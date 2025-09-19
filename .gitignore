@@ -13,6 +13,5 @@ yarn-error.log*
 .env
 
 # 构建输出（根据你项目的构建工具调整，比如 Next.js 或 Vite）
-dist/
 build/
 out/
