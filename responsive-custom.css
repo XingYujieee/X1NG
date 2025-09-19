@@ -1,0 +1,56 @@
+
+/* 响应式优化样式 */
+@media (max-width: 640px) {
+  /* 移动端优化 */
+  .responsive-optimized {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  
+  /* 确保图片在移动端正确显示 */
+  .responsive-optimized img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* 优化移动端触摸体验 */
+  .responsive-optimized a, .responsive-optimized button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* 移动端视频优化 */
+  .responsive-optimized video {
+    max-height: 40vh !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  /* 平板端优化 */
+  .responsive-optimized {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 769px) {
+  /* 桌面端优化 */
+  .responsive-optimized {
+    font-size: 16px;
+  }
+}
+
+/* 改进的hover效果 */
+@media (hover: hover) {
+  .responsive-optimized img:hover {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) {
+  .responsive-optimized img:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+}

@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xing</title>
+  <meta name="description" content="个人作品集">
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="dist/assets/favicon.ico" />
+  <link rel="stylesheet" href="dist/output.css" />
+  <link rel="stylesheet" href="responsive-custom.css" />
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Start - Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Signika:wght@400;700&display=swap" rel="stylesheet">
+  <!-- End - Fonts -->
+  <!-- Start - Fancybox Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+  <script src="https://code.jquery.com/jquery-3.6.3.min.js"
+    integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+  <!-- End - Fancybox Scripts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      content: ["./dist/*.{html,js}"],
+      theme: {
+        extend:
+                {
+                  fontFamily: {
+                    'nothingyoucoulddo': ['Nothing You Could Do', 'cursive'],
+                    'signika': ['Signika', 'sans-serif'],
+                  },
+                },
+      },
+      plugins: [],
+    }
+  </script>
+</head>
+
+<body
+  class="dark:bg-black bg-white min-h-screen text-black dark:text-white px-3 sm:px-5 md:px-10 lg:px-20 opacity-0 animate-fade-in transition duration-500 flex flex-col" class="responsive-optimized">
+
+  <!-- Intro Video Overlay (一次性播放，可点击跳过) -->
+  <div id="intro-overlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
+    <video id="intro-video" src="dist/assets/intro.mp4" autoplay playsinline muted preload="auto" style="max-width:90vw;max-height:90vh;border-radius:12px;outline:none;"></video>
+    <button id="skip-intro" aria-label="Skip" style="position:absolute;top:24px;right:24px;padding:8px 14px;border-radius:9999px;background:rgba(0,0,0,0.55);color:#fff;font-weight:600;border:1px solid rgba(255,255,255,0.2);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">跳过</button>
+  </div>
+
+  <script>
+    (function(){
+      const overlay = document.getElementById('intro-overlay');
+      const video = document.getElementById('intro-video');
+      const skipBtn = document.getElementById('skip-intro');
+      if(!overlay || !video || !skipBtn){ return; }
+
+      const key = 'introPlayedOnce';
+      const params = new URLSearchParams(location.search);
+      if (params.get('intro') === 'reset') {
+        try { sessionStorage.removeItem(key); } catch(e){}
+        try { history.replaceState(null, '', location.pathname); } catch(e){}
+      }
+      const forceShow = params.get('intro') === '1';
+      const alreadyPlayed = !forceShow && sessionStorage.getItem(key) === '1';
+      if (alreadyPlayed) {
+        overlay.style.display = 'none';
+        return;
+      }
+
+      function finishIntro(){
+        overlay.style.opacity = '1';
+        overlay.style.transition = 'opacity 300ms ease';
+        requestAnimationFrame(()=>{
+          overlay.style.opacity = '0';
+          setTimeout(()=>{ overlay.style.display = 'none'; }, 320);
+        });
+        sessionStorage.setItem(key, '1');
+      }
+
+      try {
+        video.muted = true;
+        video.setAttribute('muted', '');
+        video.setAttribute('preload', 'auto');
+        const playPromise = video.play();
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise.catch(()=>{});
+        }
+      } catch(e){}
+
+      video.addEventListener('ended', finishIntro);
+      overlay.addEventListener('click', (e)=>{
+        if (e.target === video) return;
+        try { video.pause(); } catch(e){}
+        finishIntro();
+      });
+      skipBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        try { video.pause(); } catch(e){}
+        finishIntro();
+      });
+    })();
+  </script>
+
+  
+  <!-- Navbar -->
+  <header class="flex w-full overflow-hidden pt-10 pb-1">
+    <!-- Navbar -->
+    <nav id="nav" x-data="{ open: false }" role="navigation" class="w-full">
+      <div class="container mx-auto flex flex-wrap items-center md:flex-no-wrap">
+        <div class="mr-4 md:mr-8">
+          <a href="index.html" class="text-2xl font-signika font-bold">XING</a>
+        </div>
+        <div class="ml-auto md:hidden flex items-center justify-start">
+          <button onclick="menuToggle()" @click="open = !open"
+            class="tap-highlight-transparent text-black dark:text-white w-8 h-8 p-1 relative focus:outline-none"
+            @click="open = !open">
+            <span class="sr-only">Open main menu</span>
+            <div class="block w-5 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <span aria-hidden="true"
+                class="block absolute h-0.5 w-5 bg-current transform transition duration-500 ease-in-out"
+                :class="{'rotate-45': open,' -translate-y-1.5': !open }"></span>
+              <span aria-hidden="true"
+                class="block absolute  h-0.5 w-5 bg-current   transform transition duration-500 ease-in-out"
+                :class="{'opacity-0': open } "></span>
+              <span aria-hidden="true"
+                class="block absolute h-0.5 w-5 bg-current transform  transition duration-500 ease-in-out"
+                :class="{'-rotate-45': open, ' translate-y-1.5': !open}"></span>
+            </div>
+          </button>
+        </div>
+        <div id="menu"
+          class="w-full h-0 transition-all ease-out duration-500 md:transition-none md:w-auto md:flex-grow md:flex md:items-center">
+          <ul id="ulMenu"
+            class="flex flex-col duration-300 ease-out md:space-x-5 sm:transition-none mt-5 md:flex-row md:items-center md:ml-auto md:mt-0 md:pt-0 md:border-0">
+            <li class="group transition duration-300">
+              <a href="index.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">PHOTO ALBUM
+                <span class="hidden md:block h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="dist/about_me.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">ABOUT ME
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="dist/raw.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">RAW
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="dist/travel.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">TRAVEL
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="dist/catogories.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">CATEGORIES
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <!-- Content -->
+  <div class="container mx-auto flex-1">
+    <h1 class="text-2xl sm:text-3xl md:text-4xl pt-6 sm:pt-8 md:pt-10 pb-4 sm:pb-6 md:pb-8 font-bold">Welcome to my view of the world</h1>
+    <!-- Inline Intro Video (between title and gallery) -->
+    <div class="w-full mb-8">
+      <video src="dist/assets/intro.mp4" autoplay muted playsinline loop controlslist="nodownload noplaybackrate" style="width:100%;max-height:50vh;border-radius:8px;object-fit:cover;outline:none;" class="sm:max-h-60vh md:max-h-60vh" preload="auto"></video>
+    </div>
+    <section class="text-neutral-700">
+      <div class="container w-full">
+        <div class="flex flex-wrap w-full">
+
+
+
+            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/0ae511603acb75dc0e360125e5f0248e_full.webp" data-fancybox="gallery" data-thumb="dist/assets/0ae511603acb75dc0e360125e5f0248e_thumb.webp">
+                    <img alt="0ae511603acb75dc0e360125e5f0248e" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/0ae511603acb75dc0e360125e5f0248e_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/1695c8f89e80b1ba393967ded0af4050_full.webp" data-fancybox="gallery" data-thumb="dist/assets/1695c8f89e80b1ba393967ded0af4050_thumb.webp">
+                    <img alt="1695c8f89e80b1ba393967ded0af4050" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/1695c8f89e80b1ba393967ded0af4050_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/1_after_full.webp" data-fancybox="gallery" data-thumb="dist/assets/1_after_thumb.webp">
+                    <img alt="1_after" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/1_after_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/1b7fe65878e346fd5ecd8451dcae3f05_full.webp" data-fancybox="gallery" data-thumb="dist/assets/1b7fe65878e346fd5ecd8451dcae3f05_thumb.webp">
+                    <img alt="1b7fe65878e346fd5ecd8451dcae3f05" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/1b7fe65878e346fd5ecd8451dcae3f05_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/1c5801269291c3da7f4a414e20c0bd57_full.webp" data-fancybox="gallery" data-thumb="dist/assets/1c5801269291c3da7f4a414e20c0bd57_thumb.webp">
+                    <img alt="1c5801269291c3da7f4a414e20c0bd57" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/1c5801269291c3da7f4a414e20c0bd57_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/2_thumb.webp">
+                    <img alt="2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/22_full.webp" data-fancybox="gallery" data-thumb="dist/assets/22_thumb.webp">
+                    <img alt="22" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/22_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/24fbb713a612d2f645cdd4c54f2bf16b_full.webp" data-fancybox="gallery" data-thumb="dist/assets/24fbb713a612d2f645cdd4c54f2bf16b_thumb.webp">
+                    <img alt="24fbb713a612d2f645cdd4c54f2bf16b" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/24fbb713a612d2f645cdd4c54f2bf16b_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/259ce06112abf7ea2e516c3a8be41ef9_full.webp" data-fancybox="gallery" data-thumb="dist/assets/259ce06112abf7ea2e516c3a8be41ef9_thumb.webp">
+                    <img alt="259ce06112abf7ea2e516c3a8be41ef9" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/259ce06112abf7ea2e516c3a8be41ef9_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/26997a435ba4312748f4e74c941b9ce3_full.webp" data-fancybox="gallery" data-thumb="dist/assets/26997a435ba4312748f4e74c941b9ce3_thumb.webp">
+                    <img alt="26997a435ba4312748f4e74c941b9ce3" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/26997a435ba4312748f4e74c941b9ce3_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/2d8051fa03f692e2159f35006aad9522_full.webp" data-fancybox="gallery" data-thumb="dist/assets/2d8051fa03f692e2159f35006aad9522_thumb.webp">
+                    <img alt="2d8051fa03f692e2159f35006aad9522" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/2d8051fa03f692e2159f35006aad9522_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/30bb61957b841ca16282448f926bf032_full.webp" data-fancybox="gallery" data-thumb="dist/assets/30bb61957b841ca16282448f926bf032_thumb.webp">
+                    <img alt="30bb61957b841ca16282448f926bf032" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/30bb61957b841ca16282448f926bf032_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/38e356943a827401e0547616f664f27f_full.webp" data-fancybox="gallery" data-thumb="dist/assets/38e356943a827401e0547616f664f27f_thumb.webp">
+                    <img alt="38e356943a827401e0547616f664f27f" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/38e356943a827401e0547616f664f27f_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/38fb078455529e7b290cc129e279967b_full.webp" data-fancybox="gallery" data-thumb="dist/assets/38fb078455529e7b290cc129e279967b_thumb.webp">
+                    <img alt="38fb078455529e7b290cc129e279967b" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/38fb078455529e7b290cc129e279967b_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/4c96c5ab95503badba48472345cd7ef6_full.webp" data-fancybox="gallery" data-thumb="dist/assets/4c96c5ab95503badba48472345cd7ef6_thumb.webp">
+                    <img alt="4c96c5ab95503badba48472345cd7ef6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/4c96c5ab95503badba48472345cd7ef6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/5101f04f4d3da8a81cd5abece63f54f6_full.webp" data-fancybox="gallery" data-thumb="dist/assets/5101f04f4d3da8a81cd5abece63f54f6_thumb.webp">
+                    <img alt="5101f04f4d3da8a81cd5abece63f54f6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/5101f04f4d3da8a81cd5abece63f54f6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/536c73e47ae9cb1f16a62ec3f1cdaf3b_full.webp" data-fancybox="gallery" data-thumb="dist/assets/536c73e47ae9cb1f16a62ec3f1cdaf3b_thumb.webp">
+                    <img alt="536c73e47ae9cb1f16a62ec3f1cdaf3b" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/536c73e47ae9cb1f16a62ec3f1cdaf3b_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/58a6efe226c870dd99284a7ed16f2f55_full.webp" data-fancybox="gallery" data-thumb="dist/assets/58a6efe226c870dd99284a7ed16f2f55_thumb.webp">
+                    <img alt="58a6efe226c870dd99284a7ed16f2f55" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/58a6efe226c870dd99284a7ed16f2f55_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/5ff19237958c602e2af92a4615a911f6_full.webp" data-fancybox="gallery" data-thumb="dist/assets/5ff19237958c602e2af92a4615a911f6_thumb.webp">
+                    <img alt="5ff19237958c602e2af92a4615a911f6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/5ff19237958c602e2af92a4615a911f6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/62f8e0d79cc509f62a585402ebb4d196_full.webp" data-fancybox="gallery" data-thumb="dist/assets/62f8e0d79cc509f62a585402ebb4d196_thumb.webp">
+                    <img alt="62f8e0d79cc509f62a585402ebb4d196" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/62f8e0d79cc509f62a585402ebb4d196_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/6659a9858b1d0e463ce8f65f04508c2e_full.webp" data-fancybox="gallery" data-thumb="dist/assets/6659a9858b1d0e463ce8f65f04508c2e_thumb.webp">
+                    <img alt="6659a9858b1d0e463ce8f65f04508c2e" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/6659a9858b1d0e463ce8f65f04508c2e_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/7a0a67d9dff6e4237b49828b8b7cb3c6_full.webp" data-fancybox="gallery" data-thumb="dist/assets/7a0a67d9dff6e4237b49828b8b7cb3c6_thumb.webp">
+                    <img alt="7a0a67d9dff6e4237b49828b8b7cb3c6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/7a0a67d9dff6e4237b49828b8b7cb3c6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/7be8fcc61cb30aaba60e15f2e0cb811d_full.webp" data-fancybox="gallery" data-thumb="dist/assets/7be8fcc61cb30aaba60e15f2e0cb811d_thumb.webp">
+                    <img alt="7be8fcc61cb30aaba60e15f2e0cb811d" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/7be8fcc61cb30aaba60e15f2e0cb811d_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/7c2983837077aef3bea2f31aa0c38e33_full.webp" data-fancybox="gallery" data-thumb="dist/assets/7c2983837077aef3bea2f31aa0c38e33_thumb.webp">
+                    <img alt="7c2983837077aef3bea2f31aa0c38e33" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/7c2983837077aef3bea2f31aa0c38e33_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/849ed928250a6e95cd9a80d13ca93594_full.webp" data-fancybox="gallery" data-thumb="dist/assets/849ed928250a6e95cd9a80d13ca93594_thumb.webp">
+                    <img alt="849ed928250a6e95cd9a80d13ca93594" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/849ed928250a6e95cd9a80d13ca93594_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/8bc9e9036310dc77008427dc8eb390bb 2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/8bc9e9036310dc77008427dc8eb390bb 2_thumb.webp">
+                    <img alt="8bc9e9036310dc77008427dc8eb390bb 2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/8bc9e9036310dc77008427dc8eb390bb 2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/8dd14622ffea7d3968df1bdee01de02d_full.webp" data-fancybox="gallery" data-thumb="dist/assets/8dd14622ffea7d3968df1bdee01de02d_thumb.webp">
+                    <img alt="8dd14622ffea7d3968df1bdee01de02d" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/8dd14622ffea7d3968df1bdee01de02d_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/952e28a566f4922169f9ad7bf4df042c_full.webp" data-fancybox="gallery" data-thumb="dist/assets/952e28a566f4922169f9ad7bf4df042c_thumb.webp">
+                    <img alt="952e28a566f4922169f9ad7bf4df042c" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/952e28a566f4922169f9ad7bf4df042c_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/95d91734cfd86c8a0edcf99c136989d1_full.webp" data-fancybox="gallery" data-thumb="dist/assets/95d91734cfd86c8a0edcf99c136989d1_thumb.webp">
+                    <img alt="95d91734cfd86c8a0edcf99c136989d1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/95d91734cfd86c8a0edcf99c136989d1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/9aa932bb5e5425dcc5baff682c71f8fa_full.webp" data-fancybox="gallery" data-thumb="dist/assets/9aa932bb5e5425dcc5baff682c71f8fa_thumb.webp">
+                    <img alt="9aa932bb5e5425dcc5baff682c71f8fa" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/9aa932bb5e5425dcc5baff682c71f8fa_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/9d566dc000ce36dd126b99410e5fe19e_full.webp" data-fancybox="gallery" data-thumb="dist/assets/9d566dc000ce36dd126b99410e5fe19e_thumb.webp">
+                    <img alt="9d566dc000ce36dd126b99410e5fe19e" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/9d566dc000ce36dd126b99410e5fe19e_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/9f383a9ec71e15da21c3c6d6a72c3cd1_full.webp" data-fancybox="gallery" data-thumb="dist/assets/9f383a9ec71e15da21c3c6d6a72c3cd1_thumb.webp">
+                    <img alt="9f383a9ec71e15da21c3c6d6a72c3cd1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/9f383a9ec71e15da21c3c6d6a72c3cd1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0004060_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0004060_thumb.webp">
+                    <img alt="B0004060" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0004060_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0004079.3FR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0004079.3FR_thumb.webp">
+                    <img alt="B0004079.3FR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0004079.3FR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0004115_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0004115_thumb.webp">
+                    <img alt="B0004115" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0004115_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0005171_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0005171_thumb.webp">
+                    <img alt="B0005171" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0005171_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0005974_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0005974_thumb.webp">
+                    <img alt="B0005974" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0005974_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006009_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006009_thumb.webp">
+                    <img alt="B0006009" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006009_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006029_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006029_thumb.webp">
+                    <img alt="B0006029" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006029_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006388 17.38.00_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006388 17.38.00_thumb.webp">
+                    <img alt="B0006388 17.38.00" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006388 17.38.00_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006481.3FR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006481.3FR_thumb.webp">
+                    <img alt="B0006481.3FR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006481.3FR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006654_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006654_thumb.webp">
+                    <img alt="B0006654" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006654_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006836_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006836_thumb.webp">
+                    <img alt="B0006836" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006836_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250614070916_0120_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250614070916_0120_D_thumb.webp">
+                    <img alt="DJI_20250614070916_0120_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250614070916_0120_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250821090926_0354_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250821090926_0354_D_thumb.webp">
+                    <img alt="DJI_20250821090926_0354_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250821090926_0354_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250821091248_0360_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250821091248_0360_D_thumb.webp">
+                    <img alt="DJI_20250821091248_0360_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250821091248_0360_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250823171628_0147_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250823171628_0147_D_thumb.webp">
+                    <img alt="DJI_20250823171628_0147_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250823171628_0147_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250823201223_0167_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250823201223_0167_D_thumb.webp">
+                    <img alt="DJI_20250823201223_0167_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250823201223_0167_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250825201510_0182_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250825201510_0182_D_thumb.webp">
+                    <img alt="DJI_20250825201510_0182_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250825201510_0182_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250826194608_0246_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250826194608_0246_D_thumb.webp">
+                    <img alt="DJI_20250826194608_0246_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250826194608_0246_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DSC00442_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DSC00442_thumb.webp">
+                    <img alt="DSC00442" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DSC00442_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DSC00719_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DSC00719_thumb.webp">
+                    <img alt="DSC00719" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DSC00719_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DSC03649_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DSC03649_thumb.webp">
+                    <img alt="DSC03649" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DSC03649_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DSC07591_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DSC07591_thumb.webp">
+                    <img alt="DSC07591" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DSC07591_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_1791_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_1791_thumb.webp">
+                    <img alt="IMG_1791" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_1791_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3167_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3167_thumb.webp">
+                    <img alt="IMG_3167" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3167_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3757_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3757_thumb.webp">
+                    <img alt="IMG_3757" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3757_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3758_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3758_thumb.webp">
+                    <img alt="IMG_3758" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3758_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3759 2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3759 2_thumb.webp">
+                    <img alt="IMG_3759 2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3759 2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3763_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3763_thumb.webp">
+                    <img alt="IMG_3763" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3763_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3769_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3769_thumb.webp">
+                    <img alt="IMG_3769" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3769_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4295_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4295_thumb.webp">
+                    <img alt="IMG_4295" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4295_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4424_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4424_thumb.webp">
+                    <img alt="IMG_4424" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4424_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4429_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4429_thumb.webp">
+                    <img alt="IMG_4429" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4429_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4431_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4431_thumb.webp">
+                    <img alt="IMG_4431" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4431_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4432_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4432_thumb.webp">
+                    <img alt="IMG_4432" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4432_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4507_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4507_thumb.webp">
+                    <img alt="IMG_4507" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4507_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4634_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4634_thumb.webp">
+                    <img alt="IMG_4634" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4634_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_8372_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_8372_thumb.webp">
+                    <img alt="IMG_8372" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_8372_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/SH_full.webp" data-fancybox="gallery" data-thumb="dist/assets/SH_thumb.webp">
+                    <img alt="SH" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/SH_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/SLX06909_full.webp" data-fancybox="gallery" data-thumb="dist/assets/SLX06909_thumb.webp">
+                    <img alt="SLX06909" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/SLX06909_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC0189_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC0189_thumb.webp">
+                    <img alt="_DSC0189" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC0189_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC0333_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC0333_thumb.webp">
+                    <img alt="_DSC0333" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC0333_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC0584_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC0584_thumb.webp">
+                    <img alt="_DSC0584" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC0584_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC0682_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC0682_thumb.webp">
+                    <img alt="_DSC0682" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC0682_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC1610_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC1610_thumb.webp">
+                    <img alt="_DSC1610" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC1610_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC1699_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC1699_thumb.webp">
+                    <img alt="_DSC1699" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC1699_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC1823_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC1823_thumb.webp">
+                    <img alt="_DSC1823" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC1823_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2092_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2092_thumb.webp">
+                    <img alt="_DSC2092" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2092_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2117_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2117_thumb.webp">
+                    <img alt="_DSC2117" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2117_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2606_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2606_thumb.webp">
+                    <img alt="_DSC2606" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2606_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2792-已增强-NR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2792-已增强-NR_thumb.webp">
+                    <img alt="_DSC2792-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2792-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2806_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2806_thumb.webp">
+                    <img alt="_DSC2806" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2806_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2829_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2829_thumb.webp">
+                    <img alt="_DSC2829" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2829_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2985_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2985_thumb.webp">
+                    <img alt="_DSC2985" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2985_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC4232_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC4232_thumb.webp">
+                    <img alt="_DSC4232" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC4232_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC5793-已增强-NR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC5793-已增强-NR_thumb.webp">
+                    <img alt="_DSC5793-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC5793-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC6297-HDR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC6297-HDR_thumb.webp">
+                    <img alt="_DSC6297-HDR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC6297-HDR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC7374 17.42.09_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC7374 17.42.09_thumb.webp">
+                    <img alt="_DSC7374 17.42.09" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC7374 17.42.09_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC7898_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC7898_thumb.webp">
+                    <img alt="_DSC7898" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC7898_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC7986_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC7986_thumb.webp">
+                    <img alt="_DSC7986" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC7986_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC8102-已增强-NR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC8102-已增强-NR_thumb.webp">
+                    <img alt="_DSC8102-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC8102-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC9219-已增强-NR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC9219-已增强-NR_thumb.webp">
+                    <img alt="_DSC9219-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC9219-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC9355_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC9355_thumb.webp">
+                    <img alt="_DSC9355" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC9355_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/a45c7dbff005a764e2bf5c2f7e99cf7f_full.webp" data-fancybox="gallery" data-thumb="dist/assets/a45c7dbff005a764e2bf5c2f7e99cf7f_thumb.webp">
+                    <img alt="a45c7dbff005a764e2bf5c2f7e99cf7f" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/a45c7dbff005a764e2bf5c2f7e99cf7f_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/a564378148fd0e0a564881592b714823_full.webp" data-fancybox="gallery" data-thumb="dist/assets/a564378148fd0e0a564881592b714823_thumb.webp">
+                    <img alt="a564378148fd0e0a564881592b714823" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/a564378148fd0e0a564881592b714823_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/a8922ea72d55bf51f3582c960f507c43_full.webp" data-fancybox="gallery" data-thumb="dist/assets/a8922ea72d55bf51f3582c960f507c43_thumb.webp">
+                    <img alt="a8922ea72d55bf51f3582c960f507c43" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/a8922ea72d55bf51f3582c960f507c43_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/a8c9ba24fe01bfd69a43065bceec57b2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/a8c9ba24fe01bfd69a43065bceec57b2_thumb.webp">
+                    <img alt="a8c9ba24fe01bfd69a43065bceec57b2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/a8c9ba24fe01bfd69a43065bceec57b2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/a8ec4be6c464b356c66f1d3c702f27c9_full.webp" data-fancybox="gallery" data-thumb="dist/assets/a8ec4be6c464b356c66f1d3c702f27c9_thumb.webp">
+                    <img alt="a8ec4be6c464b356c66f1d3c702f27c9" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/a8ec4be6c464b356c66f1d3c702f27c9_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/aba8806e9361f741a58d828175abfe8a_full.webp" data-fancybox="gallery" data-thumb="dist/assets/aba8806e9361f741a58d828175abfe8a_thumb.webp">
+                    <img alt="aba8806e9361f741a58d828175abfe8a" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/aba8806e9361f741a58d828175abfe8a_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/acfe4c813ba9fbf0eca34ccb46152469_full.webp" data-fancybox="gallery" data-thumb="dist/assets/acfe4c813ba9fbf0eca34ccb46152469_thumb.webp">
+                    <img alt="acfe4c813ba9fbf0eca34ccb46152469" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/acfe4c813ba9fbf0eca34ccb46152469_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/b4fed73b8ddfc32733f80fe81db11e70_full.webp" data-fancybox="gallery" data-thumb="dist/assets/b4fed73b8ddfc32733f80fe81db11e70_thumb.webp">
+                    <img alt="b4fed73b8ddfc32733f80fe81db11e70" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/b4fed73b8ddfc32733f80fe81db11e70_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/bd38867c9a7e3929d45f3faf875b3adc_full.webp" data-fancybox="gallery" data-thumb="dist/assets/bd38867c9a7e3929d45f3faf875b3adc_thumb.webp">
+                    <img alt="bd38867c9a7e3929d45f3faf875b3adc" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/bd38867c9a7e3929d45f3faf875b3adc_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/c2279d3facbf29a7c6faf1f32ce05bfc_full.webp" data-fancybox="gallery" data-thumb="dist/assets/c2279d3facbf29a7c6faf1f32ce05bfc_thumb.webp">
+                    <img alt="c2279d3facbf29a7c6faf1f32ce05bfc" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/c2279d3facbf29a7c6faf1f32ce05bfc_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/c2ddb1228fc9179a609c3ffe3e204f06 2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/c2ddb1228fc9179a609c3ffe3e204f06 2_thumb.webp">
+                    <img alt="c2ddb1228fc9179a609c3ffe3e204f06 2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/c2ddb1228fc9179a609c3ffe3e204f06 2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/c56b1032af02d09b992b07b98c3125a2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/c56b1032af02d09b992b07b98c3125a2_thumb.webp">
+                    <img alt="c56b1032af02d09b992b07b98c3125a2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/c56b1032af02d09b992b07b98c3125a2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/c9fef66fd7337bb0026e2e5ac3cccb43_full.webp" data-fancybox="gallery" data-thumb="dist/assets/c9fef66fd7337bb0026e2e5ac3cccb43_thumb.webp">
+                    <img alt="c9fef66fd7337bb0026e2e5ac3cccb43" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/c9fef66fd7337bb0026e2e5ac3cccb43_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/1695c8f89e80b1ba393967ded0af4050_full.webp" data-fancybox="gallery" data-thumb="dist/assets/1695c8f89e80b1ba393967ded0af4050_thumb.webp">
+                    <img alt="1695c8f89e80b1ba393967ded0af4050" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/1695c8f89e80b1ba393967ded0af4050_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/2_thumb.webp">
+                    <img alt="2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/2d8051fa03f692e2159f35006aad9522_full.webp" data-fancybox="gallery" data-thumb="dist/assets/2d8051fa03f692e2159f35006aad9522_thumb.webp">
+                    <img alt="2d8051fa03f692e2159f35006aad9522" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/2d8051fa03f692e2159f35006aad9522_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/7c2983837077aef3bea2f31aa0c38e33_full.webp" data-fancybox="gallery" data-thumb="dist/assets/7c2983837077aef3bea2f31aa0c38e33_thumb.webp">
+                    <img alt="7c2983837077aef3bea2f31aa0c38e33" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/7c2983837077aef3bea2f31aa0c38e33_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/849ed928250a6e95cd9a80d13ca93594_full.webp" data-fancybox="gallery" data-thumb="dist/assets/849ed928250a6e95cd9a80d13ca93594_thumb.webp">
+                    <img alt="849ed928250a6e95cd9a80d13ca93594" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/849ed928250a6e95cd9a80d13ca93594_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/8dd14622ffea7d3968df1bdee01de02d_full.webp" data-fancybox="gallery" data-thumb="dist/assets/8dd14622ffea7d3968df1bdee01de02d_thumb.webp">
+                    <img alt="8dd14622ffea7d3968df1bdee01de02d" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/8dd14622ffea7d3968df1bdee01de02d_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0005171_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0005171_thumb.webp">
+                    <img alt="B0005171" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0005171_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0005974_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0005974_thumb.webp">
+                    <img alt="B0005974" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0005974_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006029_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006029_thumb.webp">
+                    <img alt="B0006029" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006029_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006654_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006654_thumb.webp">
+                    <img alt="B0006654" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006654_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006836_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006836_thumb.webp">
+                    <img alt="B0006836" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006836_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250614070916_0120_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250614070916_0120_D_thumb.webp">
+                    <img alt="DJI_20250614070916_0120_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250614070916_0120_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DSC03649_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DSC03649_thumb.webp">
+                    <img alt="DSC03649" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DSC03649_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3759 2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3759 2_thumb.webp">
+                    <img alt="IMG_3759 2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3759 2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4507_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4507_thumb.webp">
+                    <img alt="IMG_4507" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4507_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/SH_full.webp" data-fancybox="gallery" data-thumb="dist/assets/SH_thumb.webp">
+                    <img alt="SH" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/SH_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC0189_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC0189_thumb.webp">
+                    <img alt="_DSC0189" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC0189_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC0333_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC0333_thumb.webp">
+                    <img alt="_DSC0333" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC0333_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC0584_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC0584_thumb.webp">
+                    <img alt="_DSC0584" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC0584_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC0682_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC0682_thumb.webp">
+                    <img alt="_DSC0682" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC0682_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC1823_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC1823_thumb.webp">
+                    <img alt="_DSC1823" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC1823_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2792-已增强-NR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2792-已增强-NR_thumb.webp">
+                    <img alt="_DSC2792-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2792-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2829_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2829_thumb.webp">
+                    <img alt="_DSC2829" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2829_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2985_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2985_thumb.webp">
+                    <img alt="_DSC2985" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2985_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC6297-HDR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC6297-HDR_thumb.webp">
+                    <img alt="_DSC6297-HDR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC6297-HDR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC8102-已增强-NR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC8102-已增强-NR_thumb.webp">
+                    <img alt="_DSC8102-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC8102-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC9219-已增强-NR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC9219-已增强-NR_thumb.webp">
+                    <img alt="_DSC9219-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC9219-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC9355_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC9355_thumb.webp">
+                    <img alt="_DSC9355" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC9355_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/a8922ea72d55bf51f3582c960f507c43_full.webp" data-fancybox="gallery" data-thumb="dist/assets/a8922ea72d55bf51f3582c960f507c43_thumb.webp">
+                    <img alt="a8922ea72d55bf51f3582c960f507c43" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/a8922ea72d55bf51f3582c960f507c43_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/acfe4c813ba9fbf0eca34ccb46152469_full.webp" data-fancybox="gallery" data-thumb="dist/assets/acfe4c813ba9fbf0eca34ccb46152469_thumb.webp">
+                    <img alt="acfe4c813ba9fbf0eca34ccb46152469" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/acfe4c813ba9fbf0eca34ccb46152469_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/bd38867c9a7e3929d45f3faf875b3adc_full.webp" data-fancybox="gallery" data-thumb="dist/assets/bd38867c9a7e3929d45f3faf875b3adc_thumb.webp">
+                    <img alt="bd38867c9a7e3929d45f3faf875b3adc" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/bd38867c9a7e3929d45f3faf875b3adc_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/c2279d3facbf29a7c6faf1f32ce05bfc_full.webp" data-fancybox="gallery" data-thumb="dist/assets/c2279d3facbf29a7c6faf1f32ce05bfc_thumb.webp">
+                    <img alt="c2279d3facbf29a7c6faf1f32ce05bfc" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/c2279d3facbf29a7c6faf1f32ce05bfc_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/c2ddb1228fc9179a609c3ffe3e204f06 2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/c2ddb1228fc9179a609c3ffe3e204f06 2_thumb.webp">
+                    <img alt="c2ddb1228fc9179a609c3ffe3e204f06 2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/c2ddb1228fc9179a609c3ffe3e204f06 2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/d4659493deb99ce15a0a69526d72cc81_full.webp" data-fancybox="gallery" data-thumb="dist/assets/d4659493deb99ce15a0a69526d72cc81_thumb.webp">
+                    <img alt="d4659493deb99ce15a0a69526d72cc81" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/d4659493deb99ce15a0a69526d72cc81_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/eb059407d811190af44e726be97aebc7_full.webp" data-fancybox="gallery" data-thumb="dist/assets/eb059407d811190af44e726be97aebc7_thumb.webp">
+                    <img alt="eb059407d811190af44e726be97aebc7" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/eb059407d811190af44e726be97aebc7_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/未标题-1_full.webp" data-fancybox="gallery" data-thumb="dist/assets/未标题-1_thumb.webp">
+                    <img alt="未标题-1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/未标题-1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/1_after_full.webp" data-fancybox="gallery" data-thumb="dist/assets/1_after_thumb.webp">
+                    <img alt="1_after" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/1_after_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/22_full.webp" data-fancybox="gallery" data-thumb="dist/assets/22_thumb.webp">
+                    <img alt="22" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/22_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/38e356943a827401e0547616f664f27f_full.webp" data-fancybox="gallery" data-thumb="dist/assets/38e356943a827401e0547616f664f27f_thumb.webp">
+                    <img alt="38e356943a827401e0547616f664f27f" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/38e356943a827401e0547616f664f27f_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0004060_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0004060_thumb.webp">
+                    <img alt="B0004060" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0004060_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006009_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006009_thumb.webp">
+                    <img alt="B0006009" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006009_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250821091248_0360_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250821091248_0360_D_thumb.webp">
+                    <img alt="DJI_20250821091248_0360_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250821091248_0360_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250826194608_0246_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250826194608_0246_D_thumb.webp">
+                    <img alt="DJI_20250826194608_0246_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250826194608_0246_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DSC07591_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DSC07591_thumb.webp">
+                    <img alt="DSC07591" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DSC07591_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_1791_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_1791_thumb.webp">
+                    <img alt="IMG_1791" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_1791_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3758_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3758_thumb.webp">
+                    <img alt="IMG_3758" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3758_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC1610_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC1610_thumb.webp">
+                    <img alt="_DSC1610" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC1610_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC1699_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC1699_thumb.webp">
+                    <img alt="_DSC1699" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC1699_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/ce730b764721ea8711d0656b25d0026d_full.webp" data-fancybox="gallery" data-thumb="dist/assets/ce730b764721ea8711d0656b25d0026d_thumb.webp">
+                    <img alt="ce730b764721ea8711d0656b25d0026d" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/ce730b764721ea8711d0656b25d0026d_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/efd6cedebd96732721d60eb7a00078fc_full.webp" data-fancybox="gallery" data-thumb="dist/assets/efd6cedebd96732721d60eb7a00078fc_thumb.webp">
+                    <img alt="efd6cedebd96732721d60eb7a00078fc" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/efd6cedebd96732721d60eb7a00078fc_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/fa3db5adaddb5eb492f65be625f6bcd9_full.webp" data-fancybox="gallery" data-thumb="dist/assets/fa3db5adaddb5eb492f65be625f6bcd9_thumb.webp">
+                    <img alt="fa3db5adaddb5eb492f65be625f6bcd9" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/fa3db5adaddb5eb492f65be625f6bcd9_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/未标题1_full.webp" data-fancybox="gallery" data-thumb="dist/assets/未标题1_thumb.webp">
+                    <img alt="未标题1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/未标题1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/24fbb713a612d2f645cdd4c54f2bf16b_full.webp" data-fancybox="gallery" data-thumb="dist/assets/24fbb713a612d2f645cdd4c54f2bf16b_thumb.webp">
+                    <img alt="24fbb713a612d2f645cdd4c54f2bf16b" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/24fbb713a612d2f645cdd4c54f2bf16b_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/5101f04f4d3da8a81cd5abece63f54f6_full.webp" data-fancybox="gallery" data-thumb="dist/assets/5101f04f4d3da8a81cd5abece63f54f6_thumb.webp">
+                    <img alt="5101f04f4d3da8a81cd5abece63f54f6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/5101f04f4d3da8a81cd5abece63f54f6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006388 17.38.00_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006388 17.38.00_thumb.webp">
+                    <img alt="B0006388 17.38.00" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006388 17.38.00_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250821090926_0354_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250821090926_0354_D_thumb.webp">
+                    <img alt="DJI_20250821090926_0354_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250821090926_0354_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DSC00442_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DSC00442_thumb.webp">
+                    <img alt="DSC00442" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DSC00442_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DSC00719_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DSC00719_thumb.webp">
+                    <img alt="DSC00719" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DSC00719_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3167_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3167_thumb.webp">
+                    <img alt="IMG_3167" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3167_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2092_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2092_thumb.webp">
+                    <img alt="_DSC2092" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2092_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2117_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2117_thumb.webp">
+                    <img alt="_DSC2117" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2117_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2606_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2606_thumb.webp">
+                    <img alt="_DSC2606" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2606_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC4232_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC4232_thumb.webp">
+                    <img alt="_DSC4232" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC4232_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC7898_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC7898_thumb.webp">
+                    <img alt="_DSC7898" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC7898_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC7986_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC7986_thumb.webp">
+                    <img alt="_DSC7986" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC7986_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/a8ec4be6c464b356c66f1d3c702f27c9_full.webp" data-fancybox="gallery" data-thumb="dist/assets/a8ec4be6c464b356c66f1d3c702f27c9_thumb.webp">
+                    <img alt="a8ec4be6c464b356c66f1d3c702f27c9" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/a8ec4be6c464b356c66f1d3c702f27c9_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/cb41042607433f6c8164e3e430546cae_full.webp" data-fancybox="gallery" data-thumb="dist/assets/cb41042607433f6c8164e3e430546cae_thumb.webp">
+                    <img alt="cb41042607433f6c8164e3e430546cae" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/cb41042607433f6c8164e3e430546cae_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/e5be2255192442d1923a5c0d3ba3d006_full.webp" data-fancybox="gallery" data-thumb="dist/assets/e5be2255192442d1923a5c0d3ba3d006_thumb.webp">
+                    <img alt="e5be2255192442d1923a5c0d3ba3d006" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/e5be2255192442d1923a5c0d3ba3d006_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/fdacd51eac32d9a56e704899c07985bd_full.webp" data-fancybox="gallery" data-thumb="dist/assets/fdacd51eac32d9a56e704899c07985bd_thumb.webp">
+                    <img alt="fdacd51eac32d9a56e704899c07985bd" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/fdacd51eac32d9a56e704899c07985bd_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/7a0a67d9dff6e4237b49828b8b7cb3c6_full.webp" data-fancybox="gallery" data-thumb="dist/assets/7a0a67d9dff6e4237b49828b8b7cb3c6_thumb.webp">
+                    <img alt="7a0a67d9dff6e4237b49828b8b7cb3c6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/7a0a67d9dff6e4237b49828b8b7cb3c6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0006481.3FR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0006481.3FR_thumb.webp">
+                    <img alt="B0006481.3FR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0006481.3FR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_8372_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_8372_thumb.webp">
+                    <img alt="IMG_8372" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_8372_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC2806_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC2806_thumb.webp">
+                    <img alt="_DSC2806" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC2806_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC5793-已增强-NR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC5793-已增强-NR_thumb.webp">
+                    <img alt="_DSC5793-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC5793-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/a45c7dbff005a764e2bf5c2f7e99cf7f_full.webp" data-fancybox="gallery" data-thumb="dist/assets/a45c7dbff005a764e2bf5c2f7e99cf7f_thumb.webp">
+                    <img alt="a45c7dbff005a764e2bf5c2f7e99cf7f" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/a45c7dbff005a764e2bf5c2f7e99cf7f_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/a8c9ba24fe01bfd69a43065bceec57b2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/a8c9ba24fe01bfd69a43065bceec57b2_thumb.webp">
+                    <img alt="a8c9ba24fe01bfd69a43065bceec57b2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/a8c9ba24fe01bfd69a43065bceec57b2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/cf5cfc7e8e174b7af7f8f0c35573fcce_full.webp" data-fancybox="gallery" data-thumb="dist/assets/cf5cfc7e8e174b7af7f8f0c35573fcce_thumb.webp">
+                    <img alt="cf5cfc7e8e174b7af7f8f0c35573fcce" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/cf5cfc7e8e174b7af7f8f0c35573fcce_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/ee18bf6a0fee17ca64b2a008ab6f9204_full.webp" data-fancybox="gallery" data-thumb="dist/assets/ee18bf6a0fee17ca64b2a008ab6f9204_thumb.webp">
+                    <img alt="ee18bf6a0fee17ca64b2a008ab6f9204" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/ee18bf6a0fee17ca64b2a008ab6f9204_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/1b7fe65878e346fd5ecd8451dcae3f05_full.webp" data-fancybox="gallery" data-thumb="dist/assets/1b7fe65878e346fd5ecd8451dcae3f05_thumb.webp">
+                    <img alt="1b7fe65878e346fd5ecd8451dcae3f05" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/1b7fe65878e346fd5ecd8451dcae3f05_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/1c5801269291c3da7f4a414e20c0bd57_full.webp" data-fancybox="gallery" data-thumb="dist/assets/1c5801269291c3da7f4a414e20c0bd57_thumb.webp">
+                    <img alt="1c5801269291c3da7f4a414e20c0bd57" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/1c5801269291c3da7f4a414e20c0bd57_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/259ce06112abf7ea2e516c3a8be41ef9_full.webp" data-fancybox="gallery" data-thumb="dist/assets/259ce06112abf7ea2e516c3a8be41ef9_thumb.webp">
+                    <img alt="259ce06112abf7ea2e516c3a8be41ef9" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/259ce06112abf7ea2e516c3a8be41ef9_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/26997a435ba4312748f4e74c941b9ce3_full.webp" data-fancybox="gallery" data-thumb="dist/assets/26997a435ba4312748f4e74c941b9ce3_thumb.webp">
+                    <img alt="26997a435ba4312748f4e74c941b9ce3" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/26997a435ba4312748f4e74c941b9ce3_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/38fb078455529e7b290cc129e279967b_full.webp" data-fancybox="gallery" data-thumb="dist/assets/38fb078455529e7b290cc129e279967b_thumb.webp">
+                    <img alt="38fb078455529e7b290cc129e279967b" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/38fb078455529e7b290cc129e279967b_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/58a6efe226c870dd99284a7ed16f2f55_full.webp" data-fancybox="gallery" data-thumb="dist/assets/58a6efe226c870dd99284a7ed16f2f55_thumb.webp">
+                    <img alt="58a6efe226c870dd99284a7ed16f2f55" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/58a6efe226c870dd99284a7ed16f2f55_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/952e28a566f4922169f9ad7bf4df042c_full.webp" data-fancybox="gallery" data-thumb="dist/assets/952e28a566f4922169f9ad7bf4df042c_thumb.webp">
+                    <img alt="952e28a566f4922169f9ad7bf4df042c" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/952e28a566f4922169f9ad7bf4df042c_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/95d91734cfd86c8a0edcf99c136989d1_full.webp" data-fancybox="gallery" data-thumb="dist/assets/95d91734cfd86c8a0edcf99c136989d1_thumb.webp">
+                    <img alt="95d91734cfd86c8a0edcf99c136989d1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/95d91734cfd86c8a0edcf99c136989d1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/9aa932bb5e5425dcc5baff682c71f8fa_full.webp" data-fancybox="gallery" data-thumb="dist/assets/9aa932bb5e5425dcc5baff682c71f8fa_thumb.webp">
+                    <img alt="9aa932bb5e5425dcc5baff682c71f8fa" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/9aa932bb5e5425dcc5baff682c71f8fa_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/9f383a9ec71e15da21c3c6d6a72c3cd1_full.webp" data-fancybox="gallery" data-thumb="dist/assets/9f383a9ec71e15da21c3c6d6a72c3cd1_thumb.webp">
+                    <img alt="9f383a9ec71e15da21c3c6d6a72c3cd1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/9f383a9ec71e15da21c3c6d6a72c3cd1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0004079.3FR_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0004079.3FR_thumb.webp">
+                    <img alt="B0004079.3FR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0004079.3FR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3757_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3757_thumb.webp">
+                    <img alt="IMG_3757" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3757_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4295_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4295_thumb.webp">
+                    <img alt="IMG_4295" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4295_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4429_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4429_thumb.webp">
+                    <img alt="IMG_4429" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4429_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4431_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4431_thumb.webp">
+                    <img alt="IMG_4431" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4431_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4432_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4432_thumb.webp">
+                    <img alt="IMG_4432" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4432_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4634_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4634_thumb.webp">
+                    <img alt="IMG_4634" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4634_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/_DSC7374 17.42.09_full.webp" data-fancybox="gallery" data-thumb="dist/assets/_DSC7374 17.42.09_thumb.webp">
+                    <img alt="_DSC7374 17.42.09" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/_DSC7374 17.42.09_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/c56b1032af02d09b992b07b98c3125a2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/c56b1032af02d09b992b07b98c3125a2_thumb.webp">
+                    <img alt="c56b1032af02d09b992b07b98c3125a2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/c56b1032af02d09b992b07b98c3125a2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/cc287fc69d6681796c9a4e7f417f6e1c_full.webp" data-fancybox="gallery" data-thumb="dist/assets/cc287fc69d6681796c9a4e7f417f6e1c_thumb.webp">
+                    <img alt="cc287fc69d6681796c9a4e7f417f6e1c" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/cc287fc69d6681796c9a4e7f417f6e1c_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/ec9355e3a2c039ca4b74235a58d0fbb2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/ec9355e3a2c039ca4b74235a58d0fbb2_thumb.webp">
+                    <img alt="ec9355e3a2c039ca4b74235a58d0fbb2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/ec9355e3a2c039ca4b74235a58d0fbb2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/f6ad4aff3c2132e15e05f725c129cf55_full.webp" data-fancybox="gallery" data-thumb="dist/assets/f6ad4aff3c2132e15e05f725c129cf55_thumb.webp">
+                    <img alt="f6ad4aff3c2132e15e05f725c129cf55" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/f6ad4aff3c2132e15e05f725c129cf55_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/fe33a6d5dc5258e930ba60efb9e5d285_full.webp" data-fancybox="gallery" data-thumb="dist/assets/fe33a6d5dc5258e930ba60efb9e5d285_thumb.webp">
+                    <img alt="fe33a6d5dc5258e930ba60efb9e5d285" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/fe33a6d5dc5258e930ba60efb9e5d285_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/0ae511603acb75dc0e360125e5f0248e_full.webp" data-fancybox="gallery" data-thumb="dist/assets/0ae511603acb75dc0e360125e5f0248e_thumb.webp">
+                    <img alt="0ae511603acb75dc0e360125e5f0248e" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/0ae511603acb75dc0e360125e5f0248e_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/30bb61957b841ca16282448f926bf032_full.webp" data-fancybox="gallery" data-thumb="dist/assets/30bb61957b841ca16282448f926bf032_thumb.webp">
+                    <img alt="30bb61957b841ca16282448f926bf032" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/30bb61957b841ca16282448f926bf032_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/4c96c5ab95503badba48472345cd7ef6_full.webp" data-fancybox="gallery" data-thumb="dist/assets/4c96c5ab95503badba48472345cd7ef6_thumb.webp">
+                    <img alt="4c96c5ab95503badba48472345cd7ef6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/4c96c5ab95503badba48472345cd7ef6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/536c73e47ae9cb1f16a62ec3f1cdaf3b_full.webp" data-fancybox="gallery" data-thumb="dist/assets/536c73e47ae9cb1f16a62ec3f1cdaf3b_thumb.webp">
+                    <img alt="536c73e47ae9cb1f16a62ec3f1cdaf3b" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/536c73e47ae9cb1f16a62ec3f1cdaf3b_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/5ff19237958c602e2af92a4615a911f6_full.webp" data-fancybox="gallery" data-thumb="dist/assets/5ff19237958c602e2af92a4615a911f6_thumb.webp">
+                    <img alt="5ff19237958c602e2af92a4615a911f6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/5ff19237958c602e2af92a4615a911f6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/62f8e0d79cc509f62a585402ebb4d196_full.webp" data-fancybox="gallery" data-thumb="dist/assets/62f8e0d79cc509f62a585402ebb4d196_thumb.webp">
+                    <img alt="62f8e0d79cc509f62a585402ebb4d196" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/62f8e0d79cc509f62a585402ebb4d196_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/6659a9858b1d0e463ce8f65f04508c2e_full.webp" data-fancybox="gallery" data-thumb="dist/assets/6659a9858b1d0e463ce8f65f04508c2e_thumb.webp">
+                    <img alt="6659a9858b1d0e463ce8f65f04508c2e" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/6659a9858b1d0e463ce8f65f04508c2e_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/7be8fcc61cb30aaba60e15f2e0cb811d_full.webp" data-fancybox="gallery" data-thumb="dist/assets/7be8fcc61cb30aaba60e15f2e0cb811d_thumb.webp">
+                    <img alt="7be8fcc61cb30aaba60e15f2e0cb811d" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/7be8fcc61cb30aaba60e15f2e0cb811d_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/8bc9e9036310dc77008427dc8eb390bb 2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/8bc9e9036310dc77008427dc8eb390bb 2_thumb.webp">
+                    <img alt="8bc9e9036310dc77008427dc8eb390bb 2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/8bc9e9036310dc77008427dc8eb390bb 2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/9d566dc000ce36dd126b99410e5fe19e_full.webp" data-fancybox="gallery" data-thumb="dist/assets/9d566dc000ce36dd126b99410e5fe19e_thumb.webp">
+                    <img alt="9d566dc000ce36dd126b99410e5fe19e" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/9d566dc000ce36dd126b99410e5fe19e_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/B0004115_full.webp" data-fancybox="gallery" data-thumb="dist/assets/B0004115_thumb.webp">
+                    <img alt="B0004115" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/B0004115_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250823171628_0147_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250823171628_0147_D_thumb.webp">
+                    <img alt="DJI_20250823171628_0147_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250823171628_0147_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250823201223_0167_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250823201223_0167_D_thumb.webp">
+                    <img alt="DJI_20250823201223_0167_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250823201223_0167_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/DJI_20250825201510_0182_D_full.webp" data-fancybox="gallery" data-thumb="dist/assets/DJI_20250825201510_0182_D_thumb.webp">
+                    <img alt="DJI_20250825201510_0182_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/DJI_20250825201510_0182_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3763_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3763_thumb.webp">
+                    <img alt="IMG_3763" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3763_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_3769_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_3769_thumb.webp">
+                    <img alt="IMG_3769" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_3769_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/IMG_4424_full.webp" data-fancybox="gallery" data-thumb="dist/assets/IMG_4424_thumb.webp">
+                    <img alt="IMG_4424" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/IMG_4424_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/SLX06909_full.webp" data-fancybox="gallery" data-thumb="dist/assets/SLX06909_thumb.webp">
+                    <img alt="SLX06909" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/SLX06909_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/a564378148fd0e0a564881592b714823_full.webp" data-fancybox="gallery" data-thumb="dist/assets/a564378148fd0e0a564881592b714823_thumb.webp">
+                    <img alt="a564378148fd0e0a564881592b714823" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/a564378148fd0e0a564881592b714823_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/aba8806e9361f741a58d828175abfe8a_full.webp" data-fancybox="gallery" data-thumb="dist/assets/aba8806e9361f741a58d828175abfe8a_thumb.webp">
+                    <img alt="aba8806e9361f741a58d828175abfe8a" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/aba8806e9361f741a58d828175abfe8a_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/b4fed73b8ddfc32733f80fe81db11e70_full.webp" data-fancybox="gallery" data-thumb="dist/assets/b4fed73b8ddfc32733f80fe81db11e70_thumb.webp">
+                    <img alt="b4fed73b8ddfc32733f80fe81db11e70" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/b4fed73b8ddfc32733f80fe81db11e70_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/c9fef66fd7337bb0026e2e5ac3cccb43_full.webp" data-fancybox="gallery" data-thumb="dist/assets/c9fef66fd7337bb0026e2e5ac3cccb43_thumb.webp">
+                    <img alt="c9fef66fd7337bb0026e2e5ac3cccb43" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/c9fef66fd7337bb0026e2e5ac3cccb43_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/cd1d6a8e5c3568dc6b75dae1a2e2eb60_full.webp" data-fancybox="gallery" data-thumb="dist/assets/cd1d6a8e5c3568dc6b75dae1a2e2eb60_thumb.webp">
+                    <img alt="cd1d6a8e5c3568dc6b75dae1a2e2eb60" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/cd1d6a8e5c3568dc6b75dae1a2e2eb60_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/fe40671cfbe700975ed545e8776c8ed0_full.webp" data-fancybox="gallery" data-thumb="dist/assets/fe40671cfbe700975ed545e8776c8ed0_thumb.webp">
+                    <img alt="fe40671cfbe700975ed545e8776c8ed0" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/fe40671cfbe700975ed545e8776c8ed0_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/cb41042607433f6c8164e3e430546cae_full.webp" data-fancybox="gallery" data-thumb="dist/assets/cb41042607433f6c8164e3e430546cae_thumb.webp">
+                    <img alt="cb41042607433f6c8164e3e430546cae" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/cb41042607433f6c8164e3e430546cae_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/cc287fc69d6681796c9a4e7f417f6e1c_full.webp" data-fancybox="gallery" data-thumb="dist/assets/cc287fc69d6681796c9a4e7f417f6e1c_thumb.webp">
+                    <img alt="cc287fc69d6681796c9a4e7f417f6e1c" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/cc287fc69d6681796c9a4e7f417f6e1c_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/cd1d6a8e5c3568dc6b75dae1a2e2eb60_full.webp" data-fancybox="gallery" data-thumb="dist/assets/cd1d6a8e5c3568dc6b75dae1a2e2eb60_thumb.webp">
+                    <img alt="cd1d6a8e5c3568dc6b75dae1a2e2eb60" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/cd1d6a8e5c3568dc6b75dae1a2e2eb60_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/ce730b764721ea8711d0656b25d0026d_full.webp" data-fancybox="gallery" data-thumb="dist/assets/ce730b764721ea8711d0656b25d0026d_thumb.webp">
+                    <img alt="ce730b764721ea8711d0656b25d0026d" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/ce730b764721ea8711d0656b25d0026d_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/cf5cfc7e8e174b7af7f8f0c35573fcce_full.webp" data-fancybox="gallery" data-thumb="dist/assets/cf5cfc7e8e174b7af7f8f0c35573fcce_thumb.webp">
+                    <img alt="cf5cfc7e8e174b7af7f8f0c35573fcce" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/cf5cfc7e8e174b7af7f8f0c35573fcce_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/d4659493deb99ce15a0a69526d72cc81_full.webp" data-fancybox="gallery" data-thumb="dist/assets/d4659493deb99ce15a0a69526d72cc81_thumb.webp">
+                    <img alt="d4659493deb99ce15a0a69526d72cc81" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/d4659493deb99ce15a0a69526d72cc81_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/e5be2255192442d1923a5c0d3ba3d006_full.webp" data-fancybox="gallery" data-thumb="dist/assets/e5be2255192442d1923a5c0d3ba3d006_thumb.webp">
+                    <img alt="e5be2255192442d1923a5c0d3ba3d006" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/e5be2255192442d1923a5c0d3ba3d006_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/eb059407d811190af44e726be97aebc7_full.webp" data-fancybox="gallery" data-thumb="dist/assets/eb059407d811190af44e726be97aebc7_thumb.webp">
+                    <img alt="eb059407d811190af44e726be97aebc7" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/eb059407d811190af44e726be97aebc7_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/ec9355e3a2c039ca4b74235a58d0fbb2_full.webp" data-fancybox="gallery" data-thumb="dist/assets/ec9355e3a2c039ca4b74235a58d0fbb2_thumb.webp">
+                    <img alt="ec9355e3a2c039ca4b74235a58d0fbb2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/ec9355e3a2c039ca4b74235a58d0fbb2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/ee18bf6a0fee17ca64b2a008ab6f9204_full.webp" data-fancybox="gallery" data-thumb="dist/assets/ee18bf6a0fee17ca64b2a008ab6f9204_thumb.webp">
+                    <img alt="ee18bf6a0fee17ca64b2a008ab6f9204" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/ee18bf6a0fee17ca64b2a008ab6f9204_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/efd6cedebd96732721d60eb7a00078fc_full.webp" data-fancybox="gallery" data-thumb="dist/assets/efd6cedebd96732721d60eb7a00078fc_thumb.webp">
+                    <img alt="efd6cedebd96732721d60eb7a00078fc" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/efd6cedebd96732721d60eb7a00078fc_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/f6ad4aff3c2132e15e05f725c129cf55_full.webp" data-fancybox="gallery" data-thumb="dist/assets/f6ad4aff3c2132e15e05f725c129cf55_thumb.webp">
+                    <img alt="f6ad4aff3c2132e15e05f725c129cf55" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/f6ad4aff3c2132e15e05f725c129cf55_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/fa3db5adaddb5eb492f65be625f6bcd9_full.webp" data-fancybox="gallery" data-thumb="dist/assets/fa3db5adaddb5eb492f65be625f6bcd9_thumb.webp">
+                    <img alt="fa3db5adaddb5eb492f65be625f6bcd9" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/fa3db5adaddb5eb492f65be625f6bcd9_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/fdacd51eac32d9a56e704899c07985bd_full.webp" data-fancybox="gallery" data-thumb="dist/assets/fdacd51eac32d9a56e704899c07985bd_thumb.webp">
+                    <img alt="fdacd51eac32d9a56e704899c07985bd" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/fdacd51eac32d9a56e704899c07985bd_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/fe33a6d5dc5258e930ba60efb9e5d285_full.webp" data-fancybox="gallery" data-thumb="dist/assets/fe33a6d5dc5258e930ba60efb9e5d285_thumb.webp">
+                    <img alt="fe33a6d5dc5258e930ba60efb9e5d285" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/fe33a6d5dc5258e930ba60efb9e5d285_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/fe40671cfbe700975ed545e8776c8ed0_full.webp" data-fancybox="gallery" data-thumb="dist/assets/fe40671cfbe700975ed545e8776c8ed0_thumb.webp">
+                    <img alt="fe40671cfbe700975ed545e8776c8ed0" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/fe40671cfbe700975ed545e8776c8ed0_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/未标题-1_full.webp" data-fancybox="gallery" data-thumb="dist/assets/未标题-1_thumb.webp">
+                    <img alt="未标题-1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/未标题-1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <a href="dist/assets/未标题1_full.webp" data-fancybox="gallery" data-thumb="dist/assets/未标题1_thumb.webp">
+                    <img alt="未标题1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform scale-100 hover:scale-110" src="dist/assets/未标题1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <!-- 空白占位 -->
+                </div>
+              </div>
+            </div>            <div class="flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 flex-wrap">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full">
+                  <!-- 空白占位 -->
+                </div>
+              </div>
+            </div>
+
+<!-- Footer -->
+<footer class="container mx-auto scroll-reveal">
+  <div class="w-full py-16 flex flex-col items-center justify-center mt-12">
+    <!-- 名字 -->
+    <p class="font-signika text-center">
+      <b>XING</b>
+    </p>
+
+    <!-- 邮箱 -->
+    <p class="mt-4 text-sm text-gray-600 dark:text-gray-300 text-center">
+      2193177455@qq.com
+    </p>
+
+    <!-- 社交链接 -->
+    <div class="flex justify-center mt-8 text-gray-600 dark:text-gray-300 space-x-6">
+      <!-- 抖音图标和链接 -->
+      <a class="transition duration-300 hover:opacity-75 social-link interactive"
+         href="https://v.douyin.com/pIs2kYdlksE/ 0@9.com :0pm" target="_blank" rel="noreferrer">
+        <span class="sr-only">Douyin</span>
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 1024 1024"
+             xmlns="http://www.w3.org/2000/svg">
+          <path d="M512 0C229.22 0 0 229.22 0 512s229.22 512 512 512 
+          512-229.22 512-512S794.78 0 512 0z m243.43 385.55c-11.78 11.78-24.38 
+          23.22-37.93 34.28 ..."></path>
+        </svg>
+      </a>
+    </div>
+
+    <!-- 版权信息 -->
+    <p class="mt-8 text-xs text-gray-600 dark:text-gray-300 text-center">
+      © 2025 Developed and Designed by Xing.
+    </p>
+  </div>
+</footer>
+
+  <!-- Script for the LightBox -->
+  <script>
+    Fancybox.bind("[data-fancybox]", {});
+  </script>
+  
+  <!-- 渐进式图片加载脚本 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 渐进式加载图片
+      function progressiveLoad() {
+        const images = document.querySelectorAll('img[loading="lazy"]');
+        
+        images.forEach(img => {
+          // 创建低质量占位符
+          const placeholder = document.createElement('div');
+          placeholder.className = 'absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse';
+          placeholder.style.background = 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)';
+          placeholder.style.backgroundSize = '200% 100%';
+          placeholder.style.animation = 'shimmer 1.5s infinite';
+          
+          // 将占位符添加到图片容器
+          const container = img.parentElement;
+          container.style.position = 'relative';
+          container.appendChild(placeholder);
+          
+          // 图片加载完成后的处理
+          img.onload = function() {
+            // 添加淡入效果
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.5s ease';
+            
+            // 延迟显示图片，确保占位符动画完成
+            setTimeout(() => {
+              img.style.opacity = '1';
+              // 移除占位符
+              if (placeholder.parentNode) {
+                placeholder.style.opacity = '0';
+                placeholder.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => {
+                  if (placeholder.parentNode) {
+                    placeholder.parentNode.removeChild(placeholder);
+                  }
+                }, 300);
+              }
+            }, 200);
+          };
+          
+          // 如果图片已经缓存，立即显示
+          if (img.complete) {
+            img.style.opacity = '1';
+            if (placeholder.parentNode) {
+              placeholder.parentNode.removeChild(placeholder);
+            }
+          }
+        });
+      }
+      
+      // 添加shimmer动画CSS
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // 启动渐进式加载
+      progressiveLoad();
+    });
+  </script>
+  
+  <!-- 高级懒加载脚本 -->
+  <script>
+    // 图片懒加载优化
+    document.addEventListener('DOMContentLoaded', function() {
+      const images = document.querySelectorAll('img[loading="lazy"]');
+      
+      // 创建Intersection Observer
+      const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            
+            // 添加加载动画
+            img.style.opacity = '0';
+            img.style.transform = 'scale(0.9)';
+            
+            // 图片加载完成后显示
+            img.onload = function() {
+              img.style.opacity = '1';
+              img.style.transform = 'scale(1)';
+              img.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+              
+              // 隐藏加载占位符
+              const placeholder = img.parentElement.querySelector('.absolute');
+              if (placeholder) {
+                placeholder.style.opacity = '0';
+                placeholder.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => placeholder.remove(), 300);
+              }
+            };
+            
+            // 如果图片已经缓存，立即显示
+            if (img.complete) {
+              img.style.opacity = '1';
+              img.style.transform = 'scale(1)';
+              img.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            }
+            
+            // 停止观察已加载的图片
+            observer.unobserve(img);
+          }
+        });
+      }, {
+        // 提前200px开始加载
+        rootMargin: '200px 0px',
+        threshold: 0.1
+      });
+      
+      // 开始观察所有图片
+      images.forEach(img => {
+        imageObserver.observe(img);
+      });
+    });
+  </script>
+  
+  <script src="dist/fade_in.js"></script>
+  <script src="dist/menu.js"></script>
+</body>
+
+</html>
