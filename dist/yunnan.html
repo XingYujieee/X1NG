@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>云南之旅 - 丽江·香格里拉·梅里 | Travel</title>
+  <meta name="description" content="云南摄影攻略 - 探索丽江、香格里拉、梅里雪山的绝美风光">
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="travel_assets/favicon.ico" />
+  <link rel="stylesheet" href="output.css" />
+  <link rel="stylesheet" href="../responsive-custom.css" />
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Start - Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Signika:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- End - Fonts -->
+  <!-- Start - Fancybox Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+  <script src="https://code.jquery.com/jquery-3.6.3.min.js"
+    integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+  <!-- End - Fancybox Scripts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      content: ["./dist/*.{html,js}"],
+      theme: {
+        extend: {
+          fontFamily: {
+            'nothingyoucoulddo': ['Nothing You Could Do', 'cursive'],
+            'signika': ['Signika', 'sans-serif'],
+            'noto': ['Noto Sans SC', 'sans-serif'],
+          },
+          colors: {
+            'travel-blue': '#2563eb',
+            'travel-green': '#059669',
+            'travel-orange': '#ea580c',
+          }
+        },
+      },
+      plugins: [],
+    }
+  </script>
+</head>
+
+<body class="dark:bg-black bg-white text-black dark:text-white opacity-0 animate-fade-in transition duration-500" class="responsive-optimized">
+  <!-- Navbar -->
+  <header class="flex w-full overflow-hidden pt-10 pb-1 px-5 md:px-20">
+    <nav id="nav" x-data="{ open: false }" role="navigation" class="w-full">
+      <div class="container mx-auto flex flex-wrap items-center md:flex-no-wrap">
+        <div class="mr-4 md:mr-8">
+          <a href="../index.html" class="text-2xl font-signika font-bold">XING</a>
+        </div>
+        <div class="ml-auto md:hidden flex items-center justify-start">
+          <button onclick="menuToggle()" @click="open = !open"
+            class="tap-highlight-transparent text-black dark:text-white w-8 h-8 p-1 relative focus:outline-none"
+            @click="open = !open">
+            <span class="sr-only">Open main menu</span>
+            <div class="block w-5 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <span aria-hidden="true"
+                class="block absolute h-0.5 w-5 bg-current transform transition duration-500 ease-in-out"
+                :class="{'rotate-45': open,' -translate-y-1.5': !open }"></span>
+              <span aria-hidden="true"
+                class="block absolute  h-0.5 w-5 bg-current   transform transition duration-500 ease-in-out"
+                :class="{'opacity-0': open } "></span>
+              <span aria-hidden="true"
+                class="block absolute h-0.5 w-5 bg-current transform  transition duration-500 ease-in-out"
+                :class="{'-rotate-45': open, ' translate-y-1.5': !open}"></span>
+            </div>
+          </button>
+        </div>
+        <div id="menu"
+          class="w-full h-0 transition-all ease-out duration-500 md:transition-none md:w-auto md:flex-grow md:flex md:items-center">
+          <ul id="ulMenu"
+            class="flex flex-col duration-300 ease-out md:space-x-5 sm:transition-none mt-5 md:flex-row md:items-center md:ml-auto md:mt-0 md:pt-0 md:border-0">
+            <li class="group transition duration-300">
+              <a href="../index.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">PHOTO ALBUM
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="about_me.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">ABOUT ME
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="raw.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">RAW
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="travel.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">TRAVEL
+                <span class="hidden md:block h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="catogories.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">CATEGORIES
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Content -->
+  <div class="container mx-auto px-5 md:px-20">
+    <!-- Hero Section -->
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold font-noto mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        云南之旅摄影攻略
+      </h1>
+      <p class="text-xl text-gray-600 dark:text-gray-300 font-noto max-w-3xl mx-auto leading-relaxed">
+        探索彩云之南的绚烂风光，从古城丽江到洱海大理，从松赞林寺到梅里雪山，感受多彩云南的独特魅力
+      </p>
+    </div>
+
+    <!-- 概览 -->
+    <section class="mb-16">
+      <h2 class="text-3xl font-bold font-noto mb-8 text-center">概览</h2>
+      <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-8 mb-8">
+        <p class="text-lg font-noto leading-relaxed mb-6">
+          本攻略在保留原有六日行程的基础上，针对摄影爱好者提供了细化的拍摄时间、机位推荐、装备建议及交通衔接方案，让你最大化捕捉到松赞林寺晨雾、纳帕海候鸟、飞来寺日照金山、雪达湖倒影、黑龙潭玉龙雪山日照金山和泸沽湖晨雾等绝美瞬间。
+        </p>
+        <div class="text-center mb-8">
+          <a href="https://iris-nutria-a02.notion.site/2706c64d9f5880b5b33ed799f493d883" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-noto font-bold text-lg hover:from-purple-700 hover:to-blue-700 transition duration-300 shadow-lg transform hover:scale-105">
+          获得详细攻略
+            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          </a>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6">
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+            <h3 class="text-xl font-bold font-noto mb-3 text-blue-600">总体费用</h3>
+            <p class="font-noto">机票 1600+ 元<br>包车五天 725 元/人<br>住宿餐饮 2000 元<br><strong>总计约 4500 元</strong></p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+            <h3 class="text-xl font-bold font-noto mb-3 text-green-600">行程时间</h3>
+            <p class="font-noto">六天五晚<br>最佳季节：10月-次年5月<br>天气晴朗，空气透彻</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+            <h3 class="text-xl font-bold font-noto mb-3 text-orange-600">交通方式</h3>
+            <p class="font-noto">南京直飞丽江<br>高铁丽江-香格里拉<br>包车游览各景点</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 行程安排 -->
+    <section class="mb-16">
+      <h2 class="text-3xl font-bold font-noto mb-8 text-center">详细行程安排</h2>
+      
+      <!-- Day 1 -->
+      <div class="mb-12 bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
+        <h3 class="text-2xl font-bold font-noto mb-6 text-blue-600">Day 1: 南京—丽江—香格里拉</h3>
+        <div class="grid md:grid-cols-2 gap-8">
+          <div>
+            <h4 class="text-xl font-bold font-noto mb-4">交通安排</h4>
+            <ul class="space-y-3 font-noto">
+              <li>• 南京禄口至丽江三义国际机场直飞，约4小时</li>
+              <li>• 丽江机场到市区：机场大巴或网约车，约40分钟</li>
+              <li>• 丽江—香格里拉高铁：约1.5小时，二等座¥49</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-xl font-bold font-noto mb-4">住宿建议</h4>
+            <p class="font-noto">夜宿香格里拉城区，建议选择靠近松赞林寺的高地客栈，便于次日清晨拍摄。提前查看酒店距离"打日"观景台的路程。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Day 2 -->
+      <div class="mb-12 bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
+        <h3 class="text-2xl font-bold font-noto mb-6 text-green-600">Day 2: 松赞林寺晨雾 & 纳帕海观鸟</h3>
+        <div class="grid md:grid-cols-2 gap-8">
+          <div>
+            <h4 class="text-xl font-bold font-noto mb-4">松赞林寺拍摄</h4>
+            <ul class="space-y-3 font-noto">
+              <li>• 建议清晨日出前30分钟到达</li>
+              <li>• 6:00–8:00是晨雾与金顶光影最丰富时段</li>
+              <li>• 7:00–7:30拍摄日光洒在金顶的画面尤佳</li>
+              <li>• 注意：晨雾实际是松赞林寺烧香的烟雾</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-xl font-bold font-noto mb-4">纳帕海观鸟</h4>
+            <ul class="space-y-3 font-noto">
+              <li>• 08:30–12:00在公比村、哈木古等地徒步</li>
+              <li>• 追逐黑颈鹤等冬候鸟</li>
+              <li>• 使用长焦镜头+三脚架拍清晰特写</li>
+              <li>• 注意：纳帕海全程禁飞无人机</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="mt-8">
+          <h4 class="text-xl font-bold font-noto mb-4">路上推荐观景台</h4>
+          <div class="grid md:grid-cols-3 gap-6">
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+              <h5 class="font-bold font-noto mb-2">金沙江大拐弯观景台</h5>
+              <p class="font-noto text-sm">可看到金沙江180度大拐弯，十分震撼，停车费5元</p>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+              <h5 class="font-bold font-noto mb-2">贺龙桥</h5>
+              <p class="font-noto text-sm">红军长征时建造的桥，具有历史意义</p>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+              <h5 class="font-bold font-noto mb-2">白马雪山垭口</h5>
+              <p class="font-noto text-sm">海拔较高，景色壮观，无人机可飞1000m高</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Day 3 -->
+      <div class="mb-12 bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
+        <h3 class="text-2xl font-bold font-noto mb-6 text-purple-600">Day 3: 飞来寺日照金山 & 说打村</h3>
+        <div class="grid md:grid-cols-2 gap-8">
+          <div>
+            <h4 class="text-xl font-bold font-noto mb-4">飞来寺日照金山</h4>
+            <ul class="space-y-3 font-noto">
+              <li>• 清晨6:00到达，6:30–8:00捕捉金光洒满梅里雪山</li>
+              <li>• 广角+三脚架为首选装备</li>
+              <li>• 全景20mm，特写70-200mm</li>
+              <li>• 飞来寺观景台可一览"十三峰"全貌</li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-xl font-bold font-noto mb-4">卡瓦格博观景台</h4>
+            <ul class="space-y-3 font-noto">
+              <li>• 距离卡瓦格博峰最近的地方</li>
+              <li>• 可用经幡当前景拍摄卡瓦格博峰</li>
+              <li>• 路右侧小匝道可拍摄缅茨姆（神女峰）</li>
+              <li>• 个人认为是拍摄神女峰的极佳视角</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="mt-8">
+          <h4 class="text-xl font-bold font-noto mb-4">说打村体验</h4>
+          <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-800 rounded-xl p-6">
+            <ul class="space-y-3 font-noto">
+              <li>• <strong>鸟类摄影：</strong>小鸟特别多，焦段推荐400-600mm</li>
+              <li>• <strong>雪达湖倒影：</strong>来说打村的最主要目的，蓝调时分最美</li>
+              <li>• <strong>星轨拍摄：</strong>光污染很低，推荐夜晚拍摄</li>
+              <li>• <strong>月照银山：</strong>月光洒到山峰上时，梅里十三峰亮如白昼</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Day 4-6 -->
+      <div class="grid md:grid-cols-3 gap-8 mb-12">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+          <h3 class="text-xl font-bold font-noto mb-4 text-orange-600">Day 4: 雪达村日出</h3>
+          <ul class="space-y-2 font-noto text-sm">
+            <li>• 7:00–7:30在湖边拍摄日出</li>
+            <li>• 清晨光影与倒影交融的仙境氛围</li>
+            <li>• 可用三轮车载到雪达湖节约时间</li>
+            <li>• 下午返程香格里拉，晚上到丽江</li>
+          </ul>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+          <h3 class="text-xl font-bold font-noto mb-4 text-red-600">Day 5: 黑龙潭 & 泸沽湖</h3>
+          <ul class="space-y-2 font-noto text-sm">
+            <li>• 7:15前入园拍日照金山</li>
+            <li>• 锁翠桥、得月楼、五孔桥等机位</li>
+            <li>• 8:10左右可见雪山顶金光</li>
+            <li>• 中午出发泸沽湖，4-5小时车程</li>
+          </ul>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+          <h3 class="text-xl font-bold font-noto mb-4 text-teal-600">Day 6: 泸沽湖晨雾</h3>
+          <ul class="space-y-2 font-noto text-sm">
+            <li>• 7:00–9:00在各码头候雾</li>
+            <li>• 爱情码头、普洛码头推荐</li>
+            <li>• 拍摄湖面薄雾与猪槽船</li>
+            <li>• 里格半岛航拍视角佳</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 摄影作品展示 -->
+    <section class="mb-16">
+      <h2 class="text-3xl font-bold font-noto mb-8 text-center">摄影作品展示</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_1.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_1.webp" alt="云南风光1" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_2.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_2.webp" alt="云南风光2" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_3.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_3.webp" alt="云南风光3" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_4.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_4.webp" alt="云南风光4" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_5.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_5.webp" alt="云南风光5" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_6.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_6.webp" alt="云南风光6" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_7.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_7.webp" alt="云南风光7" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_8.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_8.webp" alt="云南风光8" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_9.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_9.webp" alt="云南风光9" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_10.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_10.webp" alt="云南风光10" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_11.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_11.webp" alt="云南风光11" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_12.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_12.webp" alt="云南风光12" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_13.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_13.webp" alt="云南风光13" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_14.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_14.webp" alt="云南风光14" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_15.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_15.webp" alt="云南风光15" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_16.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_16.webp" alt="云南风光16" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_17.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_17.webp" alt="云南风光17" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+        <div class="aspect-square overflow-hidden rounded-lg">
+          <a href="travel_assets/yunnan_images/yunnan_18.webp" data-fancybox="yunnan-gallery">
+            <img src="travel_assets/yunnan_images/yunnan_18.webp" alt="云南风光18" class="w-full h-full object-cover hover:scale-110 transition-transform duration-300">
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- DLC 额外推荐 -->
+    <section class="mb-16">
+      <h2 class="text-3xl font-bold font-noto mb-8 text-center">DLC 额外推荐</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-8">
+          <h3 class="text-2xl font-bold font-noto mb-4 text-blue-600">登上玉龙雪山4680</h3>
+          <ul class="space-y-3 font-noto">
+            <li>• 早起坐最早一批索道上山</li>
+            <li>• 冬季有机会在山上看日出</li>
+            <li>• 票相对好抢一些</li>
+            <li>• 坐索道后再向上爬升100多米即可</li>
+          </ul>
+        </div>
+        
+        <div class="bg-gradient-to-br from-green-50 to-teal-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-8">
+          <h3 class="text-2xl font-bold font-noto mb-4 text-green-600">蓝月谷</h3>
+          <ul class="space-y-3 font-noto">
+            <li>• 坐索道下山后，坐景区大巴前往</li>
+            <li>• 景色十分美丽，有"小九寨沟"之称</li>
+            <li>• 下午可去白沙古镇转转</li>
+            <li>• 找个有天台的咖啡店也能见到玉龙雪山</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 摄影贴士 -->
+    <section class="mb-16">
+      <h2 class="text-3xl font-bold font-noto mb-8 text-center">摄影贴士</h2>
+      <div class="bg-gradient-to-r from-orange-50 to-red-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-8">
+        <div class="grid md:grid-cols-2 gap-8">
+          <div>
+            <h3 class="text-xl font-bold font-noto mb-4">装备建议</h3>
+            <ul class="space-y-2 font-noto">
+              <li>• 主镜头：24–70mm（全景）、70–200mm（特写）</li>
+              <li>• 16–35mm广角在拍摄日照金山与倒影时格外实用</li>
+              <li>• 全天配备三脚架+云台</li>
+              <li>• 无人机：mavic 3/mavic 3 pro</li>
+              <li>• 多备2块电池并贴身保温</li>
+              <li>• 存储卡建议64GB U3级以上</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-xl font-bold font-noto mb-4">拍摄技巧</h3>
+            <ul class="space-y-2 font-noto">
+              <li>• 行前关注晴雨与雾况</li>
+              <li>• 选定主机位后留足预热时间</li>
+              <li>• 前景可加入经幡、红叶或当地人物提升层次</li>
+              <li>• 高原紫外线强，涂抹防晒、戴墨镜、帽子</li>
+              <li>• 机位若近公路或山崖，务必注意安全</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 返回按钮 -->
+    <div class="text-center mb-12">
+      <a href="travel.html" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-noto font-medium hover:bg-blue-700 transition duration-300">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        返回旅行页面
+      </a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="scroll-reveal">
+    <div class="max-w-screen-xl py-16 mx-auto">
+      <div class="grid grid-cols-1 gap-8 text-center mx-auto">
+        <div>
+          <p class="font-signika floating-element"><b>XING</b></p>
+          <p class="mt-4 text-sm text-gray-600 dark:text-gray-300">
+            2193177455@qq.com
+          </p>
+          <div class="flex mx-auto">
+            <div class="mx-auto space-x-6 flex mt-8 text-gray-600 dark:text-gray-300">
+              <!-- 抖音图标和链接 -->
+              <a class="transition duration-300 hover:opacity-75 social-link interactive" href="https://v.douyin.com/pIs2kYdlksE/ 0@9.com :0pm" target="_blank"
+                rel="noreferrer">
+                <span class="sr-only"> Douyin </span>
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M512 0C229.22 0 0 229.22 0 512s229.22 512 512 512 512-229.22 512-512S794.78 0 512 0z m243.43 385.55c-11.78 11.78-24.38 23.22-37.93 34.28-1.45 1.2-2.88 2.4-4.3 3.62-3.32 2.8-6.67 5.6-10.05 8.38-1.4 1.15-2.8 2.3-4.2 3.45-10.2 8.4-20.52 16.6-31.12 24.3-2.7 2-5.45 3.9-8.2 5.8-15.1 10.4-30.4 20.2-46.2 28.9-1.9 1.05-3.8 2.1-5.7 3.15-12.8 7-25.7 13.5-38.9 19.1-3.3 1.4-6.6 2.8-9.9 4.2-11.6 4.9-23.3 9.3-35.1 13.2-2.9 0.9-5.8 1.8-8.7 2.7-22.1 6.8-44.3 12.4-66.9 16.4-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-3.6 0.6-7.2 1.2-10.8 1.8-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4z"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="mt-8 text-xs text-gray-600 dark:text-gray-300 text-center">
+        © 2025 Developed and Designed by Xing.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Menu toggle function
+    function menuToggle() {
+      const menu = document.getElementById('menu');
+      const ulMenu = document.getElementById('ulMenu');
+      
+      if (menu.style.height === '0px' || menu.style.height === '') {
+        menu.style.height = ulMenu.scrollHeight + 'px';
+      } else {
+        menu.style.height = '0px';
+      }
+    }
+
+    // Fade in animation
+    document.addEventListener('DOMContentLoaded', function() {
+      document.body.classList.remove('opacity-0');
+    });
+
+    // Initialize Fancybox
+    Fancybox.bind("[data-fancybox]", {
+      // Options
+    });
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
+

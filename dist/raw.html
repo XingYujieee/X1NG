@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAW - Xing</title>
+  <meta name="description" content="RAW图片前后对比">
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="output.css" />
+  <link rel="stylesheet" href="../responsive-custom.css" />
+  <link rel="stylesheet" href="../styles.css" />
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Start - Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Signika:wght@400;700&display=swap" rel="stylesheet">
+  <!-- End - Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      content: ["./dist/*.{html,js}"],
+      theme: {
+        extend:
+                {
+                  fontFamily: {
+                    'nothingyoucoulddo': ['Nothing You Could Do', 'cursive'],
+                    'signika': ['Signika', 'sans-serif'],
+                  },
+                },
+      },
+      plugins: [],
+    }
+  </script>
+  <style>
+    .image-comparison-container {
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .image-comparison-before,
+    .image-comparison-after {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .image-comparison-after {
+      clip-path: polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%);
+      transition: clip-path 0.3s ease;
+    }
+    
+    .image-comparison-slider {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 4px;
+      height: 100%;
+      background: white;
+      cursor: ew-resize;
+      z-index: 10;
+      transform: translateX(-50%);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .image-comparison-slider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .image-comparison-slider::after {
+      content: '⟷';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #333;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .image-comparison-labels {
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 5;
+    }
+    
+    .image-comparison-label {
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .raw-gallery {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+      .raw-gallery {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      
+      .image-comparison-container {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+
+<body
+  class="dark:bg-black bg-white min-h-screen text-black dark:text-white px-3 sm:px-5 md:px-10 lg:px-20 transition duration-500" class="responsive-optimized">
+  <!-- Navbar -->
+  <header class="flex w-full overflow-hidden pt-10 pb-1">
+    <!-- Navbar -->
+    <nav id="nav" x-data="{ open: false }" role="navigation" class="w-full">
+      <div class="container mx-auto flex flex-wrap items-center md:flex-no-wrap">
+        <div class="mr-4 md:mr-8">
+          <a href="../index.html" class="text-2xl font-signika font-bold">XING</a>
+        </div>
+        <div class="ml-auto md:hidden flex items-center justify-start">
+          <button onclick="menuToggle()" @click="open = !open"
+            class="tap-highlight-transparent text-black dark:text-white w-8 h-8 p-1 relative focus:outline-none"
+            @click="open = !open">
+            <span class="sr-only">Open main menu</span>
+            <div class="block w-5 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <span aria-hidden="true"
+                class="block absolute h-0.5 w-5 bg-current transform transition duration-500 ease-in-out"
+                :class="{'rotate-45': open,' -translate-y-1.5': !open }"></span>
+              <span aria-hidden="true"
+                class="block absolute  h-0.5 w-5 bg-current   transform transition duration-500 ease-in-out"
+                :class="{'opacity-0': open } "></span>
+              <span aria-hidden="true"
+                class="block absolute h-0.5 w-5 bg-current transform  transition duration-500 ease-in-out"
+                :class="{'-rotate-45': open, ' translate-y-1.5': !open}"></span>
+            </div>
+          </button>
+        </div>
+        <div id="menu"
+          class="w-full h-0 transition-all ease-out duration-500 md:transition-none md:w-auto md:flex-grow md:flex md:items-center">
+          <ul id="ulMenu"
+            class="flex flex-col duration-300 ease-out md:space-x-5 sm:transition-none mt-5 md:flex-row md:items-center md:ml-auto md:mt-0 md:pt-0 md:border-0">
+            <li class="group transition duration-300">
+              <a href="../index.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">PHOTO ALBUM
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="about_me.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">ABOUT ME
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="raw.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">RAW
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="travel.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">TRAVEL
+                <span class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="catogories.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">CATEGORIES
+                <span class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Content -->
+  <div class="container mx-auto">
+    <h1 class="text-2xl sm:text-3xl md:text-4xl pt-6 sm:pt-8 md:pt-10 pb-4 sm:pb-6 md:pb-8 font-bold">RAW Processing Showcase</h1>
+    <p class="text-lg text-gray-600 dark:text-gray-300 mb-8">
+      拖动滑块查看RAW图片处理前后的对比效果
+    </p>
+    
+    <!-- RAW Gallery -->
+    <div class="raw-gallery" id="rawGallery">
+      <!-- 示例对比图片 - 这里会通过JavaScript动态加载 -->
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="scroll-reveal">
+    <div class="max-w-screen-xl py-16 mx-auto">
+      <div class="grid grid-cols-1 gap-8 text-center mx-auto">
+        <div>
+          <p class="font-signika floating-element"><b>XING</b></p>
+          <p class="mt-4 text-sm text-gray-600 dark:text-gray-300">
+            2193177455@qq.com
+          </p>
+          <div class="flex mx-auto">
+            <div class="mx-auto space-x-6 flex mt-8 text-gray-600 dark:text-gray-300">
+              <!-- 抖音图标和链接 -->
+              <a class="transition duration-300 hover:opacity-75 social-link interactive" href="https://v.douyin.com/pIs2kYdlksE/ 0@9.com :0pm" target="_blank"
+                rel="noreferrer">
+                <span class="sr-only"> Douyin </span>
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M512 0C229.22 0 0 229.22 0 512s229.22 512 512 512 512-229.22 512-512S794.78 0 512 0z m243.43 385.55c-11.78 11.78-24.38 23.22-37.93 34.28-1.45 1.2-2.88 2.4-4.3 3.62-3.32 2.8-6.67 5.6-10.05 8.38-1.4 1.15-2.8 2.3-4.2 3.45-10.2 8.4-20.52 16.6-31.12 24.3-2.7 2-5.45 3.9-8.2 5.8-15.1 10.4-30.4 20.2-46.2 28.9-1.9 1.05-3.8 2.1-5.7 3.15-12.8 7-25.7 13.5-38.9 19.1-3.3 1.4-6.6 2.8-9.9 4.2-11.6 4.9-23.3 9.3-35.1 13.2-2.9 0.9-5.8 1.8-8.7 2.7-22.1 6.8-44.3 12.4-66.9 16.4-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-3.6 0.6-7.2 1.2-10.8 1.8-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4z"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="mt-8 text-xs text-gray-600 dark:text-gray-300 text-center">
+        © 2025 Developed and Designed by Xing.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // 动态加载RAW图片对比配置
+    async function loadRawConfig() {
+      try {
+        const response = await fetch('raw/raw-config.json?v=' + Date.now());
+        const data = await response.json();
+        console.log("Loaded rawComparisons:", data.rawComparisons)
+        return data.rawComparisons;
+      } catch (error) {
+        console.error('加载RAW配置失败:', error);
+        // 返回默认配置
+        return [
+          {
+            id: 1,
+            title: "山湖日落风景",
+            before: "raw/sample_before_1.jpg",
+            after: "raw/sample_after_1.jpg",
+            description: "增强天空对比度和色彩饱和度，突出日落时分的戏剧性效果"
+          },
+          {
+            id: 2,
+            title: "人像摄影处理",
+            before: "raw/sample_before_2.jpg", 
+            after: "raw/sample_after_2.jpg",
+            description: "肤色调整和光影优化，提升人像的质感和立体感"
+          }
+        ];
+      }
+    }
+
+    // 创建图片对比组件
+    function createImageComparison(comparison) {
+      return `
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+          <p class="text-gray-600 dark:text-gray-300 mb-4">${comparison.description}</p>
+          <div class="image-comparison-container" style="height: 400px;" data-comparison-id="${comparison.id}">
+            <img src="${comparison.before}" alt="处理前" class="image-comparison-before">
+            <img src="${comparison.after}" alt="处理后" class="image-comparison-after">
+            <div class="image-comparison-slider"></div>
+            <div class="image-comparison-labels">
+              <span class="image-comparison-label">原图</span>
+              <span class="image-comparison-label">处理后</span>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center gap-2">
+            <button class="bg-yellow-400 hover:bg-yellow-500 text-black px-3 py-1 rounded font-bold shadow pop-link-btn" data-id="${comparison.id}">获取原图</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // 初始化图片对比功能
+    function initImageComparison(container) {
+      const slider = container.querySelector('.image-comparison-slider');
+      const afterImage = container.querySelector('.image-comparison-after');
+      let isDragging = false;
+
+      function updateSlider(x) {
+        const rect = container.getBoundingClientRect();
+        const percentage = Math.max(0, Math.min(100, ((x - rect.left) / rect.width) * 100));
+        
+        slider.style.left = percentage + '%';
+        afterImage.style.clipPath = `polygon(${percentage}% 0%, 100% 0%, 100% 100%, ${percentage}% 100%)`;
+      }
+
+      // 鼠标事件
+      slider.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          updateSlider(e.clientX);
+        }
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      // 触摸事件（移动端支持）
+      slider.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        e.preventDefault();
+      });
+
+      document.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+          const touch = e.touches[0];
+          updateSlider(touch.clientX);
+        }
+      });
+
+      document.addEventListener('touchend', () => {
+        isDragging = false;
+      });
+
+      // 点击容器直接跳转
+      container.addEventListener('click', (e) => {
+        if (e.target !== slider && !slider.contains(e.target)) {
+          updateSlider(e.clientX);
+        }
+      });
+    }
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', async function() {
+      const gallery = document.getElementById('rawGallery');
+      gallery.innerHTML = '<div class="text-center py-8">加载中...</div>';
+      try {
+        const rawComparisons = await loadRawConfig();
+        window.rawComparisons = rawComparisons;
+        gallery.innerHTML = rawComparisons.map(createImageComparison).join('');
+        document.querySelectorAll('.image-comparison-container').forEach(initImageComparison);
+        // 绑定“获取原图”按钮事件，只用 json 里的 panUrl
+        document.querySelectorAll('.pop-link-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const id = parseInt(this.getAttribute('data-id'));
+            const item = window.rawComparisons.find(c => c.id === id);
+            showPanUrlModal(item && item.panUrl ? item.panUrl : '未设置链接');
+          });
+        });
+      } catch (error) {
+        console.error('初始化RAW画廊失败:', error);
+        gallery.innerHTML = '<div class="text-center py-8 text-red-500">加载失败，请刷新页面重试</div>';
+      }
+    });
+    // 趣味弹窗函数
+    function showPanUrlModal(url) {
+      // 如果已存在弹窗，先移除
+      const old = document.getElementById('pan-modal');
+      if (old) old.remove();
+      const modal = document.createElement('div');
+      modal.id = 'pan-modal';
+      let modalHtml = '';
+      if (url && url !== '未设置链接') {
+        modalHtml = `
+          <div style="position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:16px;box-shadow:0 8px 32px #0002;padding:32px 24px;min-width:320px;max-width:90vw;text-align:center;position:relative;">
+              <div style="font-size:1.2rem;font-weight:bold;margin:12px 0 8px 0;">原图领取通道</div>
+              <div style="margin-bottom:16px;color:#666;">点击下方链接即可跳转百度网盘（可复制）</div>
+              <div style='word-break:break-all;font-weight:bold;background:#f3f4f6;padding:12px 8px;border-radius:8px;'>
+                <a href="${url}" target="_blank" rel="noopener" style="color:#1d4ed8;text-decoration:underline;">${url}</a>
+              </div>
+              <div style="margin-top:18px;font-size:0.95rem;color:#aaa;">（如失效请联系我）</div>
+              <button onclick="document.getElementById('pan-modal').remove()" style="position:absolute;top:8px;right:12px;font-size:1.3rem;background:none;border:none;cursor:pointer;color:#888;">×</button>
+            </div>
+          </div>
+        `;
+      } else {
+        modalHtml = `
+          <div style="position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;">
+            <div style="background:#fff;border-radius:16px;box-shadow:0 8px 32px #0002;padding:32px 24px;min-width:220px;max-width:90vw;text-align:center;position:relative;">
+              <div style='color:#d32f2f;font-weight:bold;font-size:1.1rem;'>未设置链接</div>
+              <button onclick="document.getElementById('pan-modal').remove()" style="position:absolute;top:8px;right:12px;font-size:1.3rem;background:none;border:none;cursor:pointer;color:#888;">×</button>
+            </div>
+          </div>
+        `;
+      }
+      modal.innerHTML = modalHtml;
+      document.body.appendChild(modal);
+    }
+
+    // 移动端菜单切换
+    function menuToggle() {
+      const menu = document.getElementById('menu');
+      const ulMenu = document.getElementById('ulMenu');
+      
+      if (menu.style.height === '0px' || menu.style.height === '') {
+        menu.style.height = ulMenu.scrollHeight + 'px';
+      } else {
+        menu.style.height = '0px';
+      }
+    }
+  </script>
+</body>
+
+</html>
+

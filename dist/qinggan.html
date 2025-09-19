@@ -1,0 +1,477 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>青甘大环线</title>
+  <meta name="description" content="青甘大环线旅行攻略与摄影作品。">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Signika:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- End - Fonts -->
+  <!-- Start - Fancybox Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+  <script src="https://code.jquery.com/jquery-3.6.3.min.js"
+    integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+  <!-- End - Fancybox Scripts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      content: ["./dist/*.{html,js}"],
+      theme: {
+        extend: {
+          fontFamily: {
+            'signika': ['Signika', 'sans-serif'],
+            'noto': ['Noto Sans SC', 'sans-serif'],
+          },
+          colors: {
+            'travel-blue': '#2563eb',
+            'travel-green': '#059669',
+            'travel-orange': '#ea580c',
+          }
+        },
+      },
+      plugins: [],
+    }
+  </script>
+</head>
+
+<body class="dark:bg-black bg-white text-black dark:text-white opacity-0 animate-fade-in transition duration-500" class="responsive-optimized">
+  <!-- Navbar -->
+  <header class="flex w-full overflow-hidden pt-10 pb-1 px-5 md:px-20">
+    <nav id="nav" x-data="{ open: false }" role="navigation" class="w-full">
+      <div class="container mx-auto flex flex-wrap items-center md:flex-no-wrap">
+        <div class="mr-4 md:mr-8">
+          <a href="../index.html" class="text-2xl font-signika font-bold">XING</a>
+        </div>
+        <div class="ml-auto md:hidden flex items-center justify-start">
+          <button onclick="menuToggle()" @click="open = !open"
+            class="tap-highlight-transparent text-black dark:text-white w-8 h-8 p-1 relative focus:outline-none">
+            <span class="sr-only">Open main menu</span>
+            <div class="block w-5 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <span aria-hidden="true"
+                class="block absolute h-0.5 w-5 bg-current transform transition duration-500 ease-in-out"
+                :class="{'rotate-45': open,' -translate-y-1.5': !open }"></span>
+              <span aria-hidden="true"
+                class="block absolute  h-0.5 w-5 bg-current   transform transition duration-500 ease-in-out"
+                :class="{'opacity-0': open } "></span>
+              <span aria-hidden="true"
+                class="block absolute h-0.5 w-5 bg-current transform  transition duration-500 ease-in-out"
+                :class="{'-rotate-45': open, ' translate-y-1.5': !open}"></span>
+            </div>
+          </button>
+        </div>
+        <div id="menu"
+          class="w-full h-0 transition-all ease-out duration-500 md:transition-none md:w-auto md:flex-grow md:flex md:items-center">
+          <ul id="ulMenu"
+            class="flex flex-col duration-300 ease-out md:space-x-5 sm:transition-none mt-5 md:flex-row md:items-center md:ml-auto md:mt-0 md:pt-0 md:border-0">
+            <li class="group transition duration-300">
+              <a href="../index.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">PHOTO ALBUM
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="about_me.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">ABOUT ME
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="raw.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">RAW
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="travel.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">TRAVEL
+                <span class="hidden md:block h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="catogories.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">CATEGORIES
+                <span
+                  class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="min-h-screen flex items-center justify-center relative overflow-hidden px-5 md:px-20">
+    <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-blue-500/10"></div>
+    <div class="text-center z-10 max-w-4xl mx-auto">
+      <h1 class="text-4xl md:text-6xl font-bold font-noto mb-6 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+        青甘大环线
+      </h1>
+      <p class="text-lg md:text-xl font-noto text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+        青海 · 甘肃 · 大环线<br>
+        穿越青海湖与甘肃的壮美风光，体验西北大地的辽阔与震撼
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="#route-map" 
+          class="bg-travel-green hover:bg-green-700 text-white font-noto font-medium py-3 px-8 rounded-lg transition duration-300 transform hover:scale-105">
+          查看路线图
+        </a>
+        <a href="#attractions" 
+          class="bg-travel-blue hover:bg-blue-700 text-white font-noto font-medium py-3 px-8 rounded-lg transition duration-300 transform hover:scale-105">
+          景点推荐
+        </a>
+        <a href="https://iris-nutria-a02.notion.site/2716c64d9f588033b136cf1597f109e8" target="_blank" rel="noopener noreferrer"
+          class="bg-travel-orange hover:bg-orange-700 text-white font-noto font-medium py-3 px-8 rounded-lg transition duration-300 transform hover:scale-105">
+          小环线详细攻略
+        </a>
+    </div>
+    </div>
+
+  
+  </section>
+
+  <!-- Route Map Section -->
+  <section id="route-map" class="py-20 bg-gray-50 dark:bg-gray-900 px-5 md:px-20">
+    <div class="container mx-auto">
+      <h2 class="text-4xl font-bold font-noto text-center mb-16 text-gray-800 dark:text-white">
+        青甘大环线路线图
+      </h2>
+      
+      <!-- Interactive Map Container -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-12">
+        <div class="text-center mb-8">
+          <h3 class="text-2xl font-semibold font-noto mb-4 text-gray-800 dark:text-white">互动路线地图</h3>
+          <p class="text-gray-600 dark:text-gray-400">点击下方按钮查看完整的互动路线地图</p>
+        </div>
+        
+        <div class="flex justify-center">
+          <iframe 
+            src="travel_assets/index.html" 
+            class="w-full h-96 md:h-[600px] rounded-lg border-2 border-gray-200 dark:border-gray-600"
+            title="青甘大环线路线图">
+          </iframe>
+        </div>
+        
+        <div class="text-center mt-6">
+          <a href="travel_assets/index.html" target="_blank" 
+             class="inline-flex items-center bg-travel-green hover:bg-green-700 text-white font-noto font-medium py-3 px-6 rounded-lg transition duration-300">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
+            在新窗口中打开完整地图
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Attractions Section -->
+  <section id="attractions" class="py-20 px-5 md:px-20">
+    <div class="container mx-auto">
+      <h2 class="text-4xl font-bold font-noto text-center mb-16 text-gray-800 dark:text-white">
+        精选景点
+      </h2>
+      
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Qinghai Lake -->
+        <div class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition duration-500 bg-white dark:bg-gray-800">
+          <div class="aspect-w-16 aspect-h-12 bg-gradient-to-br from-blue-400 to-cyan-600 p-6">
+            <div class="flex flex-col justify-between h-full text-white">
+              <div>
+                <h3 class="text-2xl font-bold font-noto mb-3">青海湖</h3>
+                <p class="text-sm opacity-90">
+                  中国最大的内陆湖泊，湖水碧蓝如镜，周围草原辽阔，是青甘大环线的核心景点
+                </p>
+              </div>
+              <div class="flex items-center justify-between mt-4">
+                <span class="text-xs opacity-75">必游景点</span>
+                <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs">
+                  ⭐ 5.0
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chaka Salt Lake -->
+        <div class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition duration-500 bg-white dark:bg-gray-800">
+          <div class="aspect-w-16 aspect-h-12 bg-gradient-to-br from-pink-400 to-purple-600 p-6">
+            <div class="flex flex-col justify-between h-full text-white">
+              <div>
+                <h3 class="text-2xl font-bold font-noto mb-3">茶卡盐湖</h3>
+                <p class="text-sm opacity-90">
+                  "天空之镜"的美誉，湖面如镜，倒映着蓝天白云，是摄影爱好者的天堂
+                </p>
+              </div>
+              <div class="flex items-center justify-between mt-4">
+                <span class="text-xs opacity-75">网红打卡</span>
+                <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs">
+                  ⭐ 4.8
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zhangye Danxia -->
+        <div class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition duration-500 bg-white dark:bg-gray-800">
+          <div class="aspect-w-16 aspect-h-12 bg-gradient-to-br from-orange-400 to-red-600 p-6">
+            <div class="flex flex-col justify-between h-full text-white">
+              <div>
+                <h3 class="text-2xl font-bold font-noto mb-3">张掖丹霞</h3>
+                <p class="text-sm opacity-90">
+                  色彩斑斓的丹霞地貌，如同大自然的调色板，壮观的地质奇观令人震撼
+                </p>
+              </div>
+              <div class="flex items-center justify-between mt-4">
+                <span class="text-xs opacity-75">地质奇观</span>
+                <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs">
+                  ⭐ 4.9
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Qilian Mountains -->
+        <div class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition duration-500 bg-white dark:bg-gray-800">
+          <div class="aspect-w-16 aspect-h-12 bg-gradient-to-br from-green-400 to-teal-600 p-6">
+            <div class="flex flex-col justify-between h-full text-white">
+              <div>
+                <h3 class="text-2xl font-bold font-noto mb-3">祁连山</h3>
+                <p class="text-sm opacity-90">
+                  雪山草原相映成趣，"祁连山下好牧场"，体验高原牧区的独特风情
+                </p>
+              </div>
+              <div class="flex items-center justify-between mt-4">
+                <span class="text-xs opacity-75">雪山草原</span>
+                <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs">
+                  ⭐ 4.7
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mogao Caves -->
+        <div class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition duration-500 bg-white dark:bg-gray-800">
+          <div class="aspect-w-16 aspect-h-12 bg-gradient-to-br from-yellow-400 to-orange-600 p-6">
+            <div class="flex flex-col justify-between h-full text-white">
+              <div>
+                <h3 class="text-2xl font-bold font-noto mb-3">莫高窟</h3>
+                <p class="text-sm opacity-90">
+                  世界文化遗产，千年佛教艺术宝库，感受丝绸之路的历史文化底蕴
+                </p>
+              </div>
+              <div class="flex items-center justify-between mt-4">
+                <span class="text-xs opacity-75">文化遗产</span>
+                <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs">
+                  ⭐ 4.9
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mingsha Mountain -->
+        <div class="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition duration-500 bg-white dark:bg-gray-800">
+          <div class="aspect-w-16 aspect-h-12 bg-gradient-to-br from-amber-400 to-yellow-600 p-6">
+            <div class="flex flex-col justify-between h-full text-white">
+              <div>
+                <h3 class="text-2xl font-bold font-noto mb-3">鸣沙山月牙泉</h3>
+                <p class="text-sm opacity-90">
+                  沙漠中的绿洲奇观，金色沙丘与碧绿泉水形成强烈对比，沙漠风情浓郁
+                </p>
+              </div>
+              <div class="flex items-center justify-between mt-4">
+                <span class="text-xs opacity-75">沙漠绿洲</span>
+                <div class="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs">
+                  ⭐ 4.8
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Route Information -->
+  <section class="py-20 bg-gray-50 dark:bg-gray-900 px-5 md:px-20">
+    <div class="container mx-auto max-w-4xl">
+      <h2 class="text-4xl font-bold font-noto text-center mb-16 text-gray-800 dark:text-white">
+        路线信息
+      </h2>
+      
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Route Details -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+          <h3 class="text-2xl font-bold font-noto mb-6 text-travel-green">经典路线</h3>
+          <div class="space-y-4">
+            <div class="flex items-center">
+              <div class="w-8 h-8 bg-travel-green text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">
+                1
+              </div>
+              <div>
+                <h4 class="font-semibold font-noto">西宁</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">青甘环线起点</p>
+              </div>
+            </div>
+                
+            <div class="flex items-center">
+              <div class="w-8 h-8 bg-travel-green text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">
+                2
+              </div>
+              <div>
+                <h4 class="font-semibold font-noto">青海湖</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">高原蓝宝石</p>
+              </div>
+            </div>
+
+            <div class="flex items-center">
+              <div class="w-8 h-8 bg-travel-green text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">
+                3
+              </div>
+              <div>
+                <h4 class="font-semibold font-noto">茶卡盐湖</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">天空之镜</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center">
+              <div class="w-8 h-8 bg-travel-green text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">
+                4
+              </div>
+              <div>
+                <h4 class="font-semibold font-noto">敦煌</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">丝路明珠</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center">
+              <div class="w-8 h-8 bg-travel-green text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">
+                5
+              </div>
+              <div>
+                <h4 class="font-semibold font-noto">张掖</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">丹霞地貌</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center">
+              <div class="w-8 h-8 bg-travel-green text-white rounded-full flex items-center justify-center text-sm font-bold mr-4">
+                6
+              </div>
+              <div>
+                <h4 class="font-semibold font-noto">祁连</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">雪山草原</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Travel Tips -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+          <h3 class="text-2xl font-bold font-noto mb-6 text-travel-blue">旅行贴士</h3>
+          <div class="space-y-6">
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+              <h4 class="font-semibold font-noto mb-2 text-blue-800 dark:text-blue-300">最佳时间</h4>
+              <p class="text-sm text-gray-700 dark:text-gray-300">6-9月是最佳旅游季节，天气温和，草原绿意盎然</p>
+            </div>
+            
+            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+              <h4 class="font-semibold font-noto mb-2 text-green-800 dark:text-green-300">行程天数</h4>
+              <p class="text-sm text-gray-700 dark:text-gray-300">建议7-10天，可以充分体验各个景点的魅力</p>
+            </div>
+            
+            <div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
+              <h4 class="font-semibold font-noto mb-2 text-orange-800 dark:text-orange-300">交通方式</h4>
+              <p class="text-sm text-gray-700 dark:text-gray-300">建议自驾或包车，路况良好，风景优美</p>
+            </div>
+            
+            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+              <h4 class="font-semibold font-noto mb-2 text-purple-800 dark:text-purple-300">注意事项</h4>
+              <p class="text-sm text-gray-700 dark:text-gray-300">高原地区注意防晒保暖，备好常用药品</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 返回按钮（底部） -->
+  <div class="text-center mb-12">
+    <a href="travel.html" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-noto font-medium hover:bg-blue-700 transition duration-300">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      返回旅行页面
+    </a>
+  </div>
+  <!-- Footer -->
+  
+    <div class="max-w-screen-xl py-16 mx-auto flex flex-col items-center justify-center mt-12">
+      <p class="font-signika floating-element text-center"><b>XING</b></p>
+      <p class="mt-4 text-sm text-gray-600 dark:text-gray-300 text-center">
+        2193177455@qq.com
+      </p>
+      <div class="flex justify-center w-full">
+        <div class="space-x-6 flex mt-8 text-gray-600 dark:text-gray-300">
+          <!-- 抖音图标和链接 -->
+          <a class="transition duration-300 hover:opacity-75 social-link interactive" href="https://v.douyin.com/pIs2kYdlksE/ 0@9.com :0pm" target="_blank"
+            rel="noreferrer">
+            <span class="sr-only"> Douyin </span>
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M512 0C229.22 0 0 229.22 0 512s229.22 512 512 512 512-229.22 512-512S794.78 0 512 0z m243.43 385.55c-11.78 11.78-24.38 23.22-37.93 34.28-1.45 1.2-2.88 2.4-4.3 3.62-3.32 2.8-6.67 5.6-10.05 8.38-1.4 1.15-2.8 2.3-4.2 3.45-10.2 8.4-20.52 16.6-31.12 24.3-2.7 2-5.45 3.9-8.2 5.8-15.1 10.4-30.4 20.2-46.2 28.9-1.9 1.05-3.8 2.1-5.7 3.15-12.8 7-25.7 13.5-38.9 19.1-3.3 1.4-6.6 2.8-9.9 4.2-11.6 4.9-23.3 9.3-35.1 13.2-2.9 0.9-5.8 1.8-8.7 2.7-22.1 6.8-44.3 12.4-66.9 16.4-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-3.6 0.6-7.2 1.2-10.8 1.8-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4z"/></svg>
+          </a>
+        </div>
+      </div>
+      <p class="mt-8 text-xs text-gray-600 dark:text-gray-300 text-center">
+        © 2025 Developed and Designed by Xing.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Menu toggle function
+    function menuToggle() {
+      const menu = document.getElementById('menu');
+      const ulMenu = document.getElementById('ulMenu');
+      
+      if (menu.style.height === '0px' || menu.style.height === '') {
+        menu.style.height = ulMenu.scrollHeight + 'px';
+      } else {
+        menu.style.height = '0px';
+      }
+    }
+
+    // Fade in animation
+    document.addEventListener('DOMContentLoaded', function() {
+      document.body.classList.remove('opacity-0');
+    });
+
+    // Initialize Fancybox
+    Fancybox.bind("[data-fancybox]", {
+      // Options
+    });
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
+

@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xing - Categories</title>
+  <meta name="description" content="分类作品集">
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+  <link rel="stylesheet" href="output.css" />
+  <link rel="stylesheet" href="../responsive-custom.css" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Signika:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+  <style>
+    .category-viewport { overflow: hidden; }
+    .category-track { display: flex; flex-wrap: nowrap; gap: 0; }
+    /* 折叠态：正好显示8张（含间距），间距8px */
+    .category-item { flex: 0 0 calc((100% - (var(--gap, 8px) * 7)) / 8); }
+    .category-item + .category-item { margin-left: var(--gap, 8px); }
+    /* 展开态：多行网格（6列），停止滚动 */
+    .category-section.expanded .category-viewport { overflow: visible; }
+    .category-section.expanded .category-track { flex-wrap: wrap; gap: var(--gap, 8px); }
+    .category-section.expanded .category-item { flex: 0 0 calc((100% - (var(--gap, 8px) * 5)) / 6); margin-left: 0; }
+  </style>
+</head>
+<body class="dark:bg-black bg-white min-h-screen text-black dark:text-white px-3 sm:px-5 md:px-10 lg:px-20" class="responsive-optimized">
+  
+  <header class="flex w-full overflow-hidden pt-10 pb-1">
+    <nav id="nav" x-data="{ open: false }" role="navigation" class="w-full">
+      <div class="container mx-auto flex flex-wrap items-center md:flex-no-wrap">
+        <div class="mr-4 md:mr-8">
+          <a href="../index.html" class="text-2xl font-signika font-bold">XING</a>
+        </div>
+        <div id="menu" class="w-full h-0 transition-all ease-out duration-500 md:transition-none md:w-auto md:flex-grow md:flex md:items-center">
+          <ul id="ulMenu" class="flex flex-col duration-300 ease-out md:space-x-5 sm:transition-none mt-5 md:flex-row md:items-center md:ml-auto md:mt-0 md:pt-0 md:border-0">
+            <li class="group transition duration-300">
+              <a href="../index.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">PHOTO ALBUM
+                <span class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="about_me.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">ABOUT ME
+                <span class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="raw.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">RAW
+                <span class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="travel.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">TRAVEL
+                <span class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+            <li class="group transition duration-300">
+              <a href="catogories.html" class="font-signika text-lg sm:text-xl md:text-2xl tap-highlight-transparent">CATEGORIES
+                <span class="hidden md:block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-black dark:bg-white"></span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <div class="container mx-auto">
+    <h1 class="text-4xl pt-10 pb-2 font-bold">Categories</h1>
+    <p class="text-sm text-gray-600 dark:text-gray-300">按题材分类的作品集</p>
+    
+  <section id="section-cityscape" class="mt-10 category-section" data-category="cityscape">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-2xl font-bold capitalize">cityscape</h2>
+          <button class="toggle-expand px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium text-sm" data-category="cityscape">展开</button>
+        </div>
+        <div id="viewport-cityscape" class="category-viewport">
+          <div id="track-cityscape" class="category-track">
+
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/1695c8f89e80b1ba393967ded0af4050_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/1695c8f89e80b1ba393967ded0af4050_thumb.webp">
+                    <img alt="1695c8f89e80b1ba393967ded0af4050" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/1695c8f89e80b1ba393967ded0af4050_thumb.webp" style="aspect-ratio: 3 / 4;" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/2_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/2_thumb.webp">
+                    <img alt="2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/2d8051fa03f692e2159f35006aad9522_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/2d8051fa03f692e2159f35006aad9522_thumb.webp">
+                    <img alt="2d8051fa03f692e2159f35006aad9522" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/2d8051fa03f692e2159f35006aad9522_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/7c2983837077aef3bea2f31aa0c38e33_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/7c2983837077aef3bea2f31aa0c38e33_thumb.webp">
+                    <img alt="7c2983837077aef3bea2f31aa0c38e33" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/7c2983837077aef3bea2f31aa0c38e33_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/849ed928250a6e95cd9a80d13ca93594_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/849ed928250a6e95cd9a80d13ca93594_thumb.webp">
+                    <img alt="849ed928250a6e95cd9a80d13ca93594" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/849ed928250a6e95cd9a80d13ca93594_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/8dd14622ffea7d3968df1bdee01de02d_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/8dd14622ffea7d3968df1bdee01de02d_thumb.webp">
+                    <img alt="8dd14622ffea7d3968df1bdee01de02d" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/8dd14622ffea7d3968df1bdee01de02d_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/B0005171_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/B0005171_thumb.webp">
+                    <img alt="B0005171" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/B0005171_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/B0005974_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/B0005974_thumb.webp">
+                    <img alt="B0005974" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/B0005974_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/B0006029_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/B0006029_thumb.webp">
+                    <img alt="B0006029" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/B0006029_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/B0006654_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/B0006654_thumb.webp">
+                    <img alt="B0006654" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/B0006654_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/B0006836_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/B0006836_thumb.webp">
+                    <img alt="B0006836" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/B0006836_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/DJI_20250614070916_0120_D_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/DJI_20250614070916_0120_D_thumb.webp">
+                    <img alt="DJI_20250614070916_0120_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/DJI_20250614070916_0120_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/DSC03649_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/DSC03649_thumb.webp">
+                    <img alt="DSC03649" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/DSC03649_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/IMG_3759 2_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/IMG_3759 2_thumb.webp">
+                    <img alt="IMG_3759 2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/IMG_3759 2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/IMG_4507_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/IMG_4507_thumb.webp">
+                    <img alt="IMG_4507" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/IMG_4507_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/SH_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/SH_thumb.webp">
+                    <img alt="SH" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/SH_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC0189_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC0189_thumb.webp">
+                    <img alt="_DSC0189" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC0189_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC0333_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC0333_thumb.webp">
+                    <img alt="_DSC0333" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC0333_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC0584_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC0584_thumb.webp">
+                    <img alt="_DSC0584" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC0584_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC0682_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC0682_thumb.webp">
+                    <img alt="_DSC0682" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC0682_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC1823_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC1823_thumb.webp">
+                    <img alt="_DSC1823" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC1823_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC2792-已增强-NR_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC2792-已增强-NR_thumb.webp">
+                    <img alt="_DSC2792-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC2792-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC2829_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC2829_thumb.webp">
+                    <img alt="_DSC2829" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC2829_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC2985_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC2985_thumb.webp">
+                    <img alt="_DSC2985" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC2985_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC6297-HDR_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC6297-HDR_thumb.webp">
+                    <img alt="_DSC6297-HDR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC6297-HDR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC8102-已增强-NR_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC8102-已增强-NR_thumb.webp">
+                    <img alt="_DSC8102-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC8102-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC9219-已增强-NR_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC9219-已增强-NR_thumb.webp">
+                    <img alt="_DSC9219-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC9219-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/_DSC9355_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/_DSC9355_thumb.webp">
+                    <img alt="_DSC9355" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/_DSC9355_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/a8922ea72d55bf51f3582c960f507c43_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/a8922ea72d55bf51f3582c960f507c43_thumb.webp">
+                    <img alt="a8922ea72d55bf51f3582c960f507c43" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/a8922ea72d55bf51f3582c960f507c43_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/acfe4c813ba9fbf0eca34ccb46152469_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/acfe4c813ba9fbf0eca34ccb46152469_thumb.webp">
+                    <img alt="acfe4c813ba9fbf0eca34ccb46152469" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/acfe4c813ba9fbf0eca34ccb46152469_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/bd38867c9a7e3929d45f3faf875b3adc_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/bd38867c9a7e3929d45f3faf875b3adc_thumb.webp">
+                    <img alt="bd38867c9a7e3929d45f3faf875b3adc" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/bd38867c9a7e3929d45f3faf875b3adc_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/c2279d3facbf29a7c6faf1f32ce05bfc_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/c2279d3facbf29a7c6faf1f32ce05bfc_thumb.webp">
+                    <img alt="c2279d3facbf29a7c6faf1f32ce05bfc" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/c2279d3facbf29a7c6faf1f32ce05bfc_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/c2ddb1228fc9179a609c3ffe3e204f06 2_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/c2ddb1228fc9179a609c3ffe3e204f06 2_thumb.webp">
+                    <img alt="c2ddb1228fc9179a609c3ffe3e204f06 2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/c2ddb1228fc9179a609c3ffe3e204f06 2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/d4659493deb99ce15a0a69526d72cc81_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/d4659493deb99ce15a0a69526d72cc81_thumb.webp">
+                    <img alt="d4659493deb99ce15a0a69526d72cc81" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/d4659493deb99ce15a0a69526d72cc81_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/eb059407d811190af44e726be97aebc7_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/eb059407d811190af44e726be97aebc7_thumb.webp">
+                    <img alt="eb059407d811190af44e726be97aebc7" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/eb059407d811190af44e726be97aebc7_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/cityscape/未标题-1_full.webp" data-fancybox="cityscape" data-thumb="assets/categories/cityscape/未标题-1_thumb.webp">
+                    <img alt="未标题-1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/cityscape/未标题-1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+  <section id="section-creativity" class="mt-10 category-section" data-category="creativity">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-2xl font-bold capitalize">creativity</h2>
+          <button class="toggle-expand px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium text-sm" data-category="creativity">展开</button>
+        </div>
+        <div id="viewport-creativity" class="category-viewport">
+          <div id="track-creativity" class="category-track">
+
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/1_after_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/1_after_thumb.webp">
+                    <img alt="1_after" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/1_after_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/22_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/22_thumb.webp">
+                    <img alt="22" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/22_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/38e356943a827401e0547616f664f27f_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/38e356943a827401e0547616f664f27f_thumb.webp">
+                    <img alt="38e356943a827401e0547616f664f27f" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/38e356943a827401e0547616f664f27f_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/B0004060_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/B0004060_thumb.webp">
+                    <img alt="B0004060" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/B0004060_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/B0006009_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/B0006009_thumb.webp">
+                    <img alt="B0006009" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/B0006009_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/DJI_20250821091248_0360_D_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/DJI_20250821091248_0360_D_thumb.webp">
+                    <img alt="DJI_20250821091248_0360_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/DJI_20250821091248_0360_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/DJI_20250826194608_0246_D_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/DJI_20250826194608_0246_D_thumb.webp">
+                    <img alt="DJI_20250826194608_0246_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/DJI_20250826194608_0246_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/DSC07591_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/DSC07591_thumb.webp">
+                    <img alt="DSC07591" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/DSC07591_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/IMG_1791_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/IMG_1791_thumb.webp">
+                    <img alt="IMG_1791" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/IMG_1791_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/IMG_3758_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/IMG_3758_thumb.webp">
+                    <img alt="IMG_3758" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/IMG_3758_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/_DSC1610_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/_DSC1610_thumb.webp">
+                    <img alt="_DSC1610" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/_DSC1610_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/_DSC1699_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/_DSC1699_thumb.webp">
+                    <img alt="_DSC1699" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/_DSC1699_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/ce730b764721ea8711d0656b25d0026d_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/ce730b764721ea8711d0656b25d0026d_thumb.webp">
+                    <img alt="ce730b764721ea8711d0656b25d0026d" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/ce730b764721ea8711d0656b25d0026d_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/efd6cedebd96732721d60eb7a00078fc_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/efd6cedebd96732721d60eb7a00078fc_thumb.webp">
+                    <img alt="efd6cedebd96732721d60eb7a00078fc" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/efd6cedebd96732721d60eb7a00078fc_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/fa3db5adaddb5eb492f65be625f6bcd9_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/fa3db5adaddb5eb492f65be625f6bcd9_thumb.webp">
+                    <img alt="fa3db5adaddb5eb492f65be625f6bcd9" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/fa3db5adaddb5eb492f65be625f6bcd9_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/creativity/未标题1_full.webp" data-fancybox="creativity" data-thumb="assets/categories/creativity/未标题1_thumb.webp">
+                    <img alt="未标题1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/creativity/未标题1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+  <section id="section-documentary" class="mt-10 category-section" data-category="documentary">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-2xl font-bold capitalize">documentary</h2>
+          <button class="toggle-expand px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium text-sm" data-category="documentary">展开</button>
+        </div>
+        <div id="viewport-documentary" class="category-viewport">
+          <div id="track-documentary" class="category-track">
+
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/24fbb713a612d2f645cdd4c54f2bf16b_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/24fbb713a612d2f645cdd4c54f2bf16b_thumb.webp">
+                    <img alt="24fbb713a612d2f645cdd4c54f2bf16b" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/24fbb713a612d2f645cdd4c54f2bf16b_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/5101f04f4d3da8a81cd5abece63f54f6_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/5101f04f4d3da8a81cd5abece63f54f6_thumb.webp">
+                    <img alt="5101f04f4d3da8a81cd5abece63f54f6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/5101f04f4d3da8a81cd5abece63f54f6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/B0006388 17.38.00_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/B0006388 17.38.00_thumb.webp">
+                    <img alt="B0006388 17.38.00" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/B0006388 17.38.00_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/DJI_20250821090926_0354_D_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/DJI_20250821090926_0354_D_thumb.webp">
+                    <img alt="DJI_20250821090926_0354_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/DJI_20250821090926_0354_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/DSC00442_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/DSC00442_thumb.webp">
+                    <img alt="DSC00442" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/DSC00442_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/DSC00719_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/DSC00719_thumb.webp">
+                    <img alt="DSC00719" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/DSC00719_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/IMG_3167_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/IMG_3167_thumb.webp">
+                    <img alt="IMG_3167" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/IMG_3167_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/_DSC2092_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/_DSC2092_thumb.webp">
+                    <img alt="_DSC2092" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/_DSC2092_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/_DSC2117_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/_DSC2117_thumb.webp">
+                    <img alt="_DSC2117" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/_DSC2117_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/_DSC2606_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/_DSC2606_thumb.webp">
+                    <img alt="_DSC2606" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/_DSC2606_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/_DSC4232_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/_DSC4232_thumb.webp">
+                    <img alt="_DSC4232" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/_DSC4232_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/_DSC7898_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/_DSC7898_thumb.webp">
+                    <img alt="_DSC7898" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/_DSC7898_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/_DSC7986_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/_DSC7986_thumb.webp">
+                    <img alt="_DSC7986" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/_DSC7986_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/a8ec4be6c464b356c66f1d3c702f27c9_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/a8ec4be6c464b356c66f1d3c702f27c9_thumb.webp">
+                    <img alt="a8ec4be6c464b356c66f1d3c702f27c9" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/a8ec4be6c464b356c66f1d3c702f27c9_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/cb41042607433f6c8164e3e430546cae_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/cb41042607433f6c8164e3e430546cae_thumb.webp">
+                    <img alt="cb41042607433f6c8164e3e430546cae" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/cb41042607433f6c8164e3e430546cae_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/e5be2255192442d1923a5c0d3ba3d006_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/e5be2255192442d1923a5c0d3ba3d006_thumb.webp">
+                    <img alt="e5be2255192442d1923a5c0d3ba3d006" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/e5be2255192442d1923a5c0d3ba3d006_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/documentary/fdacd51eac32d9a56e704899c07985bd_full.webp" data-fancybox="documentary" data-thumb="assets/categories/documentary/fdacd51eac32d9a56e704899c07985bd_thumb.webp">
+                    <img alt="fdacd51eac32d9a56e704899c07985bd" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/documentary/fdacd51eac32d9a56e704899c07985bd_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+  <section id="section-ecological" class="mt-10 category-section" data-category="ecological">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-2xl font-bold capitalize">ecological</h2>
+          <button class="toggle-expand px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium text-sm" data-category="ecological">展开</button>
+        </div>
+        <div id="viewport-ecological" class="category-viewport">
+          <div id="track-ecological" class="category-track">
+
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/ecological/7a0a67d9dff6e4237b49828b8b7cb3c6_full.webp" data-fancybox="ecological" data-thumb="assets/categories/ecological/7a0a67d9dff6e4237b49828b8b7cb3c6_thumb.webp">
+                    <img alt="7a0a67d9dff6e4237b49828b8b7cb3c6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/ecological/7a0a67d9dff6e4237b49828b8b7cb3c6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/ecological/B0006481.3FR_full.webp" data-fancybox="ecological" data-thumb="assets/categories/ecological/B0006481.3FR_thumb.webp">
+                    <img alt="B0006481.3FR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/ecological/B0006481.3FR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/ecological/IMG_8372_full.webp" data-fancybox="ecological" data-thumb="assets/categories/ecological/IMG_8372_thumb.webp">
+                    <img alt="IMG_8372" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/ecological/IMG_8372_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/ecological/_DSC2806_full.webp" data-fancybox="ecological" data-thumb="assets/categories/ecological/_DSC2806_thumb.webp">
+                    <img alt="_DSC2806" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/ecological/_DSC2806_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/ecological/_DSC5793-已增强-NR_full.webp" data-fancybox="ecological" data-thumb="assets/categories/ecological/_DSC5793-已增强-NR_thumb.webp">
+                    <img alt="_DSC5793-已增强-NR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/ecological/_DSC5793-已增强-NR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/ecological/a45c7dbff005a764e2bf5c2f7e99cf7f_full.webp" data-fancybox="ecological" data-thumb="assets/categories/ecological/a45c7dbff005a764e2bf5c2f7e99cf7f_thumb.webp">
+                    <img alt="a45c7dbff005a764e2bf5c2f7e99cf7f" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/ecological/a45c7dbff005a764e2bf5c2f7e99cf7f_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/ecological/a8c9ba24fe01bfd69a43065bceec57b2_full.webp" data-fancybox="ecological" data-thumb="assets/categories/ecological/a8c9ba24fe01bfd69a43065bceec57b2_thumb.webp">
+                    <img alt="a8c9ba24fe01bfd69a43065bceec57b2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/ecological/a8c9ba24fe01bfd69a43065bceec57b2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/ecological/cf5cfc7e8e174b7af7f8f0c35573fcce_full.webp" data-fancybox="ecological" data-thumb="assets/categories/ecological/cf5cfc7e8e174b7af7f8f0c35573fcce_thumb.webp">
+                    <img alt="cf5cfc7e8e174b7af7f8f0c35573fcce" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/ecological/cf5cfc7e8e174b7af7f8f0c35573fcce_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/ecological/ee18bf6a0fee17ca64b2a008ab6f9204_full.webp" data-fancybox="ecological" data-thumb="assets/categories/ecological/ee18bf6a0fee17ca64b2a008ab6f9204_thumb.webp">
+                    <img alt="ee18bf6a0fee17ca64b2a008ab6f9204" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/ecological/ee18bf6a0fee17ca64b2a008ab6f9204_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+  <section id="section-landscape" class="mt-10 category-section" data-category="landscape">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-2xl font-bold capitalize">landscape</h2>
+          <button class="toggle-expand px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium text-sm" data-category="landscape">展开</button>
+        </div>
+        <div id="viewport-landscape" class="category-viewport">
+          <div id="track-landscape" class="category-track">
+
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/1b7fe65878e346fd5ecd8451dcae3f05_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/1b7fe65878e346fd5ecd8451dcae3f05_thumb.webp">
+                    <img alt="1b7fe65878e346fd5ecd8451dcae3f05" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/1b7fe65878e346fd5ecd8451dcae3f05_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/1c5801269291c3da7f4a414e20c0bd57_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/1c5801269291c3da7f4a414e20c0bd57_thumb.webp">
+                    <img alt="1c5801269291c3da7f4a414e20c0bd57" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/1c5801269291c3da7f4a414e20c0bd57_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/259ce06112abf7ea2e516c3a8be41ef9_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/259ce06112abf7ea2e516c3a8be41ef9_thumb.webp">
+                    <img alt="259ce06112abf7ea2e516c3a8be41ef9" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/259ce06112abf7ea2e516c3a8be41ef9_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/26997a435ba4312748f4e74c941b9ce3_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/26997a435ba4312748f4e74c941b9ce3_thumb.webp">
+                    <img alt="26997a435ba4312748f4e74c941b9ce3" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/26997a435ba4312748f4e74c941b9ce3_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/38fb078455529e7b290cc129e279967b_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/38fb078455529e7b290cc129e279967b_thumb.webp">
+                    <img alt="38fb078455529e7b290cc129e279967b" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/38fb078455529e7b290cc129e279967b_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/58a6efe226c870dd99284a7ed16f2f55_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/58a6efe226c870dd99284a7ed16f2f55_thumb.webp">
+                    <img alt="58a6efe226c870dd99284a7ed16f2f55" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/58a6efe226c870dd99284a7ed16f2f55_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/952e28a566f4922169f9ad7bf4df042c_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/952e28a566f4922169f9ad7bf4df042c_thumb.webp">
+                    <img alt="952e28a566f4922169f9ad7bf4df042c" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/952e28a566f4922169f9ad7bf4df042c_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/95d91734cfd86c8a0edcf99c136989d1_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/95d91734cfd86c8a0edcf99c136989d1_thumb.webp">
+                    <img alt="95d91734cfd86c8a0edcf99c136989d1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/95d91734cfd86c8a0edcf99c136989d1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/9aa932bb5e5425dcc5baff682c71f8fa_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/9aa932bb5e5425dcc5baff682c71f8fa_thumb.webp">
+                    <img alt="9aa932bb5e5425dcc5baff682c71f8fa" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/9aa932bb5e5425dcc5baff682c71f8fa_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/9f383a9ec71e15da21c3c6d6a72c3cd1_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/9f383a9ec71e15da21c3c6d6a72c3cd1_thumb.webp">
+                    <img alt="9f383a9ec71e15da21c3c6d6a72c3cd1" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/9f383a9ec71e15da21c3c6d6a72c3cd1_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/B0004079.3FR_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/B0004079.3FR_thumb.webp">
+                    <img alt="B0004079.3FR" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/B0004079.3FR_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/IMG_3757_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/IMG_3757_thumb.webp">
+                    <img alt="IMG_3757" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/IMG_3757_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/IMG_4295_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/IMG_4295_thumb.webp">
+                    <img alt="IMG_4295" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/IMG_4295_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/IMG_4429_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/IMG_4429_thumb.webp">
+                    <img alt="IMG_4429" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/IMG_4429_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/IMG_4431_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/IMG_4431_thumb.webp">
+                    <img alt="IMG_4431" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/IMG_4431_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/IMG_4432_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/IMG_4432_thumb.webp">
+                    <img alt="IMG_4432" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/IMG_4432_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/IMG_4634_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/IMG_4634_thumb.webp">
+                    <img alt="IMG_4634" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/IMG_4634_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/_DSC7374 17.42.09_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/_DSC7374 17.42.09_thumb.webp">
+                    <img alt="_DSC7374 17.42.09" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/_DSC7374 17.42.09_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/c56b1032af02d09b992b07b98c3125a2_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/c56b1032af02d09b992b07b98c3125a2_thumb.webp">
+                    <img alt="c56b1032af02d09b992b07b98c3125a2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/c56b1032af02d09b992b07b98c3125a2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/cc287fc69d6681796c9a4e7f417f6e1c_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/cc287fc69d6681796c9a4e7f417f6e1c_thumb.webp">
+                    <img alt="cc287fc69d6681796c9a4e7f417f6e1c" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/cc287fc69d6681796c9a4e7f417f6e1c_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/ec9355e3a2c039ca4b74235a58d0fbb2_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/ec9355e3a2c039ca4b74235a58d0fbb2_thumb.webp">
+                    <img alt="ec9355e3a2c039ca4b74235a58d0fbb2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/ec9355e3a2c039ca4b74235a58d0fbb2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/f6ad4aff3c2132e15e05f725c129cf55_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/f6ad4aff3c2132e15e05f725c129cf55_thumb.webp">
+                    <img alt="f6ad4aff3c2132e15e05f725c129cf55" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/f6ad4aff3c2132e15e05f725c129cf55_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/landscape/fe33a6d5dc5258e930ba60efb9e5d285_full.webp" data-fancybox="landscape" data-thumb="assets/categories/landscape/fe33a6d5dc5258e930ba60efb9e5d285_thumb.webp">
+                    <img alt="fe33a6d5dc5258e930ba60efb9e5d285" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/landscape/fe33a6d5dc5258e930ba60efb9e5d285_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+  <section id="section-personal" class="mt-10 category-section" data-category="personal">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-2xl font-bold capitalize">personal</h2>
+          <button class="toggle-expand px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium text-sm" data-category="personal">展开</button>
+        </div>
+        <div id="viewport-personal" class="category-viewport">
+          <div id="track-personal" class="category-track">
+
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/0ae511603acb75dc0e360125e5f0248e_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/0ae511603acb75dc0e360125e5f0248e_thumb.webp">
+                    <img alt="0ae511603acb75dc0e360125e5f0248e" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/0ae511603acb75dc0e360125e5f0248e_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/30bb61957b841ca16282448f926bf032_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/30bb61957b841ca16282448f926bf032_thumb.webp">
+                    <img alt="30bb61957b841ca16282448f926bf032" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/30bb61957b841ca16282448f926bf032_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/4c96c5ab95503badba48472345cd7ef6_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/4c96c5ab95503badba48472345cd7ef6_thumb.webp">
+                    <img alt="4c96c5ab95503badba48472345cd7ef6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/4c96c5ab95503badba48472345cd7ef6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/536c73e47ae9cb1f16a62ec3f1cdaf3b_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/536c73e47ae9cb1f16a62ec3f1cdaf3b_thumb.webp">
+                    <img alt="536c73e47ae9cb1f16a62ec3f1cdaf3b" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/536c73e47ae9cb1f16a62ec3f1cdaf3b_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/5ff19237958c602e2af92a4615a911f6_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/5ff19237958c602e2af92a4615a911f6_thumb.webp">
+                    <img alt="5ff19237958c602e2af92a4615a911f6" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/5ff19237958c602e2af92a4615a911f6_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/62f8e0d79cc509f62a585402ebb4d196_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/62f8e0d79cc509f62a585402ebb4d196_thumb.webp">
+                    <img alt="62f8e0d79cc509f62a585402ebb4d196" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/62f8e0d79cc509f62a585402ebb4d196_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/6659a9858b1d0e463ce8f65f04508c2e_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/6659a9858b1d0e463ce8f65f04508c2e_thumb.webp">
+                    <img alt="6659a9858b1d0e463ce8f65f04508c2e" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/6659a9858b1d0e463ce8f65f04508c2e_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/7be8fcc61cb30aaba60e15f2e0cb811d_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/7be8fcc61cb30aaba60e15f2e0cb811d_thumb.webp">
+                    <img alt="7be8fcc61cb30aaba60e15f2e0cb811d" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/7be8fcc61cb30aaba60e15f2e0cb811d_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/8bc9e9036310dc77008427dc8eb390bb 2_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/8bc9e9036310dc77008427dc8eb390bb 2_thumb.webp">
+                    <img alt="8bc9e9036310dc77008427dc8eb390bb 2" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/8bc9e9036310dc77008427dc8eb390bb 2_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/9d566dc000ce36dd126b99410e5fe19e_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/9d566dc000ce36dd126b99410e5fe19e_thumb.webp">
+                    <img alt="9d566dc000ce36dd126b99410e5fe19e" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/9d566dc000ce36dd126b99410e5fe19e_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/B0004115_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/B0004115_thumb.webp">
+                    <img alt="B0004115" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/B0004115_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/DJI_20250823171628_0147_D_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/DJI_20250823171628_0147_D_thumb.webp">
+                    <img alt="DJI_20250823171628_0147_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/DJI_20250823171628_0147_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/DJI_20250823201223_0167_D_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/DJI_20250823201223_0167_D_thumb.webp">
+                    <img alt="DJI_20250823201223_0167_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/DJI_20250823201223_0167_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/DJI_20250825201510_0182_D_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/DJI_20250825201510_0182_D_thumb.webp">
+                    <img alt="DJI_20250825201510_0182_D" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/DJI_20250825201510_0182_D_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/IMG_3763_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/IMG_3763_thumb.webp">
+                    <img alt="IMG_3763" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/IMG_3763_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/IMG_3769_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/IMG_3769_thumb.webp">
+                    <img alt="IMG_3769" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/IMG_3769_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/IMG_4424_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/IMG_4424_thumb.webp">
+                    <img alt="IMG_4424" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/IMG_4424_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/SLX06909_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/SLX06909_thumb.webp">
+                    <img alt="SLX06909" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/SLX06909_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/a564378148fd0e0a564881592b714823_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/a564378148fd0e0a564881592b714823_thumb.webp">
+                    <img alt="a564378148fd0e0a564881592b714823" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/a564378148fd0e0a564881592b714823_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/aba8806e9361f741a58d828175abfe8a_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/aba8806e9361f741a58d828175abfe8a_thumb.webp">
+                    <img alt="aba8806e9361f741a58d828175abfe8a" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/aba8806e9361f741a58d828175abfe8a_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/b4fed73b8ddfc32733f80fe81db11e70_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/b4fed73b8ddfc32733f80fe81db11e70_thumb.webp">
+                    <img alt="b4fed73b8ddfc32733f80fe81db11e70" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/b4fed73b8ddfc32733f80fe81db11e70_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/c9fef66fd7337bb0026e2e5ac3cccb43_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/c9fef66fd7337bb0026e2e5ac3cccb43_thumb.webp">
+                    <img alt="c9fef66fd7337bb0026e2e5ac3cccb43" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/c9fef66fd7337bb0026e2e5ac3cccb43_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/cd1d6a8e5c3568dc6b75dae1a2e2eb60_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/cd1d6a8e5c3568dc6b75dae1a2e2eb60_thumb.webp">
+                    <img alt="cd1d6a8e5c3568dc6b75dae1a2e2eb60" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/cd1d6a8e5c3568dc6b75dae1a2e2eb60_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="category-item">
+              <div class="w-full p-1">
+                <div class="overflow-hidden h-full w-full rounded">
+                  <a href="assets/categories/personal/fe40671cfbe700975ed545e8776c8ed0_full.webp" data-fancybox="personal" data-thumb="assets/categories/personal/fe40671cfbe700975ed545e8776c8ed0_thumb.webp">
+                    <img alt="fe40671cfbe700975ed545e8776c8ed0" class="block h-full w-full object-cover object-center opacity-0 animate-fade-in transition duration-500 transform hover:scale-105" src="assets/categories/personal/fe40671cfbe700975ed545e8776c8ed0_thumb.webp" style="aspect-ratio: 3 / 4;" loading="lazy" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+  </div>
+  <footer class="scroll-reveal">
+    <div class="max-w-screen-xl py-16 mx-auto">
+      <div class="grid grid-cols-1 gap-8 text-center mx-auto">
+        <div>
+          <p class="font-signika floating-element"><b>XING</b></p>
+          <p class="mt-4 text-sm text-gray-600 dark:text-gray-300">
+            2193177455@qq.com
+          </p>
+          <div class="flex mx-auto">
+            <div class="mx-auto space-x-6 flex mt-8 text-gray-600 dark:text-gray-300">
+              <!-- 抖音图标和链接 -->
+              <a class="transition duration-300 hover:opacity-75 social-link interactive" href="https://v.douyin.com/pIs2kYdlksE/ 0@9.com :0pm" target="_blank"
+                rel="noreferrer">
+                <span class="sr-only"> Douyin </span>
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M512 0C229.22 0 0 229.22 0 512s229.22 512 512 512 512-229.22 512-512S794.78 0 512 0z m243.43 385.55c-11.78 11.78-24.38 23.22-37.93 34.28-1.45 1.2-2.88 2.4-4.3 3.62-3.32 2.8-6.67 5.6-10.05 8.38-1.4 1.15-2.8 2.3-4.2 3.45-10.2 8.4-20.52 16.6-31.12 24.3-2.7 2-5.45 3.9-8.2 5.8-15.1 10.4-30.4 20.2-46.2 28.9-1.9 1.05-3.8 2.1-5.7 3.15-12.8 7-25.7 13.5-38.9 19.1-3.3 1.4-6.6 2.8-9.9 4.2-11.6 4.9-23.3 9.3-35.1 13.2-2.9 0.9-5.8 1.8-8.7 2.7-22.1 6.8-44.3 12.4-66.9 16.4-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-3.6 0.6-7.2 1.2-10.8 1.8-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-1.8 0.3-3.6 0.6-5.4 0.9-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4-0.9 0.1-1.8 0.3-2.7 0.4z"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="mt-8 text-xs text-gray-600 dark:text-gray-300 text-center">
+        © 2025 Developed and Designed by Xing.
+      </p>
+    </div>
+  </footer>
+  <script>Fancybox.bind("[data-fancybox]", {});</script>
+  <script src="fade_in.js"></script>
+  <script src="menu.js"></script>
+  <script>
+    // 分类行：展开/收起 + 自动横向滚动（全局同步，先呈现所有图片再滚动）
+    (function(){
+      const sections = document.querySelectorAll('.category-section');
+      const controllers = []; // { section, viewport, paused }
+      const SPEED = 0.10; // px/frame，统一更慢
+
+      function animate(){
+        for (const c of controllers) {
+          if (c.paused) continue;
+          const vp = c.viewport;
+          // 使用 scrollLeft 以保留完整内容（不复制 DOM），先呈现后滚动
+          vp.scrollLeft += SPEED;
+          if (vp.scrollLeft + vp.clientWidth >= vp.scrollWidth - 1) {
+            vp.scrollLeft = 0;
+          }
+        }
+        requestAnimationFrame(animate);
+      }
+
+      sections.forEach(section => {
+        const btn = section.querySelector('.toggle-expand');
+        const viewport = section.querySelector('.category-viewport');
+
+        const controller = { section, viewport, paused: false };
+        controllers.push(controller);
+
+        // 悬停暂停/恢复
+        viewport.addEventListener('mouseenter', () => { controller.paused = true; });
+        viewport.addEventListener('mouseleave', () => { if (!controller.section.classList.contains('expanded')) controller.paused = false; });
+
+        // 展开/收起
+        btn.addEventListener('click', () => {
+          const expanded = section.classList.toggle('expanded');
+          if (expanded) {
+            controller.paused = true;
+            viewport.style.overflowX = 'visible';
+            btn.textContent = '收起';
+          } else {
+            viewport.style.overflowX = 'hidden';
+            btn.textContent = '展开';
+            controller.paused = false;
+          }
+        });
+      });
+
+      // 等待所有图片加载完成后再启动动画
+      const images = document.querySelectorAll('img[loading="lazy"]');
+      let loadedCount = 0;
+      
+      function checkAllLoaded() {
+        loadedCount++;
+        if (loadedCount >= images.length) {
+          // 所有图片加载完成，启动动画
+          requestAnimationFrame(() => requestAnimationFrame(animate));
+        }
+      }
+      
+      images.forEach(img => {
+        if (img.complete) {
+          checkAllLoaded();
+        } else {
+          img.addEventListener('load', checkAllLoaded);
+          img.addEventListener('error', checkAllLoaded); // 即使加载失败也要继续
+        }
+      });
+      
+      // 如果没有图片，直接启动动画
+      if (images.length === 0) {
+        requestAnimationFrame(() => requestAnimationFrame(animate));
+      }
+    })();
+  </script>
+</body>
+</html>
