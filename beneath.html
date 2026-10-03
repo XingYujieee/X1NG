@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>X1NG — Viewfinder</title>
+  <meta name="description" content="Four places, one person: the X1NG viewfinder.">
+  <meta name="theme-color" content="#06070a">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/fonts.css">
+  <link rel="stylesheet" href="assets/css/main.css">
+  <style>
+    .solo-head { position: fixed; z-index: 20; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; padding: 26px var(--gutter); }
+    .solo-head a { color: #fff; text-decoration: none; font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; text-shadow: 0 1px 8px rgba(0,0,0,.4); }
+    .solo-head .brand { font-family: inherit; font-size: 22px; letter-spacing: .06em; font-weight: 500; }
+    .loader { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; background: #06070a; color: rgba(238,240,244,.6); font-family: var(--mono); font-size: 11px; letter-spacing: .3em; transition: opacity 1.2s, visibility 1.2s; }
+    .loader i { display: block; width: 120px; height: 1px; margin: 14px auto 0; background: linear-gradient(90deg, transparent, #eef0f4, transparent); background-size: 200% 100%; animation: ld 1.4s linear infinite; }
+    @keyframes ld { from { background-position: 100% 0 } to { background-position: -100% 0 } }
+    .is-ready .loader { opacity: 0; visibility: hidden; }
+    .solo-end { min-height: 70vh; display: grid; place-items: center; text-align: center; gap: 18px; padding: 10vh var(--gutter); }
+    .solo-end a { display: inline-block; margin: 8px; }
+  </style>
+  <script src="assets/js/build/beneath-tex.js" defer></script>
+  <script src="assets/js/build/beneath.js" defer></script>
+</head>
+<body>
+  <div class="loader" aria-hidden="true"><div>X1NG · 星光<i></i></div></div>
+  <header class="solo-head"><a class="brand" href="index.html">X1NG</a><a href="work.html">The Work →</a></header>
+  <main>
+    <section class="vf" data-vf aria-labelledby="hero-title">
+      <div class="vf__stage">
+        <canvas aria-hidden="true"></canvas>
+        <div class="vf__hud" aria-hidden="true">
+          <span class="vf__corner tl"></span><span class="vf__corner tr"></span><span class="vf__corner bl"></span><span class="vf__corner br"></span>
+          <div class="vf__info mono" data-vf-info></div>
+          <div class="vf__af"><b class="mono"></b></div>
+          <div class="vf__meter mono"><span>−3</span><span>·</span><span>−2</span><span>·</span><span>−1</span><span>·</span><span>0</span><span>·</span><span>+1</span><span>·</span><span>+2</span><span>·</span><span>+3</span><i></i></div>
+          <div class="vf__exif mono"><span data-vf-shutter>1/250</span><span>ROLL <b data-vf-count>01</b>/36</span></div>
+          <div class="vf__hint mono"><span>Click · 对焦</span><span>Hold · 长曝光</span><span>Scroll · 下一章</span></div>
+          <div class="vf__curtain"><i></i><i></i></div>
+          <div class="vf__flash"></div>
+        </div>
+        <div class="vf__copy">
+          <h1 id="hero-title">
+            <span class="line"><span>We are</span></span>
+            <span class="line"><span><strong>X1NG</strong></span></span>
+            <span class="line"><span>A traveller</span></span>
+            <span class="line"><span><em>with a camera</em></span></span>
+            <span class="zh">一个人，一台相机，走进很大的风景</span>
+          </h1>
+          <p class="big right">
+            <span class="line"><span><em>Chasing light</em></span></span>
+            <span class="line"><span><em>across wide lands</em></span></span>
+            <span class="zh">在群山、荒漠与森林之间追光</span>
+          </p>
+        </div>
+        <div class="vf__chapter" data-chapter="1"><div class="no mono">Chapter 02 / 04 — Meili, Yunnan</div><h2>Framed <em>summit</em></h2><p>A gap in the rock, a window onto Meili.<span class="zh">岩隙中的雪山 · 岩石的缝隙，是看梅里的窗。</span></p></div>
+        <div class="vf__chapter" data-chapter="2"><div class="no mono">Chapter 03 / 04 — Qinghai–Gansu</div><h2>Red on <em>the ridge</em></h2><p>Last light on the yardang.<span class="zh">山脊上的红 · 雅丹上的最后一束光。</span></p></div>
+        <div class="vf__chapter" data-chapter="3"><div class="no mono">Chapter 04 / 04 — Qinghai–Gansu</div><h2>Star trails <em>over yardang</em></h2><p>Staying until the sky turns.<span class="zh">雅丹星轨 · 一直待到星空转起来。</span></p></div>
+        <nav class="vf__ticks mono" aria-label="Chapters"><button type="button" data-tick>01 Noon</button><button type="button" data-tick>02 Afternoon</button><button type="button" data-tick>03 Sunset</button><button type="button" data-tick>04 Night</button></nav>
+      </div>
+    </section>
+
+    <section class="solo-end">
+      <div>
+        <h2 class="h2">Four places, one person.</h2>
+        <p class="zh">四个地方，一个人。</p>
+        <p><a class="pill roll-host" href="index.html"><span class="dot"></span><span data-roll>Home · 首页</span></a><a class="pill pill--ghost roll-host" href="work.html"><span class="dot"></span><span data-roll>The Work · 作品</span></a></p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

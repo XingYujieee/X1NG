@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "fps": 60,
+  "frameDuration": 0.016666666666666666,
+  "duration": 40.0,
+  "loop": "closed",
+  "controller": "autonomous-playback",
+  "delivery": "baked-video",
+  "initialState": "meili",
+  "states": [
+    {
+      "id": "meili",
+      "hold": 0.0
+    },
+    {
+      "id": "framed-summit",
+      "hold": 4.0
+    },
+    {
+      "id": "grey-dunes",
+      "hold": 8.0
+    },
+    {
+      "id": "standing-tall",
+      "hold": 12.0
+    },
+    {
+      "id": "green-terraces",
+      "hold": 16.0
+    },
+    {
+      "id": "heliostats",
+      "hold": 20.0
+    },
+    {
+      "id": "hay-bales",
+      "hold": 24.0
+    },
+    {
+      "id": "red-ridge",
+      "hold": 28.0
+    },
+    {
+      "id": "light-bearer",
+      "hold": 32.0
+    },
+    {
+      "id": "star-trails",
+      "hold": 36.0
+    }
+  ],
+  "segments": [
+    {
+      "id": "meili-to-framed-summit",
+      "from": "meili",
+      "to": "framed-summit",
+      "start": 1.4,
+      "hold": 3.9833,
+      "endExclusive": 4.0,
+      "curve": {
+        "type": "edge-mid-edge",
+        "edgeRate": 0.85,
+        "midRate": 1.15
+      }
+    },
+    {
+      "id": "framed-summit-to-grey-dunes",
+      "from": "framed-summit",
+      "to": "grey-dunes",
+      "start": 5.4,
+      "hold": 7.9833,
+      "endExclusive": 8.0,
+      "curve": {
+        "type": "edge-mid-edge",
+        "edgeRate": 0.85,
+        "midRate": 1.15
+      }
+    },
+    {
+      "id": "grey-dunes-to-standing-tall",
+      "from": "grey-dunes",
+      "to": "standing-tall",
+      "start": 9.4,
+      "hold": 11.9833,
+      "endExclusive": 12.0,
+      "curve": {
+        "type": "edge-mid-edge",
+        "edgeRate": 0.85,
+        "midRate": 1.15
+      }
+    },
+    {
+      "id": "standing-tall-to-green-terraces",
+      "from": "standing-tall",
+      "to": "green-terraces",
+      "start": 13.4,
+      "hold": 15.9833,
+      "endExclusive": 16.0,
+      "curve": {
+        "type": "edge-mid-edge",
+        "edgeRate": 0.85,
+        "midRate": 1.15
+      }
+    },
+    {
+      "id": "green-terraces-to-heliostats",
+      "from": "green-terraces",
+      "to": "heliostats",
+      "start": 17.4,
+      "hold": 19.9833,
+      "endExclusive": 20.0,
+      "curve": {
+        "type": "edge-mid-edge",
+        "edgeRate": 0.85,
+        "midRate": 1.15
+      }
+    },
+    {
+      "id": "heliostats-to-hay-bales",
+      "from": "heliostats",
+      "to": "hay-bales",
+      "start": 21.4,
+      "hold": 23.9833,
+      "endExclusive": 24.0,
+      "curve": {
+        "type": "edge-mid-edge",
+        "edgeRate": 0.85,
+        "midRate": 1.15
+      }
+    },
+    {
+      "id": "hay-bales-to-red-ridge",
+      "from": "hay-bales",
+      "to": "red-ridge",
+      "start": 25.4,
+      "hold": 27.9833,
+      "endExclusive": 28.0,
+      "curve": {
+        "type": "edge-mid-edge",
+        "edgeRate": 0.85,
+        "midRate": 1.15
+      }
+    },
+    {
+      "id": "red-ridge-to-light-bearer",
+      "from": "red-ridge",
+      "to": "light-bearer",
+      "start": 29.4,
+      "hold": 31.9833,
+      "endExclusive": 32.0,
+      "curve": {
+        "type": "edge-mid-edge",
+        "edgeRate": 0.85,
+        "midRate": 1.15
+      }
+    },
+    {
+      "id": "light-bearer-to-star-trails",
+      "from": "light-bearer",
+      "to": "star-trails",
+      "start": 33.4,
+      "hold": 35.9833,
+      "endExclusive": 36.0,
+      "curve": {
+        "type": "edge-mid-edge",
+        "edgeRate": 0.85,
+        "midRate": 1.15
+      }
+    },
+    {
+      "id": "star-trails-to-meili",
+      "from": "star-trails",
+      "to": "meili",
+      "start": 37.4,
+      "hold": 39.9833,
+      "endExclusive": 40.0,
+      "curve": {
+        "type": "edge-mid-edge",
+        "edgeRate": 0.85,
+        "midRate": 1.15
+      }
+    }
+  ],
+  "sources": {
+    "desktop": "media/film/corridor-1080p.mp4",
+    "mobile": "media/film/corridor-portrait.mp4"
+  }
+}

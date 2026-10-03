@@ -1,185 +1,96 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
+# X1NG — photographic field
 
-<a name="readme-top"></a>
+Lusion-inspired rebuild of x1ng.com. Static HTML/CSS/JS — no build step, all libraries vendored locally (works without Google/CDN access).
 
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
+## Preview
 
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
+Just double-click `index.html` — the site works straight from disk (fonts and WebGL textures are embedded for that case).
+Or serve it: double-click `预览网站.command`, or `python3 -m http.server 8000`.
 
-[![LinkedIn][linkedin-shield]][linkedin-url]
+## After editing JS
 
-<!-- PROJECT LOGO -->
-<br />
-<div align="center">
-  <a href="https://github.com/JoaoFranco03/photography-portfolio">
-    <img src="dist/assets/Logo.jpg" alt="Logo" width="80" height="80">
-  </a>
+Pages load the bundles in `assets/js/build/`. After changing anything in `assets/js/` (titles, series, code), rebuild once:
 
-  <h3 align="center">Photography Portfolio</h3>
-
-  <p align="center">
-    A Website created using Tailwind CSS, HTML, CSS <br /> and JavaScript that can be used as a Photography Portfolio.
-    <br />
-    <br />
-    <a href="https://photography-portfolio-joaofranco03.netlify.app/">View Demo</a>
-    <br />
-    <br />
-    
-  </p>
-</div>
-
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li><a href="#about-the-project">About The Project</a></li>
-    <li>
-      <a href="#built-with">Built With</a>
-      <ul>
-        <li><a href="#html-badge">HTML</a></li>
-        <li><a href="#css-badge">CSS</a></li>
-        <li><a href="#js-badge">JavaScript</a></li>
-        <li><a href="#tailwind-badge">Tailwind CSS</a></li>
-      </ul>
-    </li>
-    <li><a href="#quick-start">Quick Start</a></li>
-    <li><a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
-
-<!-- ABOUT THE PROJECT -->
-
-# 📋 About The Project <a name="about-the-project"></a>
-
-[![Product Name Screen Shot][product-screenshot]](https://github.com/JoaoFranco03/photography-portfolio)
-
-This project is a web-based portfolio that beautifully showcases the photography work of Sophia Williams, a fictional photographer. The portfolio was skillfully built using a combination of powerful front-end technologies, including Tailwind CSS, CSS, HTML, and JavaScript.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-## 🛠️ Built With <a name="built-with"></a>
-
-- [![HTML][html-badge]][html-url]
-- [![CSS][css-badge]][css-url]
-- [![JavaScript][js-badge]][js-url]
-- [![Tailwind][tailwind-badge]][tailwind-url]
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-## 🚀 Quick Start <a name="quick-start"></a>
-
-Create your own page with one click on [Netlify](https://app.netlify.com/signup):
-
-[<img src="https://www.netlify.com/img/deploy/button.svg" alt="Deploy to Netlify" />](https://app.netlify.com/start/deploy?repository=https://github.com/JoaoFranco03/photography-portfolio)
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-## 🎯 Getting Started <a name="getting-started"></a>
-
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
-
-### 🏗️ Installation <a name="installation"></a>
-
-1. Clone the repo
-
-```sh
- git clone https://github.com/JoaoFranco03/photography-portfolio/.git
+```bash
+bash assets/tools/build.sh   # needs Node.js
 ```
 
-2.  Run the following command:
+## Pages
 
-```sh
- npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
-```
-3.  Run the Project in a Server
+| Page | What it does |
+| --- | --- |
+| `index.html` | Viewfinder hero (four places, scroll-driven real-time WebGL, click to focus, hold for long exposure), intro, featured series, archive marquee, subjects index, CTA |
+| `beneath.html` | The viewfinder hero on its own page |
+| `work.html` | All 125 frames: style filters, masonry grid, lightbox (keyboard / swipe), **Field 3D** cylinder view. Deep links: `?style=gold`, `?view=field`, `?p=39` |
+| `series.html` | Series index; `series.html?id=yunnan` etc. for each story (Yunnan & Qinghai–Gansu include the travel guides) |
+| `raw.html` | RAW → final comparisons with Baidu Netdisk downloads |
+| `about.html` | Bio, subjects, contact |
 
-4.  Change it with your own photos, about me and contact info.
+Every page ends with a "keep scrolling" panel that leads into the next page.
 
-5.  Publish it using your preferred hosting platform.
+## Hero: the viewfinder (home page)
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+The home page opens inside a camera viewfinder. Four photographs, one person: noon among the hay
+bales → afternoon snow at Meili → sunset on the yardang → night under the star trails. Each photo is
+shown whole and at full resolution (the person stays small; the landscape stays big).
 
-<!-- Ko-fi -->
+- **Scroll** moves through the four places. Every scroll position is one fixed frame; scrolling back
+  plays it backwards; the chapter ticks on the right jump to a place.
+- **The change between places** uses each photo's depth map: the new place replaces the old one from
+  the horizon towards you (sky first, then far ridges, then the ground at your feet), with a thin bank
+  of mist at the front, while the camera keeps a slow push forward.
+- **Pointer** → depth parallax (near things move more). **Click** → tap-to-focus: the AF box jumps to
+  the point, the lens racks focus to that depth, the shutter curtain fires and the roll counter ticks
+  (36 frames, then it rewinds). **Hold** → long exposure: the frame gathers light, particles streak,
+  the shutter readout counts from 1/250 to 30"; release to close the shutter.
+- The AF box tracks the person and locks (yellow) when a chapter settles, after a short focus hunt.
+- **End of the hero:** the frame shrinks into a print laid on the light page, and the site continues.
+- **Per-place effects** (`SCENES` in `assets/js/viewfinder/stage.js`): grade, particles (`chaff`, `snow`,
+  `sand`, `stars`), the sun in his hand, and at night the Lusion-style nebula, shaft and rising stones.
+- **Files:** `assets/js/viewfinder/{stage,hero,standalone}.js`, photos + depth maps in `media/beneath/`
+  (embedded in `assets/js/build/beneath-tex.js` for `file://`), post-processing in `assets/vendor/three-addons/`.
+  `beneath.html` shows the hero on its own page.
+- **Swap a photo:** put `<id>.webp` and a depth map `<id>-d.png` (white = near) in `media/beneath/`, measure
+  the person (`x`, `head`, `feet`, 0–1 image coordinates), edit `SCENES`, regenerate `beneath-tex.js`, run
+  `assets/tools/build.sh`.
+- Slow machines automatically render at a lower resolution; phones get a portrait crop around the person.
+- The "Next page" panel at the bottom of every page no longer jumps automatically: the ring fills as you
+  scroll and you click it to continue (the old auto-jump trapped people at the bottom of the page).
 
-## ☕ Support Me on Ko-fi
+## Corridor film (oil-motion baked-video, now on `corridor.html` only)
 
-If you find this project useful, consider supporting me on Ko-fi. Thanks for checking it out!  
 
-<a href="https://ko-fi.com/joaofranco03" target="_blank">
-    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi" style="height:40px;">
-</a>
+The earlier home hero was a 40 s, 60 fps looping film: ten self-portraits in landscapes joined by
+2.5D zoom-through transitions (depth-map parallax, far-to-near dissolve, person kept at the same spot).
+Files: `media/film/corridor-1080p.mp4` (desktop), `corridor-portrait.mp4` (phones), posters, `timeline.json`.
+How it was made and how to rebuild or swap in AI transitions: `motion-source/corridor-film/README.md`.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+## Hero character (oil-motion, not used on the home page any more)
 
-<!-- LICENSE -->
+The photographer in the hero is a **sprite-atlas motion**: 48 pre-rendered frames of a clockwise gaze orbit,
+scrubbed by the pointer with oil-motion's damped frame animator (`assets/js/motion/`). Click him to take a shot.
+Current frames are a procedural placeholder — see `motion-source/photographer-gaze/README.md` to replace them with AI-generated frames.
 
-## 📜 License <a name="license"></a>
+## Styles
 
-Distributed under the GPL-3.0 License. See `LICENSE.txt` for more information.
+The archive is curated into seven visual styles (`STYLES` in `assets/js/data.js`; each photo's style is the last field in `photos.js`):
+Blue Hour 蓝调城市 · Golden Light 金色时刻 · Wide Open 辽阔 · After Dark 夜与星 · Geometry 几何 · Human Moments 人间 · Living Green 生灵草木.
+Deep link: `work.html?style=night`.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+## Editing content
 
-<!-- CONTACT -->
+- **Photo titles / Chinese titles / places** → `assets/js/photos.js` (one line per photo, in archive order).
+- **Series** (which photos, cover, text) → `assets/js/data.js` → `series`. Frames are referenced by number (#1–#125, as shown in the lightbox).
+- **3D hero photos** → `heroFrames` in `assets/js/data.js`.
+- **Travel guides** → `assets/js/guides.js`.
+- **Contact / socials** → `CONTACT` in `assets/js/data.js`.
 
-## 📧 Contact <a name="contact"></a>
+## Images
 
-João Franco - https://www.linkedin.com/in/joão-franco-452161195/
+`media/s` (640px, grid + WebGL textures), `media/m` (1280px), `media/l` (2400px, lightbox), `media/raw` (RAW comparisons, webp). Generated from `x1ng-refactor/dist/assets/*_full.webp`.
+To add a photo: export the three sizes with the same file name into s/m/l, then add a line to `photos.js`.
 
-Project Link: [https://github.com/JoaoFranco03/photography-portfolio/](https://github.com/JoaoFranco03/photography-portfolio/)
+## Stack
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- ACKNOWLEDGMENTS -->
-
-## 🌟 Acknowledgments <a name="acknowledgments"></a>
-
-- [FancyBox](https://fancyapps.com/fancybox/)
-- [Unsplash](https://unsplash.com/)
-- [Tailwind Documentation](https://tailwindcss.com/docs/installation)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-
-[contributors-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
-[contributors-url]: https://github.com/othneildrew/Best-README-Template/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/othneildrew/Best-README-Template.svg?style=for-the-badge
-[forks-url]: https://github.com/othneildrew/Best-README-Template/network/members
-[stars-shield]: https://img.shields.io/github/stars/othneildrew/Best-README-Template.svg?style=for-the-badge
-[stars-url]: https://github.com/othneildrew/Best-README-Template/stargazers
-[issues-shield]: https://img.shields.io/github/issues/othneildrew/Best-README-Template.svg?style=for-the-badge
-[issues-url]: https://github.com/othneildrew/Best-README-Template/issues
-[tailwind-badge]: https://img.shields.io/badge/Tailwind_CSS-62BAF3?style=for-the-badge&logo=tailwind-css&logoColor=white
-[tailwind-url]: https://tailwindcss.com
-[html-badge]: https://img.shields.io/badge/HTML-239120?style=for-the-badge&logo=html5&logoColor=white
-[html-url]: https://developer.mozilla.org/en-US/docs/Web/HTML
-[css-badge]: https://img.shields.io/badge/CSS-239120?&style=for-the-badge&logo=css3&logoColor=white
-[css-url]: https://developer.mozilla.org/en-US/docs/Web/CSS
-[js-badge]: https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black
-[js-url]: https://developer.mozilla.org/en-US/docs/Web/JavaScript
-[license-url]: https://github.com/JoaoFranco03/photography-portfolio/blob/main/LICENSE.md
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://www.linkedin.com/in/joão-franco-452161195/
-[product-screenshot]: dist/assets/mockup.png
-# Photography
+three.js r186 (bundled to `assets/vendor/three.min.js`), GSAP 3 + ScrollTrigger, Lenis smooth scroll, Geist / Geist Mono (OFL).
+Motion respects `prefers-reduced-motion`; without WebGL the hero falls back to a static collage and the Field view is disabled.

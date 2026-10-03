@@ -1,0 +1,14 @@
+Create one continuous clockwise head and gaze rotation cycle. The face and eyes
+of a stylised 3D designer-toy figure of a young East-Asian photographer in a
+bright yellow-orange hooded jacket, black backpack straps and dark trousers,
+holding a black mirrorless camera at chest height, remain oriented toward the
+camera at all times; do not rotate around to show the back of the head. An
+invisible target moves smoothly clockwise in a circle on the front screen plane
+(12 o'clock looking up, 3 o'clock looking right, 6 o'clock looking down,
+9 o'clock looking left, returning cleanly to 12 o'clock). The figure follows the
+target smoothly within a natural cone of vision, turning head, shoulders and the
+camera lens together, without leaving the front-facing half-sphere. Pass through
+every intermediate angle at a constant rate without pausing or snapping. End
+exactly at the first frame pose for a seamless loop. Keep feet, body position and
+scale completely stationary. Plain uniform #00FF00 background. No blinking, idle
+sway, or deformation.

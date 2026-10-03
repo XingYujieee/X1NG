@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Work — X1NG</title>
+  <meta name="description" content="The full X1NG archive: 125 photographs of cities, mountains, deserts, streets and wildlife. Filter by subject or step into the 3D field.">
+  <meta name="theme-color" content="#eceef4">
+  <meta property="og:title" content="Work — X1NG">
+  <meta property="og:description" content="Chasing light across cities, peaks and the quiet in between.">
+  <meta property="og:image" content="media/m/102-f6ad4aff3c2132e15e05f725c129cf55-33f.webp">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/fonts.css">
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>document.documentElement.classList.add('js')</script>
+  <script src="assets/vendor/gsap.min.js" defer></script>
+  <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="assets/vendor/lenis.min.js" defer></script>
+  <script>if (location.protocol === 'file:') document.write('<script src="assets/js/build/textures.js"><\/script>');</script>
+  <script src="assets/js/build/work.js" defer></script>
+</head>
+<body data-page="work">
+  <main id="main">
+    <section class="page-head wrap">
+      <div class="page-head__row">
+        <h1 class="h1"><span data-split>The Work</span><sup data-total>125</sup></h1>
+        <p class="lead" data-fade data-style-note>Every frame in the archive, curated into seven visual styles. Open any photograph, or step into the field. <span class="zh muted">全部作品 · 按风格浏览 · 3D 漫游</span></p>
+      </div>
+      <div class="toolbar" data-toolbar>
+        <div class="chips" role="group" aria-label="Filter by style" data-chips></div>
+        <div class="view-toggle" role="group" aria-label="View">
+          <button type="button" aria-pressed="true" data-view="grid">Grid</button>
+          <button type="button" aria-pressed="false" data-view="field">Field 3D</button>
+        </div>
+      </div>
+      <div class="grid" data-grid></div>
+    </section>
+  </main>
+
+  <div class="field-view" data-field aria-label="3D archive field">
+    <div class="field-top">
+      <div class="chips" role="group" aria-label="Filter by style" data-chips-field></div>
+      <div class="view-toggle" role="group" aria-label="View">
+        <button type="button" aria-pressed="false" data-view="grid">Grid</button>
+        <button type="button" aria-pressed="true" data-view="field">Field 3D</button>
+      </div>
+    </div>
+    <div class="field-hud">
+      <p class="title" data-field-title aria-live="polite"></p>
+      <p class="mono" style="color:var(--on-dark-2);text-align:right">Drag or scroll to turn<br>Click a frame to open</p>
+    </div>
+  </div>
+</body>
+</html>

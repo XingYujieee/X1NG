@@ -1,0 +1,26 @@
+# oil-motion Concept Contract — hero character (single source of truth for intent)
+subject_count: 1
+subjects:
+  - identity: >-
+      Xing (星光), young East-Asian man, short black hair with a soft fringe,
+      bright yellow-orange hooded technical jacket, black backpack straps over
+      both shoulders, dark trousers, dark sneakers with white soles, holding a
+      black mirrorless camera with a short zoom lens at chest height in both hands.
+      Reference photos: media/l/049-*.webp (camera at a window), 031-*.webp (arms wide,
+      yellow jacket), 038-*.webp (portrait before Jade Dragon), 115-*.webp (summit).
+style: 3D designer-toy / soft clay render, studio light, clean silhouette
+motion_intent: >-
+  Clockwise gaze orbit. Face stays toward the viewer; head, shoulders and the
+  camera lens aim at an invisible target moving clockwise on the screen plane
+  (12 o'clock up, 3 right, 6 down, 9 left, back to 12). Never turns his back.
+background_owner: page          # transparent character over the site's WebGL print field
+driver: pointer
+input_semantics: continuous
+time_control: scrub
+navigation: none
+clip_continuity: independent
+continuity: [identity, jacket colour, camera model, body position and scale, lighting]
+aspect_ratio: custom            # 3:4 portrait cell, full body standing
+destination: >-
+  Home hero, centred in a 1376×700 rounded stage; character ≈ 480×645 CSS px on
+  desktop (DPR 2 → 960×1290 source), ≈ 260×350 on mobile.

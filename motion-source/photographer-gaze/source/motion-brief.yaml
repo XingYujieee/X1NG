@@ -1,0 +1,17 @@
+concept_contract: source/concept-contract.yaml
+identity_bible: source/identity-bible.md
+parameter_space: circular
+media_access: random
+gesture_policy: { unit: continuous, inertia: coalesce, while_active: retarget, boundary: loop, programmatic_navigation: ignore }
+storyboard: [K0 looking up (12 o'clock), continuous clockwise orbit, back to K0]
+keyframes: [K0]
+clip_chain: [K0 -> K0 (closed loop)]
+rest_state: slow clockwise idle patrol after 3.5 s without input
+loop: closed
+anchor: fixed-body
+frame_policy: native
+target_fps: 48 frames per full orbit
+quality_target: 480x640 cells (desktop atlas), 270x360 (mobile atlas), WebP alpha q≈86
+aspect_ratio: custom
+pixel_dimensions: 480x640 per cell
+reduced_motion: neutral.webp — facing camera, camera at chest

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Corridor — X1NG</title>
+  <meta name="description" content="Scroll through ten landscapes, one small figure: Xing's self-portraits stacked into a single continuous corridor.">
+  <meta name="theme-color" content="#07080b">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/fonts.css">
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>document.documentElement.classList.add('js')</script>
+  <script src="assets/vendor/gsap.min.js" defer></script>
+  <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="assets/vendor/lenis.min.js" defer></script>
+  <script src="assets/js/build/corridor.js" defer></script>
+</head>
+<body data-page="corridor">
+  <main id="main">
+    <section class="corridor is-start" data-corridor aria-label="Ten landscapes, one small figure">
+      <div class="corridor__track">
+        <div class="corridor__sticky">
+          <div class="corridor__stage"></div>
+          <div class="corridor__vignette"></div>
+          <div class="corridor__grain" aria-hidden="true"></div>
+          <div class="corridor__intro">
+            <h1 class="display">Ten landscapes, one small figure.<span class="zh">十个风景，一个小小的我 · 向下滚动，穿过每一张照片</span></h1>
+            <p class="mono" style="text-align:right">Self-portraits<br>2023 — 2025</p>
+          </div>
+          <div class="corridor__caption" aria-live="polite"></div>
+          <div class="corridor__hud mono">
+            <span data-counter>01 / 10</span>
+            <div class="corridor__progress"><div class="line"><b data-bar></b></div><div data-ticks></div></div>
+            <span class="corridor__hint">Scroll ↓</span>
+          </div>
+        </div>
+      </div>
+      <div class="corridor__end">
+        <div>
+          <p class="mono" style="color:rgba(255,255,255,.6)">End of the corridor · 走廊尽头</p>
+          <h2 class="h2">Every one of these started with getting up early.</h2>
+          <a class="pill pill--light roll-host" href="work.html"><span class="dot"></span><span data-roll>See all the work</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# oil-motion Concept Contract — home hero "corridor" film
+subject_count: 1
+subjects:
+  - identity: Xing (small figure, yellow/red jacket) inside ten of his own landscape self-portraits
+style: photographic, continuous 2.5D camera move (depth parallax), no illustration, no added objects
+motion_intent: >-
+  One continuous shot. Rest on a photo with a slow push-in and a small orbit (parallax), then dolly
+  toward the person; the far world (sky, distant ridges) turns into the next place first, the foreground
+  and the person last, and the camera arrives resting on the next photo with its person at the same spot.
+  After the tenth photo it flows back into the first (closed loop).
+background_owner: video          # the whole frame is baked
+driver: time
+input_semantics: continuous
+time_control: autonomous         # plays like a moving picture; ticks let you jump to a stop
+navigation: none
+clip_continuity: chain           # every transition starts from the previous rest frame
+continuity: [person screen position through each transition, exposure, camera speed, loop seam]
+aspect_ratio: 16:9 (desktop 1920x1080) and 9:16 (mobile 720x1280)
+destination: index.html full-bleed hero (100vh)
