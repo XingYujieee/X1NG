@@ -71,7 +71,7 @@
     entries.forEach(function (e) {
       if (e.isIntersecting) { load(e.target); preload.unobserve(e.target); }
     });
-  }, { rootMargin: '600px 0px' });
+  }, { rootMargin: '250px 0px' });
 
   // 2) 进入视野 60% 时播放
   var seen = new WeakSet();
@@ -216,7 +216,17 @@
   }
   if (!reduce) [].forEach.call(document.querySelectorAll('canvas.fx'), fx);
 
-  // 6) 顶部进度条 + 当前章节
+  // 6) 章节封面：照片和屏幕比例差太多就整幅显示 + 模糊背景，否则铺满
+  var openers = document.querySelectorAll('.opener[data-ratio]');
+  function fitOpeners() {
+    [].forEach.call(openers, function (o) {
+      var r = parseFloat(o.dataset.ratio), v = o.clientWidth / o.clientHeight;
+      o.classList.toggle('fit', Math.abs(Math.log(r / v)) > Math.log(1.45));
+    });
+  }
+  fitOpeners(); addEventListener('resize', fitOpeners);
+
+  // 7) 顶部进度条 + 当前章节
   var bar = document.querySelector('.progress'), fill = bar.querySelector('.bar'), label = bar.querySelector('.label');
   var cover = document.querySelector('.cover'), chapters = document.querySelectorAll('.chapter, .afterword');
   var ticking = false;
