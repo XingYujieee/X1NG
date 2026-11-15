@@ -6,6 +6,8 @@
  */
 (function () {
   var lives = [].slice.call(document.querySelectorAll('.live'));
+  var reduceEarly = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduceEarly) lives.forEach(function (f) { if (f.closest('.body')) f.classList.add('veil'); });
   var isWx = /MicroMessenger/i.test(navigator.userAgent);
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -76,11 +78,16 @@
   var watch = new IntersectionObserver(function (entries) {
     entries.forEach(function (e) {
       var fig = e.target, mode = fig.dataset.mode || 'once';
-      if (e.isIntersecting && e.intersectionRatio >= 0.6) {
+      fig._vis = e.isIntersecting && e.intersectionRatio >= 0.6;
+      if (fig._vis) {
         if (mode === 'tap' || reduce) { fig.classList.add('needs-tap'); return; }
         if (mode === 'once' && seen.has(fig)) return;
         seen.add(fig);
-        setTimeout(function () { play(fig, false); }, 250);
+        // 等照片的显露动效走完再播放实况，否则动的那两秒被动效盖住了
+        var wait = fig.classList.contains('veil') ? 1500 : 250;
+        setTimeout(function () {
+          if (fig._vis) play(fig, false); else seen.delete(fig);
+        }, wait);
       } else if (!e.isIntersecting || e.intersectionRatio < 0.2) {
         if (mode === 'loop') stop(fig);
       }
