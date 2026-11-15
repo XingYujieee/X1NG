@@ -109,6 +109,18 @@ export const series = [
   },
 ];
 
+/* Long-form travel journals — standalone pages living in their own folder. */
+export const journals = [
+  {
+    href: 'egypt/',
+    en: 'Egypt, in Motion', zh: '埃及随笔',
+    region: 'Luxor · Hurghada · Cairo', year: '2026',
+    cover: 'egypt/assets/share.jpg',
+    lede: 'Six days, three cities: balloons over the West Bank, dolphins in the Red Sea, and a driver with a book of five-star reviews.',
+    ledeZh: '卢克索、红海与开罗，六天的随笔与实况照片。',
+  },
+];
+
 export const seriesById = (id) => series.find((s) => s.id === id);
 export const seriesOf = (n) => series.find((s) => s.frames.includes(n));
 

@@ -1,5 +1,5 @@
 import { boot, $, $$, esc, pad, reduced, gsap } from '../core.js';
-import { series, seriesById, byN, photos } from '../data.js';
+import { series, seriesById, byN, photos, journals } from '../data.js';
 import { guides } from '../guides.js';
 import { openLightbox } from '../lightbox.js';
 
@@ -27,6 +27,16 @@ function renderIndex() {
             <span class="name"><span data-roll>${esc(s.en)}</span><span class="zh">${esc(s.zh)} · ${esc(s.region)}</span></span>
             <span class="desc">${esc(s.lede)}</span>
             <span class="thumb"><img src="${byN(s.cover).m}" alt="" loading="lazy"></span>
+          </a>`).join('')}
+      </div>
+      <p class="mono" style="margin-top:4rem" data-fade>Journals · 游记</p>
+      <div class="series-list">
+        ${journals.map((j, i) => `
+          <a class="series-row roll-host" href="${j.href}" data-cursor="Read" data-fade>
+            <span class="idx mono">J${pad(i + 1)}</span>
+            <span class="name"><span data-roll>${esc(j.en)}</span><span class="zh">${esc(j.zh)} · ${esc(j.region)}</span></span>
+            <span class="desc">${esc(j.lede)}</span>
+            <span class="thumb"><img src="${j.cover}" alt="" loading="lazy"></span>
           </a>`).join('')}
       </div>
     </section>`;
