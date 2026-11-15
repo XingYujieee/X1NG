@@ -148,7 +148,68 @@
   lb.addEventListener('click', closeLb);
   addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLb(); });
 
-  // 5) 顶部进度条 + 当前章节
+  // 5) 章节封面的氛围粒子：卢克索热气球 / 红海波光 / 开罗风沙
+  function fx(canvas) {
+    var kind = canvas.dataset.fx, ctx = canvas.getContext('2d'), W = 0, H = 0, dpr = Math.min(devicePixelRatio || 1, 2);
+    var parts = [], running = false, t0 = 0;
+    function size() {
+      W = canvas.clientWidth; H = canvas.clientHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    var COLORS = [['#d9573b', '#f2c14e'], ['#2f7f8f', '#f4e3c1'], ['#c2410c', '#fde68a'], ['#7c3aed', '#fbbf24'], ['#16a34a', '#fef3c7']];
+    function make(initial) {
+      if (kind === 'balloons') return { x: Math.random() * W, y: initial ? Math.random() * H : H + 30,
+        r: 6 + Math.random() * 12, v: .12 + Math.random() * .22, ph: Math.random() * 6.3, c: COLORS[(Math.random() * COLORS.length) | 0] };
+      if (kind === 'glints') { var g = (Math.random() + Math.random() + Math.random()) / 3;
+        return { x: W * (.5 + (g - .5) * 1.6), y: H * (.55 + Math.random() * .42), s: .6 + Math.random() * 1.6, ph: Math.random() * 6.3, sp: 1.5 + Math.random() * 3 }; }
+      return { x: initial ? Math.random() * W : -10, y: Math.random() * H, s: .4 + Math.random() * 1.4,
+        v: .3 + Math.random() * 1.1, a: .15 + Math.random() * .4, ph: Math.random() * 6.3 };
+    }
+    function init() { size(); parts = []; var n = kind === 'balloons' ? 9 : kind === 'glints' ? 70 : 110;
+      if (W < 500) n = Math.round(n * .7); for (var i = 0; i < n; i++) parts.push(make(true)); }
+    function balloon(b, t) {
+      var x = b.x + Math.sin(t * .0006 + b.ph) * 6, y = b.y, r = b.r;
+      ctx.globalAlpha = .82;
+      ctx.save(); ctx.beginPath(); ctx.ellipse(x, y, r * .86, r, 0, 0, Math.PI * 2); ctx.clip();
+      for (var k = -3; k <= 3; k++) { ctx.fillStyle = b.c[(k + 3) % 2]; ctx.fillRect(x + k * r * .3 - r * .15, y - r, r * .3, r * 2); }
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(40,25,10,.6)'; ctx.lineWidth = .6;
+      ctx.beginPath(); ctx.moveTo(x - r * .45, y + r * .85); ctx.lineTo(x - r * .18, y + r * 1.35);
+      ctx.moveTo(x + r * .45, y + r * .85); ctx.lineTo(x + r * .18, y + r * 1.35); ctx.stroke();
+      ctx.fillStyle = '#5b3a1e'; ctx.fillRect(x - r * .2, y + r * 1.35, r * .4, r * .3);
+    }
+    function frame(t) {
+      if (!running) return;
+      ctx.clearRect(0, 0, W, H);
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        if (kind === 'balloons') { p.y -= p.v; if (p.y < -40) parts[i] = make(false); balloon(p, t); }
+        else if (kind === 'glints') {
+          var a = Math.max(0, Math.sin(t * .001 * p.sp + p.ph)); a = a * a * a;
+          if (a < .02) continue;
+          ctx.globalAlpha = a * .9; ctx.fillStyle = '#fff3d6';
+          var s = p.s * (1 + a); ctx.fillRect(p.x - s * 2.2, p.y - .4, s * 4.4, .8); ctx.fillRect(p.x - .4, p.y - s * 1.2, .8, s * 2.4);
+        } else {
+          p.x += p.v; p.y += Math.sin(t * .0012 + p.ph) * .25;
+          if (p.x > W + 10) parts[i] = make(false);
+          ctx.globalAlpha = p.a; ctx.fillStyle = '#f3dcb4';
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, 6.3); ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(frame);
+    }
+    init(); addEventListener('resize', function () { init(); });
+    new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting && !running) { running = true; requestAnimationFrame(frame); }
+        else if (!e.isIntersecting) running = false;
+      });
+    }).observe(canvas);
+  }
+  if (!reduce) [].forEach.call(document.querySelectorAll('canvas.fx'), fx);
+
+  // 6) 顶部进度条 + 当前章节
   var bar = document.querySelector('.progress'), fill = bar.querySelector('.bar'), label = bar.querySelector('.label');
   var cover = document.querySelector('.cover'), chapters = document.querySelectorAll('.chapter, .afterword');
   var ticking = false;
