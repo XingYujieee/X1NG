@@ -132,7 +132,11 @@ a { color: inherit; }
   position: relative; height: 88vh; height: 88svh; min-height: 480px;
   overflow: hidden; color: #fff; background: #3a2c1d;
 }
-.opener img { position: absolute; inset: 0; height: 100%; object-fit: cover; }
+.opener .op-bg, .opener .op-img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.opener .op-bg { object-fit: cover; filter: blur(28px) brightness(.72) saturate(1.2); transform: scale(1.15); }
+.opener .op-img { object-fit: cover; background-size: cover; background-position: center; }
+/* 照片比例和屏幕差太多时，整幅显示照片，四周用同一张图的模糊放大版填满 */
+.opener.fit .op-img { object-fit: contain; background-image: none !important; }
 .opener::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0) 55%); }
 .opener-text { position: absolute; z-index: 1; left: var(--gutter); right: var(--gutter); bottom: 2.4rem; }
 .opener .num { font-family: var(--display); font-style: italic; font-size: 1.3rem; opacity: .9; }
@@ -188,16 +192,17 @@ figcaption { color: var(--muted); padding: .75rem var(--gutter) 0; }
   max-width: 46rem; margin: 2.6rem auto;
 }
 .pair .media { margin: 0; }
-.pair img { aspect-ratio: 3 / 4; object-fit: cover; }
 .pair-cap { color: var(--muted); max-width: 46rem; margin: -1.85rem auto 2.6rem; padding: 0 var(--gutter); }
 
 /* ---------- Photo sets (vertical) ---------- */
 .set { max-width: 46rem; margin: 2.8rem auto; display: grid; gap: 4px; }
 .set .media { margin: 0; max-width: none; }
-.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; max-width: 46rem; margin: 0 auto; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; max-width: 46rem; margin: 0 auto; align-items: start; }
+.stack { display: grid; gap: 4px; max-width: 46rem; margin: 0 auto; }
+.body > .stack { margin: 2.6rem auto; }
+.stack .media { margin: 0; max-width: none; }
 .body > .duo { margin: 2.6rem auto; }
 .duo .media { margin: 0; }
-.duo img { aspect-ratio: 4 / 5; object-fit: cover; }
 .set-cap { color: var(--muted); padding: .55rem var(--gutter) 0; font-family: var(--sans); text-transform: uppercase; letter-spacing: .2em; font-size: 10.5px; line-height: 1.6; }
 
 /* ---------- Unveil: 照片像拂去沙土一样从下往上显露 ---------- */
@@ -322,20 +327,15 @@ figcaption { color: var(--muted); padding: .75rem var(--gutter) 0; }
 }
 #luxor .veil.shown::after { height: 100%; transform: scaleX(1.2); opacity: 0; }
 
-/* 赫尔格达：红海的潮水带着波浪边缘从下往上漫上来 */
+/* 赫尔格达：像透过海水看东西，从朦胧、偏蓝慢慢变得清澈 */
 #hurghada .veil .frame, #hurghada .veil > img {
-  clip-path: polygon(0% 112%, 12.5% 106%, 25% 112%, 37.5% 106%, 50% 112%, 62.5% 106%, 75% 112%, 87.5% 106%, 100% 112%, 100% 112%, 0% 112%);
-  transform: translateY(10px) scale(1.03);
-  transition: clip-path 1.5s cubic-bezier(.45,.05,.25,1), transform 1.8s cubic-bezier(.2,.7,.2,1);
+  clip-path: none;
+  opacity: 0; filter: blur(16px) saturate(1.5) hue-rotate(-12deg);
+  transform: translateY(26px) scale(1.02);
+  transition: opacity 1s ease, filter 1.4s cubic-bezier(.2,.7,.2,1), transform 1.4s cubic-bezier(.2,.7,.2,1);
 }
-#hurghada .veil.shown .frame, #hurghada .veil.shown > img {
-  clip-path: polygon(0% -8%, 12.5% -14%, 25% -8%, 37.5% -14%, 50% -8%, 62.5% -14%, 75% -8%, 87.5% -14%, 100% -8%, 100% 100%, 0% 100%);
-  transform: none;
-}
-#hurghada .veil::after {
-  background: linear-gradient(to top, rgba(40,150,185,.55), rgba(120,210,225,.25) 60%, rgba(120,210,225,0));
-  transition: height 1.5s cubic-bezier(.45,.05,.25,1), opacity 1s .7s ease;
-}
+#hurghada .veil.shown .frame, #hurghada .veil.shown > img { opacity: 1; filter: none; transform: none; }
+#hurghada .veil::after { display: none; }
 
 /* 开罗：照片像金字塔一样，从塔尖向下展开 */
 #cairo .veil .frame, #cairo .veil > img {
@@ -349,4 +349,17 @@ figcaption { color: var(--muted); padding: .75rem var(--gutter) 0; }
 }
 #cairo .veil::after {
   background: linear-gradient(to top, rgba(214,170,110,.6), rgba(214,170,110,0));
+}
+
+/* 模糊占位：真图没下载完时先显示 24px 的模糊缩略图 */
+.media img { background-color: var(--paper-2); background-size: cover; background-position: center; }
+
+/* ---------- 横屏：竖图不撑满整屏宽度，最高不超过一屏 ---------- */
+@media (orientation: landscape) {
+  .media > img, .media .frame { width: auto; max-width: 100%; margin-left: auto; margin-right: auto; }
+  .media > img, .media .frame img.poster { max-height: 86vh; max-height: 86svh; width: auto; max-width: 100%; margin: 0 auto; }
+  .media .frame { width: fit-content; }
+  .media > img { display: block; }
+  .duo .media > img, .duo .media .frame img.poster { max-height: 72vh; max-height: 72svh; }
+  .opener { height: 100vh; height: 100svh; }
 }
