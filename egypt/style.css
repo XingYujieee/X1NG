@@ -188,16 +188,17 @@ figcaption { color: var(--muted); padding: .75rem var(--gutter) 0; }
   max-width: 46rem; margin: 2.6rem auto;
 }
 .pair .media { margin: 0; }
-.pair img { aspect-ratio: 3 / 4; object-fit: cover; }
 .pair-cap { color: var(--muted); max-width: 46rem; margin: -1.85rem auto 2.6rem; padding: 0 var(--gutter); }
 
 /* ---------- Photo sets (vertical) ---------- */
 .set { max-width: 46rem; margin: 2.8rem auto; display: grid; gap: 4px; }
 .set .media { margin: 0; max-width: none; }
-.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; max-width: 46rem; margin: 0 auto; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; max-width: 46rem; margin: 0 auto; align-items: start; }
+.stack { display: grid; gap: 4px; max-width: 46rem; margin: 0 auto; }
+.body > .stack { margin: 2.6rem auto; }
+.stack .media { margin: 0; max-width: none; }
 .body > .duo { margin: 2.6rem auto; }
 .duo .media { margin: 0; }
-.duo img { aspect-ratio: 4 / 5; object-fit: cover; }
 .set-cap { color: var(--muted); padding: .55rem var(--gutter) 0; font-family: var(--sans); text-transform: uppercase; letter-spacing: .2em; font-size: 10.5px; line-height: 1.6; }
 
 /* ---------- Unveil: 照片像拂去沙土一样从下往上显露 ---------- */
