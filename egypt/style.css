@@ -363,3 +363,18 @@ figcaption { color: var(--muted); padding: .75rem var(--gutter) 0; }
   .duo .media > img, .duo .media .frame img.poster { max-height: 72vh; max-height: 72svh; }
   .opener { height: 100vh; height: 100svh; }
 }
+
+/* ===== Responsive fixes ===== */
+html, body { overflow-x: clip; }
+/* the reveal animations scale photos up slightly; keep that inside the photo's own box */
+.media.veil { overflow: hidden; }
+.progress { overflow: hidden; }
+/* phones held sideways / short screens: covers fit the screen, titles stay visible */
+@media (max-height: 560px) {
+  .cover, .opener { min-height: 0; }
+  .cover h1 { font-size: clamp(2.4rem, 13vh, 4.5rem); margin: .3rem 0 .5rem; }
+  .cover-text { bottom: calc(3.2rem + env(safe-area-inset-bottom)); }
+  .opener h2 { font-size: clamp(2.4rem, 14vh, 5rem); }
+  .opener-text { bottom: 1.4rem; }
+  .intro { padding-top: 2.5rem; }
+}

@@ -336,7 +336,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .hover-preview.is-on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .hover-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 760px) {
-  .index-row { grid-template-columns: 36px 1fr auto; }
+  .index-row { grid-template-columns: 30px minmax(0, 1fr) auto; gap: 12px; }
+  .index-row .name { font-size: clamp(28px, 9vw, 48px); overflow-wrap: anywhere; }
   .index-row .zh { display: none; }
   .hover-preview { display: none; }
 }
@@ -365,11 +366,11 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 
 /* Continue-scrolling → next page */
 .next {
-  position: relative; height: 100vh; display: grid; place-items: center; text-align: center;
+  position: relative; height: 100vh; height: 100svh; display: grid; place-items: center; text-align: center;
   background: var(--dark); color: var(--on-dark); overflow: hidden;
 }
 .next__inner { display: grid; gap: 22px; justify-items: center; }
-.next__title { font-size: clamp(52px, 10vw, 180px); line-height: .9; letter-spacing: -0.06em; }
+.next__title { font-size: clamp(38px, 10vw, 180px); line-height: .9; letter-spacing: -0.06em; max-width: calc(100vw - 2 * var(--gutter)); overflow-wrap: anywhere; }
 .next__go { position: relative; display: grid; place-items: center; width: 88px; height: 88px; border-radius: 50%; color: var(--on-dark); transition: transform .5s cubic-bezier(.2,.8,.2,1), background .4s; }
 .next__go:hover, .next.is-ready .next__go { transform: scale(1.12); }
 .next.is-ready .next__go { background: rgba(255,255,255,.08); }
@@ -481,12 +482,13 @@ body.field-mode .toolbar { visibility: hidden; }
 .series-row:hover .thumb img { transform: scale(1.08); }
 .series-row:hover .name { color: var(--blue); }
 @media (max-width: 860px) {
-  .series-row { grid-template-columns: 1fr 120px; }
+  .series-row { grid-template-columns: minmax(0, 1fr) clamp(84px, 26vw, 120px); gap: 16px; }
+  .series-row .name { font-size: clamp(26px, 8vw, 44px); overflow-wrap: anywhere; }
   .series-row .idx, .series-row .desc { display: none; }
 }
 
 /* Series detail (dark) */
-.s-hero { position: relative; height: 100vh; min-height: 560px; overflow: hidden; }
+.s-hero { position: relative; height: 100vh; height: 100svh; min-height: 560px; overflow: hidden; }
 .s-hero__media { position: absolute; inset: 0; }
 .s-hero__media img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.12); }
 .s-hero__media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(11,12,16,.95) 0%, rgba(11,12,16,.25) 45%, rgba(11,12,16,.35) 100%); }
@@ -753,3 +755,29 @@ body.field-mode .toolbar { visibility: hidden; }
   .vf__exif { right: 16px; left: 16px; justify-content: space-between; }
 }
 @media (prefers-reduced-motion: reduce) { .vf__curtain.go i, .vf__flash.go { animation: none; } }
+
+/* ===================== Responsive fixes (all devices / orientations) ===================== */
+/* Never let a stray element create sideways scrolling (clip keeps position: sticky working) */
+html, body { overflow-x: clip; }
+
+/* Short screens = phones held sideways, small laptops with toolbars: full-screen sections
+   should fit the screen instead of forcing a 560px minimum. */
+@media (max-height: 560px) {
+  .s-hero, .film { min-height: 0; }
+  .next__title { font-size: clamp(34px, 8vh, 120px); }
+  .next__inner { gap: 14px; }
+  /* Work filters: one swipeable row instead of a block that eats half the screen */
+  .toolbar { position: static; flex-wrap: nowrap; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; min-width: 0; scrollbar-width: none; border-radius: 16px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; }
+  .view-toggle { flex: none; }
+  /* RAW Lab: a comparison should fit on one screen so the slider is usable */
+  .compare img { max-height: 82svh; width: auto; max-width: 100%; margin: 0 auto; }
+  .compare { width: fit-content; max-width: 100%; justify-self: center; }
+}
+/* Very narrow phones (≤ 380px): tighter header and gutters */
+@media (max-width: 380px) {
+  .menu-btn { width: 42px; height: 42px; }
+  .series-row .thumb { border-radius: 9px; }
+}

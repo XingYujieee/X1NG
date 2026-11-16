@@ -234,7 +234,7 @@
     ticking = false;
     var y = window.scrollY, max = document.documentElement.scrollHeight - innerHeight;
     bar.classList.toggle('show', y > cover.offsetHeight * .8);
-    fill.style.transform = 'scaleX(' + (max > 0 ? y / max : 0) + ')';
+    fill.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, Math.max(0, y / max)) : 0) + ')';
     var cur = 'Egypt, in Motion';
     [].forEach.call(chapters, function (c) { if (c.offsetTop - innerHeight * .4 < y) cur = c.dataset.title; });
     if (label.textContent !== cur) label.textContent = cur;
