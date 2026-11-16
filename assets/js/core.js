@@ -268,17 +268,24 @@ function initNext() {
   if (!sec || !ScrollTrigger) return;
   const ring = $('.next__ring .fill', sec);
   const inner = $('.next__inner', sec);
-  let fired = false;
-  ScrollTrigger.create({
-    trigger: sec, start: 'top bottom', end: 'bottom bottom',
-    onUpdate: (self) => {
-      const p = self.progress;
-      ring.style.strokeDashoffset = String(1 - Math.min(1, Math.max(0, (p - 0.35) / 0.63)));
-      if (!reduced) inner.style.transform = `translateY(${(1 - p) * -30}vh)`;
-      // no automatic jump any more (it trapped people at the bottom of the page): when the ring is full the button invites a click
-      sec.classList.toggle('is-ready', p > 0.97);
-    },
-  });
+  // Progress is measured from the live layout, not ScrollTrigger's cached start/end:
+  // on phones the address bar shows/hides without a ScrollTrigger refresh, so the
+  // cached end point could become unreachable and the ring never filled.
+  const update = () => {
+    const vh = window.innerHeight;
+    const r = sec.getBoundingClientRect();
+    const doc = document.documentElement;
+    const atBottom = window.scrollY + vh >= doc.scrollHeight - 2;
+    const p = atBottom ? 1 : Math.min(1, Math.max(0, (vh - r.top) / Math.max(1, r.height)));
+    ring.style.strokeDashoffset = String(1 - Math.min(1, Math.max(0, (p - 0.35) / 0.63)));
+    if (!reduced) inner.style.transform = `translateY(${(1 - p) * -30}vh)`;
+    // no automatic jump any more (it trapped people at the bottom of the page): when the ring is full the button invites a click
+    sec.classList.toggle('is-ready', p > 0.97);
+  };
+  ScrollTrigger.create({ trigger: sec, start: 'top bottom', end: 'bottom bottom', onUpdate: update });
+  window.addEventListener('resize', update, { passive: true });
+  window.visualViewport?.addEventListener('resize', update, { passive: true });
+  window.addEventListener('scroll', update, { passive: true });
 }
 
 /* ---------- Preloader ---------- */
