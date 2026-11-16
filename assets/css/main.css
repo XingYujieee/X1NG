@@ -781,3 +781,11 @@ html, body { overflow-x: clip; }
   .menu-btn { width: 42px; height: 42px; }
   .series-row .thumb { border-radius: 9px; }
 }
+/* Mid-size screens (iPhone Duo unfolded, tablets, small laptops): the Work filters stay on
+   one swipeable row so the sticky bar never grows to two lines over the photos. */
+@media (max-width: 1280px) {
+  .toolbar { flex-wrap: nowrap; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; min-width: 0; scrollbar-width: none; border-radius: 16px; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip, .view-toggle { flex: none; }
+}
