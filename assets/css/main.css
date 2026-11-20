@@ -1021,3 +1021,32 @@ body::after {
 .vf__copy { opacity: calc(1 - var(--orbit) * .85); transition: opacity .2s; }
 .vf__chapter { filter: opacity(calc(1 - var(--orbit) * .85)); }
 .vf__af { opacity: calc(1 - var(--orbit)); }
+
+/* ---------- Relief prints (relief.js) ---------- */
+canvas.relief { display: block; width: 100%; height: 100%; }
+.card__media canvas.relief { height: 118%; }
+.chapter__cover canvas.relief { height: 116%; }
+.about__portrait canvas.relief { height: 115%; }
+.card:hover .card__media canvas.relief { transform-origin: center; }
+
+/* ---------- Developer-fluid ink (ink.js) ---------- */
+.has-ink { isolation: isolate; }
+canvas.ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; filter: blur(42px) saturate(1.25); opacity: .62; mix-blend-mode: screen; }
+.cv { position: relative; overflow: hidden; }
+
+/* ---------- Footer word pressed into the paper ---------- */
+.footer__word {
+  --lx: 1; --ly: 1;
+  color: var(--bg);
+  text-shadow:
+    calc(var(--lx) * -1.2px) calc(var(--ly) * -1.2px) 1px rgba(255, 255, 255, .95),
+    calc(var(--lx) * 1.6px) calc(var(--ly) * 1.6px) 2px rgba(13, 14, 19, .24),
+    calc(var(--lx) * 6px) calc(var(--ly) * 9px) 22px rgba(13, 14, 19, .14);
+}
+.is-dark .footer__word {
+  color: var(--dark);
+  text-shadow:
+    calc(var(--lx) * -1.2px) calc(var(--ly) * -1.2px) 1px rgba(255, 255, 255, .16),
+    calc(var(--lx) * 1.6px) calc(var(--ly) * 1.6px) 2px rgba(0, 0, 0, .8),
+    calc(var(--lx) * 6px) calc(var(--ly) * 9px) 24px rgba(0, 0, 0, .6);
+}

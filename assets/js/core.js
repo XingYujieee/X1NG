@@ -1,6 +1,8 @@
 /* Shared chrome + motion system for every page. */
 import { CONTACT } from './data.js';
 import { createIris, initDevelop, initMagnetic, initLens, initScramble } from './fx.js';
+import { initRelief } from './relief.js';
+import { mountInk, paletteFrom } from './ink.js';
 
 const gsap = window.gsap;
 const ScrollTrigger = window.ScrollTrigger;
@@ -162,6 +164,25 @@ function initScroll() {
   gsap.ticker.lagSmoothing(0);
 }
 
+/* the big X1NG in the footer is pressed into the paper; its light follows the pointer */
+function initEmboss() {
+  const w = $('.footer__word');
+  if (!w || reduced || !finePointer) return;
+  let lx = 1, ly = 1, tx = 1, ty = 1, on = false;
+  window.addEventListener('pointermove', (e) => {
+    const r = w.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > innerHeight) return;
+    tx = Math.max(-1.5, Math.min(1.5, (e.clientX - (r.left + r.width / 2)) / (r.width / 2) * -1.5));
+    ty = Math.max(-1.5, Math.min(1.5, (e.clientY - (r.top + r.height / 2)) / (innerHeight / 2) * -1.5));
+    if (!on) { on = true; gsap.ticker.add(step); }
+  }, { passive: true });
+  const step = () => {
+    lx += (tx - lx) * 0.08; ly += (ty - ly) * 0.08;
+    w.style.setProperty('--lx', lx.toFixed(3)); w.style.setProperty('--ly', ly.toFixed(3));
+    if (Math.abs(tx - lx) < 0.002 && Math.abs(ty - ly) < 0.002) { on = false; gsap.ticker.remove(step); }
+  };
+}
+
 function initHeaderAutoHide() {
   const header = $('.site-header');
   let last = 0;
@@ -178,6 +199,7 @@ function initHeaderAutoHide() {
 /* ---------- Reveals ---------- */
 export function initReveals(root = document) {
   if (!gsap) return;
+  initRelief(root);                                    // before parallax: relief canvases take over the photo's data-parallax
   $$('[data-split]', root).forEach((el) => {
     const words = splitWords(el);
     if (reduced) return;
@@ -288,6 +310,8 @@ function initTransitions() {
 function initNext() {
   const sec = $('.next');
   if (!sec || !ScrollTrigger) return;
+  const bgImg = $('.next__bg img', sec);
+  if (bgImg) mountInk(sec, paletteFrom([bgImg.getAttribute('src')]), { after: $('.next__bg', sec), z: 0, strength: 0.8 });
   const ring = $('.next__ring .fill', sec);
   const inner = $('.next__inner', sec);
   let fired = false;
@@ -357,6 +381,7 @@ export function boot({ page, dark = false, footer = true, next = null } = {}) {
   initTransitions();
   initMagnetic();
   initLens();
+  initEmboss();
   $$('[data-top]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); lenis ? lenis.scrollTo(0, { duration: 1.6 }) : window.scrollTo({ top: 0, behavior: 'smooth' }); }));
   return {
     ready() {

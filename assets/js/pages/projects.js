@@ -2,6 +2,7 @@ import { boot, $, $$, esc, pad, reduced, gsap, ScrollTrigger, getLenis, finePoin
 import { byN } from '../data.js';
 import { PROJECTS, PROJECT_KINDS, CV, coverSvg } from '../profile.js';
 import { scramble } from '../fx.js';
+import { mountInk, paletteFromHues } from '../ink.js';
 
 const app = boot({ page: 'projects', next: { href: 'about.html', label: 'About Xing', sub: 'The person behind the lens · 关于我', image: byN(95).m } });
 
@@ -95,6 +96,8 @@ $('[data-cv]').innerHTML = `
 $('[data-cv-pdf]').innerHTML = CV.pdf
   ? `<a class="pill pill--light roll-host" href="${CV.pdf}" download><span class="dot"></span><span data-roll>Download CV · PDF</span></a>`
   : '<span class="pill pill--ghost is-disabled" aria-disabled="true"><span class="dot"></span>PDF coming soon · 即将上传</span>';
+
+mountInk($('.cv'), paletteFromHues(PROJECTS.map((p) => p.hue)), { strength: 0.7 });
 
 app.ready();
 if (location.hash === '#cv') setTimeout(() => { const t = $('#cv'); getLenis() ? getLenis().scrollTo(t, { offset: -40, duration: 1.4 }) : t.scrollIntoView(); }, 600);

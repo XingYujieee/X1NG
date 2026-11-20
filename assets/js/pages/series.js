@@ -47,7 +47,7 @@ function renderTravelIndex() {
             </div>
           </div>
           <a class="chapter__cover" href="travel.html?id=${t.id}" data-cursor="Open chapter" data-reveal>
-            <img src="${cover.m}" srcset="${cover.m} 1280w, ${cover.l} 2400w" sizes="(max-width: 860px) 100vw, 62vw" alt="${esc(cover.title)}" loading="lazy" data-parallax="5">
+            <img src="${cover.m}" alt="${esc(cover.title)}" loading="lazy" data-parallax="5" data-relief>
           </a>
           <div class="chapter__strip">
             ${thumbs.map((p, i) => `<a href="travel.html?id=${t.id}" data-reveal data-reveal-delay="${(0.1 + i * 0.07).toFixed(2)}" aria-label="${esc(p.title)}"><img src="${p.s}" alt="" loading="lazy"></a>`).join('')}

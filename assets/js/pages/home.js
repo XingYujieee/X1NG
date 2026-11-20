@@ -2,6 +2,7 @@ import { boot, preloader, $, $$, h, esc, pad, reduced, finePointer, gsap, Scroll
 import { photos, series, travel, byN, heroFrames, CATEGORIES, STYLES, texSrc } from '../data.js';
 import { mountViewfinder } from '../viewfinder/hero.js';
 import { PROJECTS, FEATURED_PROJECTS, coverSvg } from '../profile.js';
+import { mountInk, paletteFrom } from '../ink.js';
 import { getLenis } from '../core.js';
 
 const app = boot({ page: 'home', next: { href: 'work.html', label: 'The Work', sub: `All ${photos.length} frames · 全部作品`, image: byN(86).m } });
@@ -21,7 +22,7 @@ $('[data-cards]').innerHTML = series.slice(0, 4).map((s, i) => {
   const cover = byN(s.cover);
   return `<a class="card roll-host" href="series.html?id=${s.id}" data-cursor="Open series" data-scramble-host>
     <div class="card__media" data-reveal>
-      <img src="${cover.m}" alt="${esc(cover.title)} — ${esc(s.en)}" loading="lazy" data-parallax="6">
+      <img src="${cover.m}" alt="${esc(cover.title)} — ${esc(s.en)}" loading="lazy" data-parallax="6" data-relief>
       <span class="count mono">${pad(s.frames.length)} frames</span>
     </div>
     <div class="card__meta mono"><span data-scramble>${pad(i + 1)} / ${esc(s.region)}</span><span data-scramble>${s.tags.join(' • ')}</span></div>
@@ -57,6 +58,10 @@ if (!reduced) {
     });
   });
 }
+
+/* ---------- Developer-fluid colour in the dark rooms ---------- */
+mountInk($('.tv__sticky'), paletteFrom(travel.map((t) => byN(t.cover).s)), { strength: 0.9 });
+mountInk($('.band'), paletteFrom(STYLES.map((st) => byN(st.cover).s)), { strength: 0.75 });
 
 /* ---------- Beyond the camera: featured projects ---------- */
 $('[data-proj-mini]').innerHTML = FEATURED_PROJECTS.map((id) => PROJECTS.find((p) => p.id === id)).filter(Boolean).map((p) => {
