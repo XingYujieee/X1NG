@@ -1,5 +1,6 @@
 /* Shared chrome + motion system for every page. */
 import { CONTACT } from './data.js';
+import { createIris, initDevelop, initMagnetic, initLens, initScramble } from './fx.js';
 
 const gsap = window.gsap;
 const ScrollTrigger = window.ScrollTrigger;
@@ -69,7 +70,7 @@ function buildChrome(page, opts) {
   const panel = h(`
     <div class="menu-panel" id="menu-panel" aria-hidden="true">
       <nav aria-label="Primary">
-        ${NAV.map((n, i) => `<a class="roll-host" href="${n.href}" ${n.key === page ? 'aria-current="page"' : ''}><span data-roll>${n.en}</span><small>${pad(i + 1)} · ${n.zh}</small></a>`).join('')}
+        ${NAV.map((n, i) => `<a class="roll-host" data-scramble-host href="${n.href}" ${n.key === page ? 'aria-current="page"' : ''}><span data-roll>${n.en}</span><small data-scramble>${pad(i + 1)} · ${n.zh}</small></a>`).join('')}
       </nav>
       <div class="menu-foot">
         <p class="mono muted">Say hello · 联系</p>
@@ -80,9 +81,8 @@ function buildChrome(page, opts) {
   const brand = h('<a class="brand" href="index.html" aria-label="X1NG — home">X1NG <small>Photographic field</small></a>');
   const scrim = h('<div class="menu-scrim"></div>');
   const cursor = h('<div class="cursor" aria-hidden="true"><div class="cursor__pill"><span class="cursor__text">View</span></div></div>');
-  const transition = h(`<div class="transition" aria-hidden="true">${'<i></i>'.repeat(5)}</div>`);
   document.body.prepend(h('<a class="skip-link" href="#main">Skip to content</a>'));
-  document.body.append(header, brand, scrim, panel, cursor, transition);
+  document.body.append(header, brand, scrim, panel, cursor);
 
   const btn = $('.menu-btn', header);
   const setMenu = (open) => {
@@ -194,6 +194,8 @@ export function initReveals(root = document) {
     });
   }
   $$('[data-roll]', root).forEach(roll);
+  initDevelop(root);
+  initScramble(root);
 }
 
 /* ---------- Cursor label ---------- */
@@ -218,28 +220,40 @@ export const setCursor = (label) => {
   if (label) { $('.cursor__text', c).textContent = label; c.classList.add('is-active'); } else c.classList.remove('is-active');
 };
 
-/* ---------- Page transitions ---------- */
+/* ---------- Page transitions: aperture iris ---------- */
 const TKEY = 'x1ng:transition';
+const LKEY = 'x1ng:transition-label';
+let iris = null;
+const labelFor = (url) => {
+  const file = url.pathname.split('/').pop() || 'index.html';
+  if (/\/egypt\/?$/.test(url.pathname)) return 'Egypt · 埃及随笔';
+  const n = NAV.find((x) => x.href === file);
+  if (file === 'series.html' && url.searchParams.get('id')) return `Series · ${url.searchParams.get('id')}`;
+  return n ? `${n.en} · ${n.zh}` : '';
+};
 function initTransitions() {
-  const overlay = $('.transition');
-  const bars = $$('i', overlay);
+  iris = createIris();
   let busy = false;
-
-  const reveal = () => {
-    if (sessionStorage.getItem(TKEY) !== '1' || reduced) return;
+  const arriving = sessionStorage.getItem(TKEY) === '1' && !reduced;
+  if (arriving) {
     sessionStorage.removeItem(TKEY);
-    gsap.set(bars, { scaleY: 1, transformOrigin: 'top' });
-    gsap.to(bars, { scaleY: 0, duration: 0.9, ease: 'expo.inOut', stagger: 0.05, delay: 0.05 });
-  };
-  reveal();
+    iris.shut(sessionStorage.getItem(LKEY) || '');
+    document.documentElement.classList.remove('is-arriving');
+    requestAnimationFrame(() => iris.open({ delay: 0.12 }));
+  } else document.documentElement.classList.remove('is-arriving');
+
+  let lastX = 0.5, lastY = 0.5;
+  document.addEventListener('pointerdown', (e) => { lastX = e.clientX / innerWidth; lastY = e.clientY / innerHeight; }, { passive: true });
 
   window.navigateTo = (href) => {
     if (busy) return; busy = true;
     if (reduced) { location.href = href; return; }
+    const label = labelFor(new URL(href, location.href));
     sessionStorage.setItem(TKEY, '1');
-    gsap.set(bars, { transformOrigin: 'bottom' });
-    gsap.to(bars, { scaleY: 1, duration: 0.75, ease: 'expo.inOut', stagger: 0.05, onComplete: () => { location.href = href; } });
-    setTimeout(() => { location.href = href; }, 1600);
+    sessionStorage.setItem(LKEY, label);
+    lenis?.stop();
+    iris.close({ x: lastX, y: lastY, label }).then(() => { location.href = href; });
+    setTimeout(() => { location.href = href; }, 1800);
   };
 
   document.addEventListener('click', (e) => {
@@ -258,8 +272,8 @@ function initTransitions() {
     document.documentElement.classList.remove('menu-open');
     window.navigateTo(url.href);
   });
-  // bfcache: make sure overlay is cleared when user comes back
-  window.addEventListener('pageshow', (e) => { if (e.persisted) { busy = false; gsap.set(bars, { scaleY: 0 }); } });
+  // bfcache: make sure the iris is open when the user comes back
+  window.addEventListener('pageshow', (e) => { if (e.persisted) { busy = false; lenis?.start(); iris.open({ duration: 0.6, delay: 0 }); } });
 }
 
 /* ---------- Next page (continue scrolling) ---------- */
@@ -286,6 +300,7 @@ export function preloader(promise) {
   const seen = sessionStorage.getItem('x1ng:loaded');
   if (seen || reduced) { sessionStorage.setItem('x1ng:loaded', '1'); return promise; }
   const el = h(`<div class="preloader" role="status" aria-live="polite">
+      <div class="preloader__ring" aria-hidden="true"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54"/><circle class="arc" cx="60" cy="60" r="54" pathLength="1"/></svg><span class="mono">ƒ/1.4</span></div>
       <div class="preloader__bar"><i></i></div>
       <div class="preloader__count">000</div>
       <p class="preloader__note mono">Developing negatives<br>正在冲洗底片</p>
@@ -293,6 +308,7 @@ export function preloader(promise) {
   document.body.append(el);
   lenis?.stop();
   const bar = $('.preloader__bar i', el);
+  const arc = $('.preloader__ring .arc', el);
   const count = $('.preloader__count', el);
   const state = { p: 0 };
   let target = 0.3;
@@ -300,6 +316,7 @@ export function preloader(promise) {
   const tick = () => {
     state.p += (target - state.p) * 0.06;
     bar.style.transform = `scaleX(${state.p})`;
+    arc.style.strokeDashoffset = String(1 - state.p);
     count.textContent = pad(Math.round(state.p * 100), 3);
   };
   gsap.ticker.add(tick);
@@ -310,7 +327,13 @@ export function preloader(promise) {
       gsap.ticker.remove(tick); tw.kill();
       bar.style.transform = 'scaleX(1)'; count.textContent = '100';
       sessionStorage.setItem('x1ng:loaded', '1');
-      gsap.to(el, { yPercent: -100, duration: 1.1, ease: 'expo.inOut', delay: 0.15, onStart: () => res(r), onComplete: () => { el.remove(); lenis?.start(); } });
+      // hand over to the aperture: shut it under the (same-coloured) preloader, drop the preloader, open the lens
+      gsap.to(el.children, { opacity: 0, y: -14, duration: 0.45, ease: 'power2.in', stagger: 0.04, onComplete: () => {
+        iris ? iris.shut('') : null;
+        el.remove();
+        res(r);
+        (iris ? iris.open({ duration: 1.5, delay: 0.05 }) : Promise.resolve()).then(() => lenis?.start());
+      } });
     }, 650);
   }));
 }
@@ -324,6 +347,8 @@ export function boot({ page, dark = false, footer = true, next = null } = {}) {
   initHeaderAutoHide();
   initCursor();
   initTransitions();
+  initMagnetic();
+  initLens();
   $$('[data-top]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); lenis ? lenis.scrollTo(0, { duration: 1.6 }) : window.scrollTo({ top: 0, behavior: 'smooth' }); }));
   return {
     ready() {

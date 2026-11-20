@@ -20,7 +20,7 @@ export const CATEGORIES = [
 export const STYLES = [
   { id: 'blue',     en: 'Blue Hour',        zh: '蓝调城市', cover: 1,   note: 'Cities in the cool minutes after sunset, when the lights come on.', noteZh: '日落后的蓝调时刻，城市一盏盏亮起。' },
   { id: 'gold',     en: 'Golden Light',     zh: '金色时刻', cover: 95,  note: 'Alpenglow, burning skies and the warm edges of the day.', noteZh: '日照金山、火烧云，一天中最暖的边缘。' },
-  { id: 'vast',     en: 'Wide Open',        zh: '辽阔',     cover: 47,  note: 'Plateaus, peaks, fog seas — and one small figure for scale.', noteZh: '高原、雪山与云海，以及画面里那个小小的人。' },
+  { id: 'vast',     en: 'Wide Open',        zh: '辽阔',     cover: 126, note: 'Plateaus, peaks, fog seas — and one small figure for scale.', noteZh: '高原、雪山与云海，以及画面里那个小小的人。' },
   { id: 'night',    en: 'After Dark',       zh: '夜与星',   cover: 39,  note: 'Star trails, fireflies, lightning and neon.', noteZh: '星轨、萤火、闪电与霓虹。' },
   { id: 'geometry', en: 'Geometry',         zh: '几何',     cover: 25,  note: 'Spirals, symmetry and patterns found in architecture and land.', noteZh: '在建筑与大地中发现的螺旋、对称与秩序。' },
   { id: 'people',   en: 'Human Moments',    zh: '人间',     cover: 20,  note: 'Streets, festivals and the people inside the frame.', noteZh: '街头、节庆，以及画面里的人。' },
@@ -28,20 +28,42 @@ export const STYLES = [
 ];
 export const styleById = (id) => STYLES.find((s) => s.id === id);
 
-export const photos = RAW_PHOTOS.map(([id, w, h, cat, title, zh, place, style], i) => ({
+/* Frames taken off the site in the Nov 2026 edit (weaker or near-duplicate shots).
+   Files stay in media/ and numbering stays stable (deep links keep working) — delete a
+   number here to put a frame back on the site. */
+export const RETIRED = new Set([3, 4, 23, 31, 38, 43, 45, 46, 49, 53, 57, 58, 62, 67, 73, 74, 83, 93, 98, 100, 101, 104, 112, 113, 116, 117, 119]);
+
+/* Every frame ever numbered (byN works for all of them) … */
+export const allPhotos = RAW_PHOTOS.map(([id, w, h, cat, title, zh, place, style], i) => ({
   n: i + 1, id, w, h, ratio: w / h, cat, style, title, zh, place,
   s: `media/s/${id}.webp`,   // 640px  — grid, WebGL textures
   m: `media/m/${id}.webp`,   // 1280px — cards, series pages
   l: `media/l/${id}.webp`,   // 2400px — lightbox
 }));
 
-export const byN = (n) => photos[n - 1];
+/* … and the curated archive that the site actually shows. */
+export const NEW_FRAMES = [126, 127, 128, 129, 130, 131];
+allPhotos.forEach((p) => { p.isNew = NEW_FRAMES.includes(p.n); });
+/* newest frames lead the archive */
+export const photos = [...allPhotos.filter((p) => p.isNew), ...allPhotos.filter((p) => !p.isNew && !RETIRED.has(p.n))];
+
+export const byN = (n) => allPhotos[n - 1];
 /* WebGL texture source. When the site is opened straight from disk (file://),
    browsers refuse to upload local images to WebGL, so a pre-embedded copy is used. */
 export const texSrc = (p) => (typeof window !== 'undefined' && window.X1NG_TEX && window.X1NG_TEX[p.id]) || p.s;
-export const byId = (id) => photos.find((p) => p.id === id);
+export const byId = (id) => allPhotos.find((p) => p.id === id);
 
 export const series = [
+  {
+    id: 'egypt',
+    en: 'Egypt, from the Air', zh: '埃及 · 光与沙',
+    region: 'Luxor · Giza · Cairo', year: '2026', tags: ['Travel', 'Aerial', 'New'],
+    cover: 128,
+    lede: 'Dawn over the West Bank in a balloon basket, Hatshepsut cut into the cliff below, then the pyramids again and again — in fog, through glass, behind the minarets of Cairo.',
+    ledeZh: '在卢克索西岸的热气球上等日出，脚下是嵌进山崖的哈特谢普苏特神庙；再到吉萨，雾里、玻璃后、开罗宣礼塔背后，一次次遇见金字塔。',
+    frames: [128, 126, 129, 127, 130, 131],
+    journal: 'egypt/',
+  },
   {
     id: 'yunnan',
     en: 'Yunnan Journey', zh: '云南之旅',
@@ -121,11 +143,14 @@ export const journals = [
   },
 ];
 
+/* Retired frames drop out of every series and of the hero automatically. */
+series.forEach((s) => { s.frames = s.frames.filter((n) => !RETIRED.has(n)); });
+
 export const seriesById = (id) => series.find((s) => s.id === id);
 export const seriesOf = (n) => series.find((s) => s.frames.includes(n));
 
 /* Photos that anchor the 3D hero — strong, varied, readable at small size. */
-export const heroFrames = [102, 95, 20, 25, 86, 39, 47, 21, 55, 8, 65, 34, 16, 125, 77, 91, 13, 124, 44, 88, 56, 70, 1, 122, 96, 63];
+export const heroFrames = [126, 102, 95, 129, 20, 25, 86, 128, 39, 47, 21, 131, 55, 8, 65, 34, 16, 125, 77, 91, 13, 124, 44, 88, 56, 70, 1, 122, 96, 63].filter((n) => !RETIRED.has(n));
 
 const PAN = [
   'https://pan.baidu.com/s/1fnFnoaW2alaQI63GItltfA?pwd=kstr',

@@ -12,7 +12,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/fonts.css">
   <link rel="stylesheet" href="assets/css/main.css">
-  <script>document.documentElement.classList.add('js')</script>
+  <script>document.documentElement.classList.add('js');try{if(sessionStorage.getItem('x1ng:transition')==='1'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('is-arriving')}catch(e){}</script>
   <script src="assets/vendor/gsap.min.js" defer></script>
   <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
   <script src="assets/vendor/lenis.min.js" defer></script>
@@ -72,11 +72,38 @@
       </div>
     </section>
 
+    <!-- 02b · New: Egypt — sticky horizontal film strip. Panels are built in home.js from the
+         'egypt' series; scroll moves the strip sideways, each photo drifts inside its frame. -->
+    <section class="eg" data-eg aria-labelledby="eg-title">
+      <div class="eg__sticky">
+        <div class="eg__word" aria-hidden="true" data-eg-word>EGYPT&nbsp;·&nbsp;مصر&nbsp;·&nbsp;EGYPT</div>
+        <div class="eg__track" data-eg-track>
+          <div class="eg__intro">
+            <p class="mono"><span class="tag-new">New</span><span data-scramble>Series 01 · Nov 2026</span></p>
+            <h2 id="eg-title" class="eg__title"><span data-split>Egypt,</span> <em data-split>from the air.</em></h2>
+            <p class="zh">埃及 · 光与沙<br>卢克索的热气球、嵌进山崖的神庙，还有雾里、玻璃后、宣礼塔背后的金字塔。</p>
+            <p class="mono eg__hint"><span>Keep scrolling · 继续滚动</span><i aria-hidden="true"></i></p>
+          </div>
+          <div class="eg__panels" data-eg-panels></div>
+          <div class="eg__end">
+            <p class="mono muted">06 frames · Luxor — Giza — Cairo</p>
+            <a class="eg__more roll-host" href="series.html?id=egypt" data-cursor="Open series"><span data-roll>Open the series</span> <span aria-hidden="true">→</span></a>
+            <a class="pill pill--light roll-host" href="egypt/"><span class="dot"></span><span data-roll>Read the journal · 随笔</span></a>
+          </div>
+        </div>
+        <div class="eg__hud mono" aria-hidden="true">
+          <span data-eg-count>00 / 06</span>
+          <span class="eg__bar"><i data-eg-bar></i></span>
+          <span data-eg-place>Luxor, Egypt</span>
+        </div>
+      </div>
+    </section>
+
     <!-- 03 · Featured series -->
     <section class="wrap" aria-labelledby="series-title">
       <div class="section-head">
         <h2 id="series-title" class="h2" data-split>Featured Series</h2>
-        <p class="mono muted" data-fade>Seven bodies of work — from plateau roads to city nights. 七个系列，从高原公路到城市夜色。</p>
+        <p class="mono muted" data-fade>Eight bodies of work — from Nile dawns and plateau roads to city nights. 八个系列，从尼罗河的清晨、高原公路到城市夜色。</p>
       </div>
       <div class="cards" data-cards></div>
       <div style="display:flex;justify-content:center;margin-top:clamp(60px,8vw,120px)">
@@ -88,7 +115,7 @@
     <section class="section">
       <div class="band dark" aria-labelledby="band-title">
         <div class="band__head">
-          <h2 id="band-title" class="h2" data-split>Not a grid. <em>A field of 125 frames.</em></h2>
+          <h2 id="band-title" class="h2"><span data-split>Not a grid.</span> <em>A field of <span data-total>104</span> frames.</em></h2>
           <a class="pill pill--light roll-host" href="work.html?view=field"><span class="dot"></span><span data-roll>Enter the field</span></a>
         </div>
         <div data-marquee></div>

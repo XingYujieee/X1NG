@@ -12,7 +12,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/fonts.css">
   <link rel="stylesheet" href="assets/css/main.css">
-  <script>document.documentElement.classList.add('js')</script>
+  <script>document.documentElement.classList.add('js');try{if(sessionStorage.getItem('x1ng:transition')==='1'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('is-arriving')}catch(e){}</script>
   <script src="assets/vendor/gsap.min.js" defer></script>
   <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
   <script src="assets/vendor/lenis.min.js" defer></script>
@@ -26,7 +26,7 @@
     </section>
     <section class="section wrap" style="padding-top:clamp(40px,6vw,90px)">
       <div class="about">
-        <figure class="about__portrait" data-fade><img data-portrait alt="Xing with a camera by a window" data-parallax="6"></figure>
+        <figure class="about__portrait" data-reveal><img data-portrait alt="Xing with a camera by a window" data-parallax="6"></figure>
         <div class="about__body">
           <p class="h3" data-split>A Nanjing-based photographer who keeps getting up before sunrise — for blue hours over the city, first light on high mountains, and the quiet human moments in between.</p>
           <p class="zh" data-fade>大家好，我是<strong>星光</strong>，一名常驻南京的摄影爱好者。我的镜头主要聚焦于城市风光和自然风光，热衷于在日常中捕捉那些被忽略的美丽瞬间。对我来说，摄影不仅是记录世界的方式，更是“在光影中寻找世界的另一种语言”。无论是城市的繁华街角还是大自然的宁静角落，我都试图通过作品传达每一片风景背后的故事。</p>

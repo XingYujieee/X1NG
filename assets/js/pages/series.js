@@ -18,15 +18,15 @@ function renderIndex() {
     <section class="page-head wrap">
       <div class="page-head__row">
         <h1 class="h1"><span data-split>Series</span><sup>${pad(series.length)}</sup></h1>
-        <p class="lead" data-fade>Seven bodies of work, ${total} frames — two long journeys and five ongoing studies. <span class="zh muted">两段长途旅行，五个持续进行的主题。</span></p>
+        <p class="lead" data-fade>${series.length === 8 ? 'Eight' : series.length} bodies of work, ${total} frames — three long journeys and five ongoing studies. <span class="zh muted">三段长途旅行，五个持续进行的主题。</span></p>
       </div>
       <div class="series-list">
         ${series.map((s, i) => `
           <a class="series-row roll-host" href="series.html?id=${s.id}" data-cursor="Open" data-fade>
             <span class="idx mono">${pad(i + 1)}</span>
-            <span class="name"><span data-roll>${esc(s.en)}</span><span class="zh">${esc(s.zh)} · ${esc(s.region)}</span></span>
+            <span class="name"><span data-roll>${esc(s.en)}</span>${s.tags.includes('New') ? '<b class="tag-new">New</b>' : ''}<span class="zh">${esc(s.zh)} · ${esc(s.region)}</span></span>
             <span class="desc">${esc(s.lede)}</span>
-            <span class="thumb"><img src="${byN(s.cover).m}" alt="" loading="lazy"></span>
+            <span class="thumb" data-reveal><img src="${byN(s.cover).m}" alt="" loading="lazy"></span>
           </a>`).join('')}
       </div>
       <p class="mono" style="margin-top:4rem" data-fade>Journals · 游记</p>
@@ -72,7 +72,7 @@ function renderDetail(s) {
         <div class="s-meta mono">
           <span>Region<b>${esc(s.region)}</b></span>
           <span>Year<b>${esc(years)}</b></span>
-          <span>Frames<b>${pad(frames.length)}</b></span>
+          <span>Frames<b data-scramble>${pad(frames.length)}</b></span>
           <span>Tags<b>${s.tags.map(esc).join(' · ')}</b></span>
         </div>
       </div>
@@ -82,13 +82,14 @@ function renderDetail(s) {
       <div class="s-intro">
         <p class="lead" data-split>${esc(s.lede)}</p>
         <p class="zh" data-fade>${esc(s.ledeZh)}</p>
+        ${s.journal ? `<div class="s-intro__links" data-fade><a class="pill pill--light roll-host" href="${s.journal}"><span class="dot"></span><span data-roll>Read the journal · 阅读随笔</span></a></div>` : ''}
       </div>
     </section>
 
     <section class="wrap">
       <div class="sequence">
         ${seq.map(({ p, kind }) => `
-          <figure class="seq seq--${kind}" data-n="${p.n}" data-cursor="View" data-fade tabindex="0" role="button" aria-label="Open ${esc(p.title)}">
+          <figure class="seq seq--${kind}" data-n="${p.n}" data-cursor="View" data-reveal tabindex="0" role="button" aria-label="Open ${esc(p.title)}">
             <img src="${p.m}" srcset="${p.m} 1280w, ${p.l} 2400w" sizes="${kind === 'full' ? '100vw' : '60vw'}" alt="${esc(p.title)}" loading="lazy" data-parallax="5">
             <figcaption class="mono"><span>${esc(p.title)} · ${esc(p.zh)}</span><span>#${pad(p.n, 3)}</span></figcaption>
           </figure>`).join('')}

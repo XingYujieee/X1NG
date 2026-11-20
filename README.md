@@ -21,7 +21,7 @@ bash assets/tools/build.sh   # needs Node.js
 | --- | --- |
 | `index.html` | Viewfinder hero (four places, scroll-driven real-time WebGL, click to focus, hold for long exposure), intro, featured series, archive marquee, subjects index, CTA |
 | `beneath.html` | The viewfinder hero on its own page |
-| `work.html` | All 125 frames: style filters, masonry grid, lightbox (keyboard / swipe), **Field 3D** cylinder view. Deep links: `?style=gold`, `?view=field`, `?p=39` |
+| `work.html` | The curated archive (104 frames, newest first): style filters, masonry grid, lightbox (keyboard / swipe), **Field 3D** cylinder view. Deep links: `?style=gold`, `?view=field`, `?p=39` |
 | `series.html` | Series index; `series.html?id=yunnan` etc. for each story (Yunnan & Qinghai–Gansu include the travel guides) |
 | `raw.html` | RAW → final comparisons with Baidu Netdisk downloads |
 | `about.html` | Bio, subjects, contact |
@@ -70,6 +70,17 @@ How it was made and how to rebuild or swap in AI transitions: `motion-source/cor
 The photographer in the hero is a **sprite-atlas motion**: 48 pre-rendered frames of a clockwise gaze orbit,
 scrubbed by the pointer with oil-motion's damped frame animator (`assets/js/motion/`). Click him to take a shot.
 Current frames are a procedural placeholder — see `motion-source/photographer-gaze/README.md` to replace them with AI-generated frames.
+
+## Nov 2026 edit — curation, Egypt, FX layer
+
+- **Curation:** `RETIRED` in `assets/js/data.js` lists the 27 frames taken off the site (weaker or near-duplicate
+  shots). Files stay in `media/`, numbering and deep links stay stable — delete a number to put a frame back.
+  `photos` = what the site shows; `allPhotos`/`byN` still reach every numbered frame.
+- **New frames #126–131 (Egypt):** tagged *New*, lead the archive, form the `egypt` series (linked to the
+  `egypt/` journal) and a sticky horizontal film strip on the home page (`.eg`, built in `pages/home.js`).
+- **`assets/js/fx.js`** — shared camera-body effects: aperture-iris page transition and preloader exit (canvas),
+  "develop" reveal for photos (`data-reveal`: clip wipe + chemical fade), magnetic buttons, viewfinder lens
+  cursor, mono-label scramble (`data-scramble`), film grain. All off under `prefers-reduced-motion`.
 
 ## Styles
 
