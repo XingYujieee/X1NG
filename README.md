@@ -84,6 +84,12 @@ Current frames are a procedural placeholder — see `motion-source/photographer-
 - **`assets/js/fx.js`** — shared camera-body effects: aperture-iris page transition and preloader exit (canvas),
   "develop" reveal for photos (`data-reveal`: clip wipe + chemical fade), magnetic buttons, viewfinder lens
   cursor, mono-label scramble (`data-scramble`), film grain. All off under `prefers-reduced-motion`.
+- **Hero 3D:** drag the viewfinder photo and it lifts off as a depth-map relief (`viewfinder/stage.js`, diorama mesh).
+- **`relief.js`** — `img[data-relief]` → plaster bas-relief that develops into colour as it scrolls up; hover = raking light.
+- **`ink.js`** — monopo-style colour fluid in dark sections (travel strip, band, CV, next panels), pushed by the cursor.
+- **Work → 3D World** (`webgl/world.js`): endless curved wall of prints, drag anywhere, click to fly in.
+- **Travel → Drive** (`drive/drive.js`, own bundle + vendored `cannon-es`): drive a little car to each chapter,
+  knock over its prints; loaded only on demand (`travel.html?drive` opens it directly).
 
 ## Styles
 

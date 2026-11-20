@@ -25,7 +25,10 @@ function renderTravelIndex() {
     <section class="page-head wrap">
       <div class="page-head__row">
         <h1 class="h1"><span data-split>Travel</span><sup>${pad(travel.length)}</sup></h1>
-        <p class="lead" data-fade>${travel.length} journeys, ${total} frames — each one a chapter, with field notes or a written journal. <span class="zh muted">游记：每段旅程是一章，配攻略或随笔。</span></p>
+        <div class="travel-intro" data-fade>
+          <p class="lead">${travel.length} journeys, ${total} frames — each one a chapter, with field notes or a written journal. <span class="zh muted">游记：每段旅程是一章，配攻略或随笔。</span></p>
+          <button type="button" class="pill pill--blue roll-host" data-drive><span class="dot"></span><span data-roll>Drive through them · 开车逛游记</span></button>
+        </div>
       </div>
     </section>
     <section class="wrap chapters">
@@ -56,6 +59,36 @@ function renderTravelIndex() {
       }).join('')}
     </section>`;
   app.ready();
+  $('[data-drive]').addEventListener('click', openDrive);
+  if (new URLSearchParams(location.search).has('drive')) openDrive();
+}
+
+/* Drive mode: a small physics world (assets/js/drive) loaded only on demand */
+function openDrive() {
+  if ($('.drive')) return;
+  const host = document.createElement('div');
+  host.className = 'drive';
+  host.innerHTML = '<div class="drive__load mono">Loading the desert · 正在铺沙</div>';
+  document.body.append(host);
+  getLenis()?.stop();
+  document.documentElement.classList.add('drive-open');
+  const chapters = travel.map((t) => ({
+    chapter: t.chapter, en: t.en, zh: t.zh, year: t.year, region: t.region,
+    href: `travel.html?id=${t.id}`, journal: t.journal ? t.journal.href : null,
+    thumbs: [t.cover, ...t.frames.filter((n) => n !== t.cover)].slice(0, 5).map((n) => byN(n).s),
+  }));
+  const done = () => { host.remove(); document.documentElement.classList.remove('drive-open'); getLenis()?.start(); };
+  const go = () => document.fonts.ready.then(() => window.X1NG_DRIVE.mount(host, {
+    chapters,
+    onOpen: (href) => { window.navigateTo ? window.navigateTo(href) : (location.href = href); },
+    onClose: done,
+  }));
+  if (window.X1NG_DRIVE) { go(); return; }
+  const sc = document.createElement('script');
+  sc.src = 'assets/js/build/drive.js';
+  sc.onload = go;
+  sc.onerror = () => { host.innerHTML = '<p class="drive__load mono">Drive mode could not load · 加载失败</p>'; setTimeout(done, 1800); };
+  document.head.append(sc);
 }
 
 /* ================= Series index ================= */

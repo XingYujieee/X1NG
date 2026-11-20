@@ -5,4 +5,5 @@ for p in home work series raw about corridor projects; do
   npx --yes esbuild@0.25 "assets/js/pages/$p.js" --bundle --format=iife --minify --target=es2019 --outfile="assets/js/build/$p.js" || exit 1
 done
 npx --yes esbuild@0.25 "assets/js/viewfinder/standalone.js" --bundle --format=iife --minify --target=es2019 --outfile="assets/js/build/beneath.js" || exit 1
+npx --yes esbuild@0.25 "assets/js/drive/drive.js" --bundle --format=iife --minify --target=es2019 --outfile="assets/js/build/drive.js" || exit 1
 echo "Built assets/js/build/*.js"
