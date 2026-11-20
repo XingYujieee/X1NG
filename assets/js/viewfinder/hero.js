@@ -8,6 +8,9 @@
               focus to that depth, the shutter fires, the roll counter ticks.
    Hold     → long exposure: the frame gathers light, particles streak, the
               shutter readout counts up; release to close the shutter.
+   Drag     → 3D: the photograph lifts off the screen as a relief built from
+              its depth map and turns in your hand; let go and it springs back.
+              It also arrives this way once, when the page opens.
    End      → the frame shrinks into a print laid on the page below.
 ------------------------------------------------------------------- */
 import { createStage, SCENES } from './stage.js';
@@ -42,6 +45,10 @@ export function mountViewfinder(root, { reduced = false, lenis = null } = {}) {
   const focus = { d: 0.5, k: 0, hunt: -1e9, manual: -1e9, mx: 0.5, my: 0.5, md: 0.5 };
   const hold = { down: false, t0: 0, x: 0, y: 0, active: false, expo: 0 };
   let lockedIdx = -1, settle = 0;
+  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  // 3D diorama: tilt 0 = flat picture, 1 = relief in the hand. Springs for a physical feel.
+  const dio = { on: false, x0: 0, y0: 0, tx: 0, ty: 0, rx: 0, ry: 0, vx: 0, vy: 0, tilt: reduced ? 0 : 1, vt: 0, intro: reduced ? 0 : 1, lx: 0, ly: 0 };
+  if (/[?&]still/.test(location.search)) window.__dio = dio;
 
   const ready = Promise.all(SCENES.flatMap((s) => [load(TEX[s.id] || `media/beneath/${s.id}.webp`), load(TEX[s.id + '-d'] || `media/beneath/${s.id}-d.png`)]))
     .then((imgs) => {
@@ -66,7 +73,14 @@ export function mountViewfinder(root, { reduced = false, lenis = null } = {}) {
   const local = (e) => { const r = stageEl.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
   stageEl.addEventListener('pointermove', (e) => {
     const [x, y] = local(e); mouse.x = x * 2 - 1; mouse.y = y * 2 - 1; mouse.px = x; mouse.py = y;
-    if (hold.down && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 10 && !hold.active) hold.down = false;   // it was a drag/scroll
+    if (hold.down && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 10 && !hold.active) {   // it was a drag: turn the place in 3D
+      hold.down = false;
+      if (fine && !reduced && stage) { dio.on = true; dio.intro = 0; dio.x0 = e.clientX; dio.y0 = e.clientY; root.classList.add('is-orbit'); }
+    }
+    if (dio.on) {
+      dio.tx = clamp((e.clientX - dio.x0) / stageEl.clientWidth * 1.9, -0.95, 0.95);
+      dio.ty = clamp((e.clientY - dio.y0) / stageEl.clientHeight * 1.3, -0.6, 0.6);
+    }
   }, { passive: true });
   stageEl.addEventListener('pointerleave', () => { mouse.x = mouse.y = 0; });
   stageEl.addEventListener('contextmenu', (e) => { if (hold.active) e.preventDefault(); });
@@ -76,6 +90,7 @@ export function mountViewfinder(root, { reduced = false, lenis = null } = {}) {
     hold.down = true; hold.t0 = performance.now(); hold.x = e.clientX; hold.y = e.clientY; hold.active = false;
   });
   const release = (e) => {
+    if (dio.on) { dio.on = false; dio.tx = dio.ty = 0; root.classList.remove('is-orbit'); return; }
     if (!hold.down) return;
     hold.down = false;
     const dt = performance.now() - hold.t0;
@@ -132,7 +147,20 @@ export function mountViewfinder(root, { reduced = false, lenis = null } = {}) {
     focus.k = k;
     if (ht > 0.55 && near) root.classList.add('is-locked'); else if (!near) root.classList.remove('is-locked');
 
-    const st = stage.frame(t, uS, { mouse: [mouse.sx, mouse.sy], expo: hold.expo, focus, fade: clamp(t / 1.2), print });
+    // 3D springs: tilt follows the drag; the intro lands the first place like a print dropped on the table
+    if (dio.intro > 0) { dio.intro = Math.max(0, 1 - t / 3.2); const e = 1 - Math.pow(1 - dio.intro, 3); dio.tx = 0.55 * e * Math.sin(t * 0.9 + 0.6); dio.ty = -0.32 * e; }
+    const tTarget = dio.on || dio.intro > 0.02 ? 1 : 0;
+    const spring = (x, v, target, k, c) => { const a = (target - x) * k - v * c; v += a * dt; return [x + v * dt, v]; };
+    if (!reduced) {
+      [dio.tilt, dio.vt] = spring(dio.tilt, dio.vt, tTarget, dio.on ? 60 : 26, dio.on ? 13 : 7);
+      [dio.ry, dio.vx] = spring(dio.ry, dio.vx, dio.tx, 70, 9);
+      [dio.rx, dio.vy] = spring(dio.rx, dio.vy, dio.ty, 70, 9);
+      dio.tilt = clamp(dio.tilt, 0, 1.15);
+    }
+    dio.lx += (mouse.sx - dio.lx) * 0.1; dio.ly += (mouse.sy - dio.ly) * 0.1;
+    root.style.setProperty('--orbit', clamp(dio.tilt).toFixed(3));
+    const st = stage.frame(t, uS, { mouse: [mouse.sx * (1 - clamp(dio.tilt)), mouse.sy * (1 - clamp(dio.tilt))], expo: hold.expo, focus, fade: clamp(t / 1.2), print,
+      dio: { tilt: print > 0.02 ? 0 : clamp(dio.tilt), rx: dio.rx, ry: dio.ry, lx: dio.lx, ly: dio.ly } });
 
     // HUD: AF box on him (or on the tapped point for a moment)
     const W = stageEl.clientWidth, H = stageEl.clientHeight;
@@ -171,6 +199,6 @@ export function mountViewfinder(root, { reduced = false, lenis = null } = {}) {
     ready,
     play() { if (!stage || running) return; running = true; started = performance.now(); root.classList.add('is-in'); requestAnimationFrame(loop); },
     // test hooks
-    still(t, opts = {}) { if (!stage) return; Object.assign(hold, { expo: opts.expo ?? 0 }); if (opts.tap) { focus.manual = performance.now() - opts.tap * 1000; focus.mx = opts.x; focus.my = opts.y; focus.md = stage.depthAt(opts.x, opts.y); } root.classList.add('is-in'); last = t; return draw(t, true); },
+    still(t, opts = {}) { if (!stage) return; Object.assign(hold, { expo: opts.expo ?? 0 }); if (opts.dio) Object.assign(dio, opts.dio, { intro: 0 }); if (opts.tap) { focus.manual = performance.now() - opts.tap * 1000; focus.mx = opts.x; focus.my = opts.y; focus.md = stage.depthAt(opts.x, opts.y); } root.classList.add('is-in'); last = t; return draw(t, true); },
   };
 }

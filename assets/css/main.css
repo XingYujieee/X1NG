@@ -1013,3 +1013,11 @@ body::after {
 .pill.is-disabled { opacity: .55; cursor: default; pointer-events: none; color: var(--on-dark); }
 @media (max-width: 960px) { .cv__grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 640px) { .cv__grid { grid-template-columns: 1fr; } .cv__head { grid-template-columns: 1fr; } }
+
+/* ---------- Hero · 3D diorama (drag) ---------- */
+.vf { --orbit: 0; }
+.vf__stage { cursor: grab; }
+.vf.is-orbit .vf__stage { cursor: grabbing; }
+.vf__copy { opacity: calc(1 - var(--orbit) * .85); transition: opacity .2s; }
+.vf__chapter { filter: opacity(calc(1 - var(--orbit) * .85)); }
+.vf__af { opacity: calc(1 - var(--orbit)); }
