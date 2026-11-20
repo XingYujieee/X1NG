@@ -79,7 +79,7 @@ async function setView(next) {
   history.replaceState(null, '', u);
   if (view === 'field') {
     if (!field) {
-      const { createField } = await import('../webgl/field.js');
+      const { createField } = await import('../webgl/world.js');
       field = createField(fieldEl, {
         onHover(it) { fieldTitle.innerHTML = it ? `${esc(it.title)}<span class="zh">${esc(it.zh)}</span>` : ''; },
         onSelect(it) { openAt(it.n); },
