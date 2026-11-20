@@ -2,6 +2,7 @@
 import { CONTACT } from './data.js';
 import { createIris, initDevelop, initMagnetic, initLens, initScramble } from './fx.js';
 import { initRelief } from './relief.js';
+import { initLensText } from './lenstext.js';
 import { mountInk, paletteFrom } from './ink.js';
 
 const gsap = window.gsap;
@@ -225,6 +226,7 @@ export function initReveals(root = document) {
   $$('[data-roll]', root).forEach(roll);
   initDevelop(root);
   initScramble(root);
+  initLensText(root);
 }
 
 /* ---------- Cursor label ---------- */

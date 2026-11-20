@@ -18,7 +18,7 @@ const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
 const VS = `attribute vec2 p; varying vec2 v; void main(){ v = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }`;
 const FS = `
 precision highp float;
-uniform sampler2D tex; uniform vec2 scale, off, px; uniform vec3 light; uniform float develop, hover, t;
+uniform sampler2D tex; uniform vec2 scale, off, px, cur; uniform vec3 light; uniform float develop, hover, t, curOn, aspect;
 varying vec2 v;
 float lum(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
 float hh(vec2 q){ return fract(sin(dot(q, vec2(127.1, 311.7))) * 43758.5453); }
@@ -33,21 +33,26 @@ float H(vec2 u){
 void main(){
   vec2 u = off + v * scale; u.y = 1.0 - u.y;
   vec3 col = texture2D(tex, u).rgb;
+  // Immersive-style: the relief rises out of the wall around the cursor, and sinks back elsewhere
+  vec2 dv = (v - cur) * vec2(aspect, 1.0);
+  float local = exp(-dot(dv, dv) / 0.05) * curOn;
+  float hs = 0.45 + 0.85 * local;
   vec2 e = px * 3.0;
   float hx = H(u + vec2(e.x, 0.0)) - H(u - vec2(e.x, 0.0));
   float hy = H(u - vec2(0.0, e.y)) - H(u + vec2(0.0, e.y));
-  vec3 n = normalize(vec3(-hx * 11.0, -hy * 11.0, 1.0));
+  vec3 n = normalize(vec3(-hx * 13.0 * hs, -hy * 13.0 * hs, 1.0));
   float lam = max(dot(n, normalize(light)), 0.0);
   float spec = pow(max(dot(reflect(-normalize(light), n), vec3(0.0, 0.0, 1.0)), 0.0), 24.0);
   // plaster: warm white, lit by the raking light
   float cav = smoothstep(0.0, 0.5, H(u));                         // deeper hollows hold a little shadow
-  vec3 plaster = vec3(0.91, 0.895, 0.86) * (0.26 + 0.86 * lam) * (0.82 + 0.18 * cav) + spec * 0.14;
+  vec3 plaster = vec3(0.91, 0.895, 0.86) * mix(0.82, 0.26 + 0.86 * lam, 0.35 + 0.65 * hs) * (0.82 + 0.18 * cav) + spec * 0.14 * hs;
+  plaster += local * 0.04;                                          // the raised part catches a little more light
   // the photograph, with a touch of the relief still in it while hovered
   vec3 photo = col * mix(1.0, 0.72 + 0.55 * lam, hover * 0.75) + spec * hover * 0.18;
   // developing: the colour floods in from the shadows up, with a little noise
   float n2 = vn(v * 7.0) * 0.65 + vn(v * 23.0) * 0.35;
   float th = (1.0 - lum(col)) * 0.45 + n2 * 0.4;                  // shadows develop first, in soft organic patches
-  float k = smoothstep(th - 0.12, th + 0.06, develop * 1.3 - 0.12);
+  float k = smoothstep(th - 0.12, th + 0.06, max(develop * 1.3 - 0.12, local * 0.55 + develop * 0.3));   // the hand warms colour into it too
   gl_FragColor = vec4(mix(plaster, photo, k), 1.0);
 }`;
 
@@ -64,7 +69,7 @@ function setup() {
   const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   const p = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(p); gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
-  ['tex', 'scale', 'off', 'px', 'light', 'develop', 'hover', 't'].forEach((k) => { loc[k] = gl.getUniformLocation(prog, k); });
+  ['tex', 'scale', 'off', 'px', 'light', 'develop', 'hover', 't', 'cur', 'curOn', 'aspect'].forEach((k) => { loc[k] = gl.getUniformLocation(prog, k); });
   window.addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; kick(); }, { passive: true });
   window.addEventListener('scroll', kick, { passive: true });
   window.addEventListener('resize', () => { items.forEach((it) => { it.dirty = true; }); kick(); });
@@ -106,6 +111,9 @@ function render(it) {
   const ly = my < 0 ? 0.7 : -(my - (r.top + r.height / 2)) / (r.height / 2);
   gl.uniform3f(loc.light, Math.max(-1.5, Math.min(1.5, lx)), Math.max(-1.5, Math.min(1.5, ly)), 0.9);
   gl.uniform1f(loc.develop, it.dev);
+  gl.uniform2f(loc.cur, it.cx, it.cy);
+  gl.uniform1f(loc.curOn, it.con);
+  gl.uniform1f(loc.aspect, r.width / r.height);
   gl.uniform1f(loc.hover, it.hov);
   gl.uniform1i(loc.tex, 0);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -127,6 +135,14 @@ function tick() {
     const over = fine && mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom;
     const hovT = over ? 1 : 0;
     const pd = it.dev, ph = it.hov;
+    // where the relief rises: under the cursor, or (touch / away) a slow wandering point while still plaster
+    const t = performance.now() / 1000;
+    const tx = over ? (mx - r.left) / r.width : 0.5 + Math.sin(t * 0.45 + it.seed) * 0.32;
+    const ty = over ? 1 - (my - r.top) / r.height : 0.5 + Math.cos(t * 0.37 + it.seed) * 0.28;
+    it.cx += (tx - it.cx) * 0.12; it.cy += (ty - it.cy) * 0.12;
+    const conT = over ? 1 : (it.dev < 0.97 ? 0.7 : 0);
+    it.con += (conT - it.con) * 0.06;
+    if (it.con > 0.01) { it.dirty = true; busy = true; }
     it.dev += (it.devT - it.dev) * 0.06;
     it.hov += (hovT - it.hov) * 0.12;
     if (Math.abs(it.devT - it.dev) > 0.002 || Math.abs(hovT - it.hov) > 0.002) busy = true;
@@ -148,7 +164,7 @@ export function initRelief(root = document) {
     canvas.setAttribute('aria-label', img.alt || '');
     if (img.dataset.parallax) canvas.dataset.parallax = img.dataset.parallax;
     delete img.dataset.parallax;
-    const it = { img, canvas, ctx: canvas.getContext('2d'), tex: null, ratio: 1.5, dev: reduced ? 1 : 0, devT: 0, hov: 0, dirty: true };
+    const it = { img, canvas, ctx: canvas.getContext('2d'), tex: null, ratio: 1.5, dev: reduced ? 1 : 0, devT: 0, hov: 0, dirty: true, cx: 0.5, cy: 0.5, con: 0, seed: Math.random() * 6.28 };
     // swap now so layout, reveals and parallax bind to the canvas; paint once the photo has loaded
     img.replaceWith(canvas);
     canvas.append(img);                                        // the <img> stays as fallback content

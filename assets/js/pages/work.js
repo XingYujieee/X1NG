@@ -23,6 +23,9 @@ grid.innerHTML = photos.map((p) => `
     <img src="${p.s}" srcset="${p.s} 640w, ${p.m} 1280w" sizes="(max-width: 700px) 50vw, 25vw" width="${p.w}" height="${p.h}" alt="${esc(p.title)}${p.place ? ` — ${esc(p.place)}` : ''}" loading="lazy" decoding="async">
     <span class="tile__cap"><b>${esc(p.title)}</b><span class="mono">${esc(p.place || styleById(p.style).en)}</span></span>
   </a>`).join('');
+// Unseen-style paper curl: the grid's prints are drawn by WebGL behind the page (desktop only)
+if (window.matchMedia('(min-width: 761px) and (hover: hover)').matches) import('../webgl/bend.js').then(({ mountBend }) => mountBend(grid));
+
 $$('.tile img', grid).forEach((img) => { if (img.complete) img.classList.add('is-loaded'); else img.addEventListener('load', () => img.classList.add('is-loaded'), { once: true }); });
 
 grid.addEventListener('click', (e) => {

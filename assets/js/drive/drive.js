@@ -95,7 +95,25 @@ export function mountDrive(host, { chapters = [], onOpen, onClose } = {}) {
     }
     floorGeo.computeVertexNormals();
   }
-  const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ color: SAND, roughness: 1 }));
+  // floor: warm centre fading to the edges (vertex colours) under a fine survey grid of little crosses
+  {
+    const p = floorGeo.attributes.position, col = [];
+    const a = new THREE.Color('#ecdcc0'), m = new THREE.Color('#dcc6a2'), e = new THREE.Color('#c4a57b'), c = new THREE.Color();
+    for (let i = 0; i < p.count; i++) {
+      const r = Math.hypot(p.getX(i), p.getY(i)) / 130;
+      c.copy(a).lerp(m, Math.min(1, r / 0.45)); if (r > 0.45) c.lerp(e, Math.min(1, (r - 0.45) / 0.55));
+      col.push(c.r, c.g, c.b);
+    }
+    floorGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  }
+  const floorTex = (() => {
+    const S = 128, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, S, S);
+    x.strokeStyle = 'rgba(11,12,16,.32)'; x.lineWidth = 3; x.lineCap = 'round';
+    x.beginPath(); x.moveTo(S / 2 - 9, S / 2); x.lineTo(S / 2 + 9, S / 2); x.moveTo(S / 2, S / 2 - 9); x.lineTo(S / 2, S / 2 + 9); x.stroke();
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(86, 86); t.anisotropy = 8; return t;
+  })();
+  const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, map: floorTex, vertexColors: true, roughness: 1 }));
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
   // world edge
   [[0, 56, 0], [0, -56, 0], [56, 0, Math.PI / 2], [-56, 0, Math.PI / 2]].forEach(([x, z, r]) => {
@@ -104,7 +122,9 @@ export function mountDrive(host, { chapters = [], onOpen, onClose } = {}) {
   });
 
   const sync = []; // [mesh, body]
-  const addDynamic = (mesh, body) => { scene.add(mesh); world.addBody(body); sync.push([mesh, body]); };
+  const pops = []; // things that pop into the world at the start (Bruno-style)
+  const pop = (obj, delay) => { obj.userData.pop = delay; obj.userData.base = obj.scale.clone(); obj.scale.setScalar(0.0001); pops.push(obj); };
+  const addDynamic = (mesh, body, delay = 0.2 + Math.random() * 0.6) => { scene.add(mesh); world.addBody(body); sync.push([mesh, body]); pop(mesh, delay); };
 
   /* ---------- the car ---------- */
   const chassis = new CANNON.Body({ mass: 150 });
@@ -136,11 +156,21 @@ export function mountDrive(host, { chapters = [], onOpen, onClose } = {}) {
   const cab = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.52, 1.1), glass); cab.position.set(0.15, 0.58, 0); cab.castShadow = true; car.add(cab);
   const roof = new THREE.Mesh(new THREE.BoxGeometry(1.14, 0.06, 1.14), paint); roof.position.set(0.15, 0.87, 0); car.add(roof);
   const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.12, 0.9), new THREE.MeshBasicMaterial({ color: 0xfff3c4 })); lamp.position.set(-1.11, 0.16, 0); car.add(lamp);
+  const brakeMat = new THREE.MeshBasicMaterial({ color: 0x5a0d14 });
+  [-0.42, 0.42].forEach((z) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.12, 0.22), brakeMat); b.position.set(1.11, 0.2, z); car.add(b); });
   scene.add(car);
   const wheelMeshes = vehicle.wheelInfos.map((w) => {
     const g = new THREE.CylinderGeometry(w.radius, w.radius, 0.3, 20); g.rotateX(Math.PI / 2);
     const m = new THREE.Mesh(g, dark); m.castShadow = true; scene.add(m); return m;
   });
+
+  /* ---------- dust kicked up by the rear wheels ---------- */
+  const DUST = 90;
+  const dust = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.16, 0), new THREE.MeshStandardMaterial({ color: 0xe9dcc4, roughness: 1, transparent: true, opacity: 0.85 }), DUST);
+  dust.instanceMatrix.setUsage(THREE.DynamicDrawUsage); dust.frustumCulled = false; scene.add(dust);
+  const puffs = Array.from({ length: DUST }, () => ({ life: 0, p: new THREE.Vector3(), v: new THREE.Vector3(), s: 1 }));
+  let puffI = 0;
+  const dm = new THREE.Matrix4(), dq = new THREE.Quaternion(), ds = new THREE.Vector3();
 
   /* ---------- "TRAVEL" letters at the start ---------- */
   const letterMat = (ch) => new THREE.MeshStandardMaterial({ map: textTexture([ch], { w: 256, h: 256, bg: '#f4efe6', font: '700 200px Geist, sans-serif' }), roughness: 0.8 });
@@ -151,7 +181,7 @@ export function mountDrive(host, { chapters = [], onOpen, onClose } = {}) {
     m.castShadow = true; m.receiveShadow = true;
     const b = new CANNON.Body({ mass: 3, shape: new CANNON.Box(new CANNON.Vec3(hx, hy, hz)) });
     b.position.set((i - 2.5) * 1.3, hy, -1.5); b.allowSleep = true; b.sleepSpeedLimit = 0.2;
-    addDynamic(m, b);
+    addDynamic(m, b, 0.15 + i * 0.08);
   });
 
   /* ---------- chapter stops ---------- */
@@ -161,7 +191,7 @@ export function mountDrive(host, { chapters = [], onOpen, onClose } = {}) {
   chapters.forEach((ch, ci) => {
     const [sx, sz] = SPOTS[ci % SPOTS.length];
     const decal = new THREE.Mesh(new THREE.PlaneGeometry(11, 11), new THREE.MeshStandardMaterial({ map: stopDecal(ch), transparent: true, roughness: 1 }));
-    decal.rotation.x = -Math.PI / 2; decal.position.set(sx, 0.02, sz); decal.receiveShadow = true; scene.add(decal);
+    decal.rotation.x = -Math.PI / 2; decal.position.set(sx, 0.02, sz); decal.receiveShadow = true; scene.add(decal); pop(decal, 0.4 + ci * 0.15);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(4.9, 0.08, 8, 80), new THREE.MeshBasicMaterial({ color: BLUE, transparent: true, opacity: 0 }));
     ring.rotation.x = -Math.PI / 2; ring.position.set(sx, 0.08, sz); scene.add(ring);
     // its photographs, standing up behind the stop, ready to be knocked over
@@ -220,6 +250,7 @@ export function mountDrive(host, { chapters = [], onOpen, onClose } = {}) {
   const resize = () => { const w = host.clientWidth, h = host.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = camera.aspect < 0.8 ? 52 : 38; camera.updateProjectionMatrix(); };
   resize(); addEventListener('resize', resize);
   let last = performance.now();
+  const startT = performance.now();
   host.querySelector('.drive__load').remove();
 
   function frame(now) {
@@ -244,10 +275,40 @@ export function mountDrive(host, { chapters = [], onOpen, onClose } = {}) {
     sync.forEach(([m, b]) => { m.position.copy(b.position); m.quaternion.copy(b.quaternion); });
     if (chassis.position.y < -5) resetCar();
 
+    // brake lights
+    brakeMat.color.set(keys.brake || keys.hand ? 0xff2a3d : 0x5a0d14);
+    // dust from the rear wheels when moving
+    if (speed > 2.5 && vehicle.wheelInfos[2].isInContact) {
+      for (const wi of [2, 3]) {
+        if (Math.random() > Math.min(0.9, speed / 20)) continue;
+        const pf = puffs[puffI = (puffI + 1) % DUST];
+        pf.life = 1; pf.s = 0.6 + Math.random() * 0.9;
+        pf.p.copy(vehicle.wheelInfos[wi].worldTransform.position).y = 0.15;
+        pf.v.set(-chassis.velocity.x * 0.08 + (Math.random() - 0.5), 0.6 + Math.random() * 0.8, -chassis.velocity.z * 0.08 + (Math.random() - 0.5));
+      }
+    }
+    puffs.forEach((pf, i) => {
+      if (pf.life > 0) { pf.life -= dt * 1.1; pf.p.addScaledVector(pf.v, dt); pf.v.multiplyScalar(0.96); }
+      const k = Math.max(0, pf.life);
+      ds.setScalar(k > 0 ? pf.s * (1.6 - k) : 0.0001);
+      dm.compose(pf.p, dq, ds); dust.setMatrixAt(i, dm);
+    });
+    dust.instanceMatrix.needsUpdate = true;
+    // things pop into the world with a little overshoot
+    const tt = (now - startT) / 1000;
+    for (let i = pops.length - 1; i >= 0; i--) {
+      const o = pops[i], x = (tt - o.userData.pop) / 0.6;
+      if (x <= 0) continue;
+      const e = x >= 1 ? 1 : 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);
+      o.scale.copy(o.userData.base).multiplyScalar(Math.max(0.0001, e));
+      if (x >= 1) { o.scale.copy(o.userData.base); pops.splice(i, 1); }
+    }
+
     // fixed-angle follow camera, leaning a little towards where you're heading
     const lead = new THREE.Vector3(chassis.velocity.x, 0, chassis.velocity.z).multiplyScalar(0.35);
     camLook.lerp(new THREE.Vector3(car.position.x, 0, car.position.z).add(lead), Math.min(1, dt * 3));
-    camPos.copy(camLook).add(new THREE.Vector3(9, 15 + Math.min(6, speed * 0.25), 15));
+    const zoom = 1 + Math.min(0.35, speed * 0.018);     // pull back as you speed up
+    camPos.copy(camLook).add(new THREE.Vector3(9 * zoom, (14 + Math.min(4, speed * 0.2)) * zoom, 15 * zoom));
     camera.position.lerp(camPos, Math.min(1, dt * 4)); camera.lookAt(camLook);
     sun.position.set(camLook.x - 14, 26, camLook.z + 10); sun.target.position.copy(camLook);
 

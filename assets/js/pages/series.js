@@ -24,7 +24,7 @@ function renderTravelIndex() {
   root.innerHTML = `
     <section class="page-head wrap">
       <div class="page-head__row">
-        <h1 class="h1"><span data-split>Travel</span><sup>${pad(travel.length)}</sup></h1>
+        <h1 class="h1" data-lens="游记"><span data-split>Travel</span><sup>${pad(travel.length)}</sup></h1>
         <div class="travel-intro" data-fade>
           <p class="lead">${travel.length} journeys, ${total} frames — each one a chapter, with field notes or a written journal. <span class="zh muted">游记：每段旅程是一章，配攻略或随笔。</span></p>
           <button type="button" class="pill pill--blue roll-host" data-drive><span class="dot"></span><span data-roll>Drive through them · 开车逛游记</span></button>
@@ -99,7 +99,7 @@ function renderIndex() {
   root.innerHTML = `
     <section class="page-head wrap">
       <div class="page-head__row">
-        <h1 class="h1"><span data-split>Series</span><sup>${pad(series.length)}</sup></h1>
+        <h1 class="h1" data-lens="系列"><span data-split>Series</span><sup>${pad(series.length)}</sup></h1>
         <p class="lead" data-fade>Five ongoing studies, ${total} frames — cities, altitude, architecture, people and living things. The journeys have their own chapters in <a href="travel.html" style="text-decoration:underline;text-underline-offset:3px">Travel</a>. <span class="zh muted">五个持续进行的主题；旅行游记见 Travel。</span></p>
       </div>
       <div class="series-list">

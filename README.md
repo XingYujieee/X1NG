@@ -87,6 +87,11 @@ Current frames are a procedural placeholder — see `motion-source/photographer-
 - **Hero 3D:** drag the viewfinder photo and it lifts off as a depth-map relief (`viewfinder/stage.js`, diorama mesh).
 - **`relief.js`** — `img[data-relief]` → plaster bas-relief that develops into colour as it scrolls up; hover = raking light.
 - **`ink.js`** — monopo-style colour fluid in dark sections (travel strip, band, CV, next panels), pushed by the cursor.
+- **Work grid paper curl** (`webgl/bend.js`, Unseen-style): prints drawn by WebGL behind the page curl over a
+  cylinder at the screen's top/bottom edges, RGB-split when scrolling fast (desktop only).
+- **Lens text** (`lenstext.js`, monopo-style): `data-lens="中文"` on a heading → a glass lens follows the cursor and
+  shows the Chinese inside it.
+- **Relief prints** rise out of the plaster around the cursor (Immersive-style local relief).
 - **Work → 3D World** (`webgl/world.js`): endless curved wall of prints, drag anywhere, click to fly in.
 - **Travel → Drive** (`drive/drive.js`, own bundle + vendored `cannon-es`): drive a little car to each chapter,
   knock over its prints; loaded only on demand (`travel.html?drive` opens it directly).

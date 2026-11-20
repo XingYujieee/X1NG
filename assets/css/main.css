@@ -1079,3 +1079,30 @@ canvas.ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-ev
 .drive__pad button[data-k="right"] { margin-right: auto; margin-left: 10px; }
 .drive__pad button[data-k="brake"] { margin-right: 10px; }
 @media (pointer: coarse) { .drive__card { bottom: 100px; } }
+
+/* ---------- Work grid · paper curl (webgl/bend.js) ---------- */
+.bend-canvas { position: fixed; left: 0; top: 0; z-index: -1; pointer-events: none; }
+.has-bend .tile { background: transparent; }
+.has-bend .tile img { opacity: 0 !important; }
+.has-bend .tile[data-reveal] { clip-path: none !important; }
+body.field-mode .bend-canvas { display: none; }
+
+/* ---------- Lens text (lenstext.js): English outside the lens, Chinese inside ---------- */
+[data-lens-ready] { position: relative; }
+[data-lens-ready]::after {
+  content: attr(data-lens); position: absolute; left: 0; top: 0; right: 0; pointer-events: none;
+  font: inherit; color: inherit; letter-spacing: 0; text-align: inherit; line-height: 1.12;
+  text-shadow: -.04em 0 rgba(255, 50, 100, .55), .04em 0 rgba(40, 140, 255, .55);
+  clip-path: circle(0 at 0 0);
+}
+[data-lens-ready].is-lensing::after { clip-path: circle(var(--lr) at var(--lx) var(--ly)); }
+[data-lens-ready].is-lensing > .lens-src {
+  -webkit-mask-image: radial-gradient(circle var(--lr) at var(--lx) var(--ly), transparent calc(var(--lr) - 1px), #000 calc(var(--lr) + 1px));
+          mask-image: radial-gradient(circle var(--lr) at var(--lx) var(--ly), transparent calc(var(--lr) - 1px), #000 calc(var(--lr) + 1px));
+}
+.lens-ring {
+  position: fixed; left: 0; top: 0; z-index: 122; pointer-events: none; border-radius: 50%; opacity: 0;
+  box-shadow: inset 0 0 0 1.5px #fff, inset 0 0 30px rgba(255, 255, 255, .35);
+  mix-blend-mode: difference;
+}
+.lens-on .lens, .lens-on .cursor { opacity: 0 !important; }
