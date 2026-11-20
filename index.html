@@ -72,29 +72,29 @@
       </div>
     </section>
 
-    <!-- 02b · New: Egypt — sticky horizontal film strip. Panels are built in home.js from the
-         'egypt' series; scroll moves the strip sideways, each photo drifts inside its frame. -->
-    <section class="eg" data-eg aria-labelledby="eg-title">
-      <div class="eg__sticky">
-        <div class="eg__word" aria-hidden="true" data-eg-word>EGYPT&nbsp;·&nbsp;مصر&nbsp;·&nbsp;EGYPT</div>
-        <div class="eg__track" data-eg-track>
-          <div class="eg__intro">
-            <p class="mono"><span class="tag-new">New</span><span data-scramble>Series 01 · Nov 2026</span></p>
-            <h2 id="eg-title" class="eg__title"><span data-split>Egypt,</span> <em data-split>from the air.</em></h2>
-            <p class="zh">埃及 · 光与沙<br>卢克索的热气球、嵌进山崖的神庙，还有雾里、玻璃后、宣礼塔背后的金字塔。</p>
-            <p class="mono eg__hint"><span>Keep scrolling · 继续滚动</span><i aria-hidden="true"></i></p>
+    <!-- 02b · Travel — sticky horizontal film strip: one panel per chapter (built in home.js from
+         `travel` in data.js); scroll moves the strip sideways, each photo drifts inside its frame. -->
+    <section class="tv" data-tv aria-labelledby="tv-title">
+      <div class="tv__sticky">
+        <div class="tv__word" aria-hidden="true" data-tv-word>TRAVEL&nbsp;·&nbsp;游记&nbsp;·&nbsp;TRAVEL</div>
+        <div class="tv__track" data-tv-track>
+          <div class="tv__intro">
+            <p class="mono"><span data-scramble>Travel · <span data-tv-n>03</span> chapters</span></p>
+            <h2 id="tv-title" class="tv__title"><span data-split>Journeys,</span> <em data-split>told in chapters.</em></h2>
+            <p class="zh">游记 · 每段旅程是一章<br>云南的雪山与古城、青甘的戈壁与星空，还有埃及的热气球与金字塔。</p>
+            <p class="mono tv__hint"><span>Keep scrolling · 继续滚动</span><i aria-hidden="true"></i></p>
           </div>
-          <div class="eg__panels" data-eg-panels></div>
-          <div class="eg__end">
-            <p class="mono muted">06 frames · Luxor — Giza — Cairo</p>
-            <a class="eg__more roll-host" href="series.html?id=egypt" data-cursor="Open series"><span data-roll>Open the series</span> <span aria-hidden="true">→</span></a>
-            <a class="pill pill--light roll-host" href="egypt/"><span class="dot"></span><span data-roll>Read the journal · 随笔</span></a>
+          <div class="tv__panels" data-tv-panels></div>
+          <div class="tv__end">
+            <p class="mono muted" data-tv-total></p>
+            <a class="tv__more roll-host" href="travel.html" data-cursor="Open travel"><span data-roll>All travel</span> <span aria-hidden="true">→</span></a>
+            <a class="pill pill--light roll-host" href="egypt/"><span class="dot"></span><span data-roll>Latest journal · 埃及随笔</span></a>
           </div>
         </div>
-        <div class="eg__hud mono" aria-hidden="true">
-          <span data-eg-count>00 / 06</span>
-          <span class="eg__bar"><i data-eg-bar></i></span>
-          <span data-eg-place>Luxor, Egypt</span>
+        <div class="tv__hud mono" aria-hidden="true">
+          <span data-tv-count>00 / 03</span>
+          <span class="tv__bar"><i data-tv-bar></i></span>
+          <span data-tv-place>Travel · 游记</span>
         </div>
       </div>
     </section>
@@ -103,7 +103,7 @@
     <section class="wrap" aria-labelledby="series-title">
       <div class="section-head">
         <h2 id="series-title" class="h2" data-split>Featured Series</h2>
-        <p class="mono muted" data-fade>Eight bodies of work — from Nile dawns and plateau roads to city nights. 八个系列，从尼罗河的清晨、高原公路到城市夜色。</p>
+        <p class="mono muted" data-fade>Five ongoing studies — city nights, altitude, architecture, people and living things. 五个持续进行的主题。</p>
       </div>
       <div class="cards" data-cards></div>
       <div style="display:flex;justify-content:center;margin-top:clamp(60px,8vw,120px)">
@@ -133,6 +133,19 @@
         <p class="mono muted" data-fade>The archive, curated by visual style. 按风格浏览：蓝调、金色、辽阔、夜与星、几何、人间、生灵。</p>
       </div>
       <div class="index-list" data-index></div>
+    </section>
+
+    <!-- 05b · Beyond the camera — projects & CV teaser (data in assets/js/profile.js) -->
+    <section class="wrap section" aria-labelledby="proj-title" style="padding-bottom:0">
+      <div class="section-head">
+        <h2 id="proj-title" class="h2"><span data-split>Beyond the camera</span></h2>
+        <p class="mono muted" data-fade>Research, apps and small machines — the other half of what I do. 镜头之外：研究、应用和小硬件。</p>
+      </div>
+      <div class="proj-mini" data-proj-mini></div>
+      <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:clamp(40px,5vw,70px)">
+        <a class="pill roll-host" href="projects.html"><span class="dot"></span><span data-roll>All projects</span></a>
+        <a class="pill pill--ghost roll-host" href="projects.html#cv"><span class="dot"></span><span data-roll>CV · 简历</span></a>
+      </div>
     </section>
 
     <!-- 06 · CTA -->

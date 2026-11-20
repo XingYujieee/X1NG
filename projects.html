@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projects &amp; CV — X1NG</title>
+  <meta name="description" content="Projects and CV of Xing (X1NG): research on AI’s carbon cost and radar signal sorting, apps like Pixel Study and HeadTilt, and small hardware experiments.">
+  <meta name="theme-color" content="#eceef4">
+  <meta property="og:title" content="Projects &amp; CV — X1NG">
+  <meta property="og:description" content="Chasing light across cities, peaks and the quiet in between.">
+  <meta property="og:image" content="media/m/102-f6ad4aff3c2132e15e05f725c129cf55-33f.webp">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/fonts.css">
+  <link rel="stylesheet" href="assets/css/main.css">
+  <script>document.documentElement.classList.add('js');try{if(sessionStorage.getItem('x1ng:transition')==='1'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('is-arriving')}catch(e){}</script>
+  <script src="assets/vendor/gsap.min.js" defer></script>
+  <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="assets/vendor/lenis.min.js" defer></script>
+  <script>if (location.protocol === 'file:') document.write('<script src="assets/js/build/textures.js"><\/script>');</script>
+  <script src="assets/js/build/projects.js" defer></script>
+</head>
+<body data-page="projects">
+  <main id="main">
+    <section class="page-head wrap">
+      <div class="page-head__row">
+        <h1 class="h1"><span data-split>Projects</span><sup data-proj-count></sup></h1>
+        <p class="lead" data-fade>Beyond the camera — I study AI for sustainable development, and build research code, small apps and the odd piece of hardware. <span class="zh muted">镜头之外：读 AI 与可持续发展，也写研究代码、做小应用和小硬件。</span></p>
+      </div>
+      <div class="toolbar toolbar--static">
+        <div class="chips" data-proj-chips role="group" aria-label="Filter projects"></div>
+        <a class="pill roll-host" href="#cv"><span class="dot"></span><span data-roll>CV · 简历</span></a>
+      </div>
+      <div class="proj-list" data-proj-list></div>
+    </section>
+
+    <section class="section" id="cv" aria-labelledby="cv-title">
+      <div class="cv dark">
+        <div class="cv__head">
+          <p class="mono" style="color:var(--on-dark-2)"><span data-scramble>Curriculum vitae · 简历</span></p>
+          <h2 id="cv-title" class="h2"><span data-split>Yujie Xing</span> <em>· 星光</em></h2>
+          <div data-cv-pdf></div>
+        </div>
+        <div class="cv__grid" data-cv></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -20,7 +20,7 @@ export const CATEGORIES = [
 export const STYLES = [
   { id: 'blue',     en: 'Blue Hour',        zh: '蓝调城市', cover: 1,   note: 'Cities in the cool minutes after sunset, when the lights come on.', noteZh: '日落后的蓝调时刻，城市一盏盏亮起。' },
   { id: 'gold',     en: 'Golden Light',     zh: '金色时刻', cover: 95,  note: 'Alpenglow, burning skies and the warm edges of the day.', noteZh: '日照金山、火烧云，一天中最暖的边缘。' },
-  { id: 'vast',     en: 'Wide Open',        zh: '辽阔',     cover: 126, note: 'Plateaus, peaks, fog seas — and one small figure for scale.', noteZh: '高原、雪山与云海，以及画面里那个小小的人。' },
+  { id: 'vast',     en: 'Wide Open',        zh: '辽阔',     cover: 47,  note: 'Plateaus, peaks, fog seas — and one small figure for scale.', noteZh: '高原、雪山与云海，以及画面里那个小小的人。' },
   { id: 'night',    en: 'After Dark',       zh: '夜与星',   cover: 39,  note: 'Star trails, fireflies, lightning and neon.', noteZh: '星轨、萤火、闪电与霓虹。' },
   { id: 'geometry', en: 'Geometry',         zh: '几何',     cover: 25,  note: 'Spirals, symmetry and patterns found in architecture and land.', noteZh: '在建筑与大地中发现的螺旋、对称与秩序。' },
   { id: 'people',   en: 'Human Moments',    zh: '人间',     cover: 20,  note: 'Streets, festivals and the people inside the frame.', noteZh: '街头、节庆，以及画面里的人。' },
@@ -41,11 +41,8 @@ export const allPhotos = RAW_PHOTOS.map(([id, w, h, cat, title, zh, place, style
   l: `media/l/${id}.webp`,   // 2400px — lightbox
 }));
 
-/* … and the curated archive that the site actually shows. */
-export const NEW_FRAMES = [126, 127, 128, 129, 130, 131];
-allPhotos.forEach((p) => { p.isNew = NEW_FRAMES.includes(p.n); });
-/* newest frames lead the archive */
-export const photos = [...allPhotos.filter((p) => p.isNew), ...allPhotos.filter((p) => !p.isNew && !RETIRED.has(p.n))];
+/* … and the curated archive that the site actually shows (archive order, every frame in one of the seven styles). */
+export const photos = allPhotos.filter((p) => !RETIRED.has(p.n));
 
 export const byN = (n) => allPhotos[n - 1];
 /* WebGL texture source. When the site is opened straight from disk (file://),
@@ -53,17 +50,9 @@ export const byN = (n) => allPhotos[n - 1];
 export const texSrc = (p) => (typeof window !== 'undefined' && window.X1NG_TEX && window.X1NG_TEX[p.id]) || p.s;
 export const byId = (id) => allPhotos.find((p) => p.id === id);
 
-export const series = [
-  {
-    id: 'egypt',
-    en: 'Egypt, from the Air', zh: '埃及 · 光与沙',
-    region: 'Luxor · Giza · Cairo', year: '2026', tags: ['Travel', 'Aerial', 'New'],
-    cover: 128,
-    lede: 'Dawn over the West Bank in a balloon basket, Hatshepsut cut into the cliff below, then the pyramids again and again — in fog, through glass, behind the minarets of Cairo.',
-    ledeZh: '在卢克索西岸的热气球上等日出，脚下是嵌进山崖的哈特谢普苏特神庙；再到吉萨，雾里、玻璃后、开罗宣礼塔背后，一次次遇见金字塔。',
-    frames: [128, 126, 129, 127, 130, 131],
-    journal: 'egypt/',
-  },
+/* Travel — journeys told as chapters (travel.html). Each can carry a shooting guide
+   (guides.js) and/or a long-form journal living in its own folder. */
+export const travel = [
   {
     id: 'yunnan',
     en: 'Yunnan Journey', zh: '云南之旅',
@@ -73,6 +62,7 @@ export const series = [
     ledeZh: '从古城丽江到梅里雪山，六天五晚追逐日照金山、松赞林寺晨雾与雪达湖的蓝调倒影。',
     frames: [102, 39, 44, 55, 114, 24, 42, 105, 106, 115, 38, 116, 118, 117, 93, 94, 52, 53, 26],
     guide: 'yunnan',
+    chapter: 1, days: '6 days',
   },
   {
     id: 'qinggan',
@@ -83,7 +73,23 @@ export const series = [
     ledeZh: '穿越青海与甘肃的高原与戈壁：倒映天空的盐湖、星轨下的雅丹，以及没有尽头的公路。',
     frames: [47, 65, 91, 63, 77, 64, 60, 35, 112, 92, 88, 87, 90, 66],
     guide: 'qinggan',
+    chapter: 2, days: 'Loop',
   },
+  {
+    id: 'egypt',
+    en: 'Egypt, from the Air', zh: '埃及 · 光与沙',
+    region: 'Luxor · Hurghada · Giza · Cairo', year: '2026', tags: ['Travel', 'Aerial', 'Journal'],
+    cover: 128,
+    lede: 'Dawn over the West Bank in a balloon basket, Hatshepsut cut into the cliff below, then the pyramids again and again — in fog, through glass, behind the minarets of Cairo.',
+    ledeZh: '在卢克索西岸的热气球上等日出，脚下是嵌进山崖的哈特谢普苏特神庙；再到吉萨，雾里、玻璃后、开罗宣礼塔背后，一次次遇见金字塔。',
+    frames: [128, 126, 129, 127, 130, 131],
+    journal: { href: 'egypt/', en: 'Egypt, in Motion', zh: '埃及随笔', note: 'Six days of essays and Live Photos — balloons, the Red Sea and a driver with a book of five-star reviews.', noteZh: '六天的随笔与实况照片。' },
+    chapter: 3, days: '6 days',
+  },
+];
+
+/* Series — ongoing themes (series.html). */
+export const series = [
   {
     id: 'cities',
     en: 'Cities After Dusk', zh: '城市暮色',
@@ -143,11 +149,13 @@ export const journals = [
   },
 ];
 
-/* Retired frames drop out of every series and of the hero automatically. */
-series.forEach((s) => { s.frames = s.frames.filter((n) => !RETIRED.has(n)); });
+/* Retired frames drop out of every series/chapter and of the hero automatically. */
+[...travel, ...series].forEach((s) => { s.frames = s.frames.filter((n) => !RETIRED.has(n)); });
+export const travelById = (id) => travel.find((t) => t.id === id);
 
 export const seriesById = (id) => series.find((s) => s.id === id);
 export const seriesOf = (n) => series.find((s) => s.frames.includes(n));
+export const travelOf = (n) => travel.find((t) => t.frames.includes(n));
 
 /* Photos that anchor the 3D hero — strong, varied, readable at small size. */
 export const heroFrames = [126, 102, 95, 129, 20, 25, 86, 128, 39, 47, 21, 131, 55, 8, 65, 34, 16, 125, 77, 91, 13, 124, 44, 88, 56, 70, 1, 122, 96, 63].filter((n) => !RETIRED.has(n));

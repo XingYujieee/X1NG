@@ -3,7 +3,7 @@ import { photos, CATEGORIES, STYLES, styleById, byN, texSrc } from '../data.js';
 import { openLightbox } from '../lightbox.js';
 import { webglAvailable } from '../webgl/hero.js';
 
-const app = boot({ page: 'work', next: { href: 'series.html', label: 'The Series', sub: 'Eight curated stories · 八个系列', image: byN(102).m } });
+const app = boot({ page: 'work', next: { href: 'series.html', label: 'The Series', sub: 'Five ongoing studies · 五个系列', image: byN(102).m } });
 const params = new URLSearchParams(location.search);
 let filter = styleById(params.get('style')) ? params.get('style') : 'all';
 let view = params.get('view') === 'field' ? 'field' : 'grid';
@@ -19,7 +19,7 @@ $('[data-chips-field]').innerHTML = chipHtml();
 /* ---------- Grid ---------- */
 const grid = $('[data-grid]');
 grid.innerHTML = photos.map((p) => `
-  <a class="tile${p.isNew ? ' is-new' : ''}" href="work.html?p=${p.n}" data-n="${p.n}" data-style="${p.style}" data-cursor="View" data-reveal aria-label="${esc(p.title)} ${esc(p.zh)}">${p.isNew ? '<span class="tag-new tile__new">New</span>' : ''}
+  <a class="tile" href="work.html?p=${p.n}" data-n="${p.n}" data-style="${p.style}" data-cursor="View" data-reveal aria-label="${esc(p.title)} ${esc(p.zh)}">
     <img src="${p.s}" srcset="${p.s} 640w, ${p.m} 1280w" sizes="(max-width: 700px) 50vw, 25vw" width="${p.w}" height="${p.h}" alt="${esc(p.title)}${p.place ? ` — ${esc(p.place)}` : ''}" loading="lazy" decoding="async">
     <span class="tile__cap"><b>${esc(p.title)}</b><span class="mono">${esc(p.place || styleById(p.style).en)}</span></span>
   </a>`).join('');

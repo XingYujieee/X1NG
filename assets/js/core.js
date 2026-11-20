@@ -16,11 +16,17 @@ export const pad = (n, l = 2) => String(n).padStart(l, '0');
 
 export const NAV = [
   { href: 'index.html', en: 'Home', zh: '首页', key: 'home' },
-  { href: 'corridor.html', en: 'Corridor', zh: '走廊', key: 'corridor' },
   { href: 'work.html', en: 'Work', zh: '作品', key: 'work' },
   { href: 'series.html', en: 'Series', zh: '系列', key: 'series' },
-  { href: 'raw.html', en: 'RAW Lab', zh: '后期', key: 'raw' },
+  { href: 'travel.html', en: 'Travel', zh: '游记', key: 'travel' },
+  { href: 'projects.html', en: 'Projects', zh: '项目 · 简历', key: 'projects' },
   { href: 'about.html', en: 'About', zh: '关于', key: 'about' },
+];
+/* smaller links under the main menu */
+export const NAV_MORE = [
+  { href: 'corridor.html', en: 'Corridor', zh: '走廊', key: 'corridor' },
+  { href: 'raw.html', en: 'RAW Lab', zh: '后期', key: 'raw' },
+  { href: 'projects.html#cv', en: 'CV', zh: '简历', key: 'cv' },
 ];
 
 let lenis = null;
@@ -72,6 +78,7 @@ function buildChrome(page, opts) {
       <nav aria-label="Primary">
         ${NAV.map((n, i) => `<a class="roll-host" data-scramble-host href="${n.href}" ${n.key === page ? 'aria-current="page"' : ''}><span data-roll>${n.en}</span><small data-scramble>${pad(i + 1)} · ${n.zh}</small></a>`).join('')}
       </nav>
+      <div class="menu-more mono">${NAV_MORE.map((n) => `<a href="${n.href}" ${n.key === page ? 'aria-current="page"' : ''}>${n.en} · ${n.zh}</a>`).join('')}</div>
       <div class="menu-foot">
         <p class="mono muted">Say hello · 联系</p>
         <a class="h3" href="mailto:${CONTACT.email}" style="font-size:20px;letter-spacing:-.02em">${CONTACT.email}</a>
@@ -110,7 +117,7 @@ function buildFooter(opts) {
         </div>
         <div class="footer__col">
           <p class="mono">Explore</p>
-          ${NAV.slice(1).map((n) => `<a class="roll-host" href="${n.href}"><span data-roll>${n.en}</span></a>`).join('')}
+          ${[...NAV.slice(1), ...NAV_MORE.slice(0, 2)].map((n) => `<a class="roll-host" href="${n.href}"><span data-roll>${n.en}</span></a>`).join('')}
         </div>
         <div class="footer__col">
           <p class="mono">Follow</p>
@@ -227,8 +234,9 @@ let iris = null;
 const labelFor = (url) => {
   const file = url.pathname.split('/').pop() || 'index.html';
   if (/\/egypt\/?$/.test(url.pathname)) return 'Egypt · 埃及随笔';
-  const n = NAV.find((x) => x.href === file);
-  if (file === 'series.html' && url.searchParams.get('id')) return `Series · ${url.searchParams.get('id')}`;
+  const n = [...NAV, ...NAV_MORE].find((x) => x.href === file);
+  const sid = url.searchParams.get('id');
+  if (sid && (file === 'series.html' || file === 'travel.html')) return `${file === 'travel.html' ? 'Travel' : 'Series'} · ${sid.charAt(0).toUpperCase()}${sid.slice(1)}`;
   return n ? `${n.en} · ${n.zh}` : '';
 };
 function initTransitions() {

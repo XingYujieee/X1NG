@@ -22,7 +22,9 @@ bash assets/tools/build.sh   # needs Node.js
 | `index.html` | Viewfinder hero (four places, scroll-driven real-time WebGL, click to focus, hold for long exposure), intro, featured series, archive marquee, subjects index, CTA |
 | `beneath.html` | The viewfinder hero on its own page |
 | `work.html` | The curated archive (104 frames, newest first): style filters, masonry grid, lightbox (keyboard / swipe), **Field 3D** cylinder view. Deep links: `?style=gold`, `?view=field`, `?p=39` |
-| `series.html` | Series index; `series.html?id=yunnan` etc. for each story (Yunnan & Qinghai–Gansu include the travel guides) |
+| `series.html` | Ongoing themes (cities, above, geometry, people, wild); `series.html?id=cities` etc. |
+| `travel.html` | Travel chapters — Yunnan, Qinghai–Gansu (with field guides), Egypt (links to the `egypt/` journal); `travel.html?id=egypt`. Old `series.html?id=yunnan` links redirect here |
+| `projects.html` | Projects + CV (`#cv`). Content lives in `assets/js/profile.js`; `todo: true` items show as dashed placeholders, set `CV.pdf` to show the download button |
 | `raw.html` | RAW → final comparisons with Baidu Netdisk downloads |
 | `about.html` | Bio, subjects, contact |
 
@@ -76,8 +78,9 @@ Current frames are a procedural placeholder — see `motion-source/photographer-
 - **Curation:** `RETIRED` in `assets/js/data.js` lists the 27 frames taken off the site (weaker or near-duplicate
   shots). Files stay in `media/`, numbering and deep links stay stable — delete a number to put a frame back.
   `photos` = what the site shows; `allPhotos`/`byN` still reach every numbered frame.
-- **New frames #126–131 (Egypt):** tagged *New*, lead the archive, form the `egypt` series (linked to the
-  `egypt/` journal) and a sticky horizontal film strip on the home page (`.eg`, built in `pages/home.js`).
+- **New frames #126–131 (Egypt):** sit in the archive with their styles like every other frame, and form
+  Travel chapter 03 (linked to the `egypt/` journal). Home has a sticky horizontal strip of the travel
+  chapters (`.tv`, built in `pages/home.js`) and a "Beyond the camera" projects teaser.
 - **`assets/js/fx.js`** — shared camera-body effects: aperture-iris page transition and preloader exit (canvas),
   "develop" reveal for photos (`data-reveal`: clip wipe + chemical fade), magnetic buttons, viewfinder lens
   cursor, mono-label scramble (`data-scramble`), film grain. All off under `prefers-reduced-motion`.
