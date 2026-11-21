@@ -47,15 +47,15 @@ const bgShader = {
     aspA: { value: 1.5 }, aspB: { value: 1.5 }, sa: { value: 1.78 },
     cA: { value: new THREE.Vector2(.5, .5) }, cB: { value: new THREE.Vector2(.5, .5) }, zA: { value: 1 }, zB: { value: 1 },
     dollyA: { value: 0 }, dollyB: { value: 0 }, mouse: { value: new THREE.Vector2() }, par: { value: 0.006 },
-    prog: { value: 0 }, t: { value: 0 },
+    prog: { value: 0 }, t: { value: 0 }, anc: { value: new THREE.Vector2(0.5, 0.5) }, zbk: { value: 0 },
     focusD: { value: 0.5 }, blurK: { value: 0 }, px: { value: new THREE.Vector2(1 / 1280, 1 / 720) },
     tint: { value: new THREE.Vector3(1, 1, 1) }, sat: { value: 1 }, light: { value: new THREE.Vector3(1, 1, 1) },
-    expo: { value: 0 }, subj: { value: new THREE.Vector3(.5, .5, .1) }, pool: { value: 0.18 }, dim: { value: 0 },
+    expo: { value: 0 }, subj: { value: new THREE.Vector3(.5, .5, .1) }, pool: { value: 0.18 },
   },
   vertexShader: `varying vec2 vS; void main(){ vS = uv; gl_Position = vec4(position.xy, 0.9999, 1.0); }`,
   fragmentShader: `
     uniform sampler2D texA, texB, depA, depB;
-    uniform float aspA, aspB, sa, zA, zB, dollyA, dollyB, par, prog, t, focusD, blurK, sat, expo, pool, dim;
+    uniform float aspA, aspB, sa, zA, zB, dollyA, dollyB, par, prog, t, focusD, blurK, sat, expo, pool, zbk; uniform vec2 anc;
     uniform vec2 cA, cB, mouse, px; uniform vec3 tint, light, subj;
     varying vec2 vS;
     vec2 K(float ia){ return sa > ia ? vec2(1.0, ia / sa) : vec2(sa / ia, 1.0); }
@@ -93,20 +93,27 @@ const bgShader = {
         col = lens(texA, uA, dA, aspA);
       } else {
         vec2 uB = place(s, aspB, cB, zB, dollyB, depB, dB);
-        // the horizon sweep: far first, near last, the sky from the top down
-        vec2 np = s * vec2(sa, 1.0) * 3.0;
-        float n = 0.6 * vn(np + t * 0.05) + 0.4 * vn(np * 2.7 - t * 0.08);
-        float key = max(dA, dB) * 0.9 + s.y * 0.12 + (n - 0.5) * 0.1;
-        float P = prog * 1.32 - 0.16;
-        float m = smoothstep(key - 0.045, key + 0.045, P);
-        float front = exp(-pow((P - key) / 0.065, 2.0));
-        // the mist bends the light a touch as it passes
-        vec2 wob = vec2(0.0, (vn(np * 4.0 + t * 0.3) - 0.5) * 0.004 * front);
-        vec3 a = m < 0.999 ? lens(texA, uA + wob, dA, aspA) : vec3(0.0);
-        vec3 b = m > 0.001 ? lens(texB, uB + wob, dB, aspB) : vec3(0.0);
-        col = mix(a, b, m);
-        float land = smoothstep(0.04, 0.22, max(dA, dB));             // the mist lies on the land, the sky just changes
-        col = mix(col, light * 0.9, front * 0.13 * land);
+        // Through the figure: the old place rushes on towards him (a radial zoom blur on the anchor) …
+        vec3 a = lens(texA, uA, dA, aspA);
+        if (zbk > 0.002) {
+          vec3 acc = a;
+          for (int i = 1; i < 8; i++) {
+            float f = float(i) / 8.0 * zbk; float dd;
+            acc += photo(texA, place(mix(s, anc, f), aspA, cA, zA, dollyA, depA, dd));
+          }
+          a = acc / 8.0;
+        }
+        // … while the next place opens out of him like a print lifted to the eye, until it fills the frame
+        vec2 e = vec2(0.004);
+        vec2 inn = smoothstep(vec2(0.0), e, uB) * smoothstep(vec2(1.0), vec2(1.0) - e, uB);
+        float win = inn.x * inn.y;
+        vec2 outv = max(vec2(0.0), max(-uB, uB - 1.0)) * zB / K(aspB);
+        float od = length(outv);
+        a *= 1.0 - 0.5 * exp(-od * 22.0) * (1.0 - win);                     // the print's soft shadow on the old place
+        vec3 b = lens(texB, uB, dB, aspB);
+        col = mix(a, b, win * smoothstep(0.0, 0.08, prog));
+        col += vec3(1.0, 0.97, 0.92) * (1.0 - win) * exp(-od * 700.0) * 0.55 * (1.0 - smoothstep(0.8, 1.0, prog));   // its fine paper edge
+        col += light * 0.04 * exp(-pow((prog - 0.55) / 0.16, 2.0));           // a breath of light as it passes
       }
       // grade: true to the photo, nudged towards the hour
       float l = dot(col, vec3(0.299, 0.587, 0.114));
@@ -116,56 +123,7 @@ const bgShader = {
       col *= 1.0 + pool * exp(-dot(dd, dd) * 0.9);
       // long exposure: the frame gathers light, highlights roll off like film
       col = col * (1.0 + expo * 1.6) / (1.0 + col * expo * 0.55);
-      // 3D mode: the flat picture falls back into a dark room behind the diorama
-      float lum = dot(col, vec3(0.299, 0.587, 0.114));
-      col = mix(col, vec3(lum) * vec3(0.16, 0.17, 0.21), dim);
       gl_FragColor = vec4(col, 1.0);
-    }`,
-};
-
-/* ---------- the diorama: the same photograph as a real 3D relief ----------
-   A dense plane displaced by the depth map (near rises towards you), lit from a
-   light that follows the pointer, so dragging the hero turns the place in your hands.
-   At tilt 0 it lines up exactly with the flat picture, so the hand-over is seamless. */
-const dioShader = {
-  uniforms: {
-    tex: { value: null }, dep: { value: null }, disp: { value: 0 }, tilt: { value: 0 }, texel: { value: new THREE.Vector2(1 / 1024, 1 / 600) },
-    tint: { value: new THREE.Vector3(1, 1, 1) }, sat: { value: 1 }, lightDir: { value: new THREE.Vector3(0.3, 0.5, 1) }, relief: { value: 0 }, expo: { value: 0 },
-  },
-  vertexShader: `
-    uniform sampler2D dep; uniform float disp; uniform vec2 texel;
-    varying vec2 vUv; varying float vD;
-    float D(vec2 u){ return texture2D(dep, u).r; }
-    void main(){
-      vUv = uv;
-      // a little smoothing so cliffs bend instead of tearing
-      float d = D(uv) * 0.4 + (D(uv + vec2(texel.x * 2.0, 0.0)) + D(uv - vec2(texel.x * 2.0, 0.0)) + D(uv + vec2(0.0, texel.y * 2.0)) + D(uv - vec2(0.0, texel.y * 2.0))) * 0.15;
-      vD = d;
-      vec3 p = position; p.z += pow(d, 1.35) * disp;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-    }`,
-  fragmentShader: `
-    uniform sampler2D tex, dep; uniform vec2 texel; uniform vec3 tint, lightDir; uniform float sat, relief, tilt, expo;
-    varying vec2 vUv; varying float vD;
-    void main(){
-      vec3 col = texture2D(tex, vUv).rgb;
-      float l = dot(col, vec3(0.299, 0.587, 0.114));
-      col = mix(vec3(l), col, sat) * tint;
-      // relief shading from the depth slope
-      float dx = texture2D(dep, vUv + vec2(texel.x * 3.0, 0.0)).r - texture2D(dep, vUv - vec2(texel.x * 3.0, 0.0)).r;
-      float dy = texture2D(dep, vUv + vec2(0.0, texel.y * 3.0)).r - texture2D(dep, vUv - vec2(0.0, texel.y * 3.0)).r;
-      vec3 n = normalize(vec3(-dx * 9.0, -dy * 9.0, 1.0));
-      float lam = clamp(dot(n, normalize(lightDir)), 0.0, 1.0);
-      float shade = 0.8 + 0.42 * lam;
-      float cliff = smoothstep(0.03, 0.12, abs(dx) + abs(dy));          // torn edges read as dark rock faces
-      col *= mix(1.0, shade, relief) * (1.0 - cliff * 0.55 * tilt);
-      // plaster wash for the bas-relief look as it lifts, colour returns as it settles
-      vec3 plaster = vec3(0.86, 0.84, 0.8) * (0.35 + 0.85 * lam);
-      col = mix(col, plaster, relief * 0.05);
-      col = col * (1.0 + expo * 1.6) / (1.0 + col * expo * 0.55);
-      // the far edge of the print fades into the dark room
-      float edge = smoothstep(0.0, 0.035, vUv.x) * smoothstep(1.0, 0.965, vUv.x) * smoothstep(0.0, 0.035, vUv.y) * smoothstep(1.0, 0.965, vUv.y);
-      gl_FragColor = vec4(col * mix(1.0, edge, tilt), 1.0);
     }`,
 };
 
@@ -324,12 +282,6 @@ export function createStage(canvas, images, depths, opts = {}) {
   bg.frustumCulled = false; bg.renderOrder = -10; scene.add(bg);
   const U = bg.material.uniforms;
 
-  const seg = lite ? 150 : 300;
-  const dio = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, seg, seg), new THREE.ShaderMaterial({ ...dioShader, uniforms: THREE.UniformsUtils.clone(dioShader.uniforms) }));
-  dio.frustumCulled = false; dio.renderOrder = 1;
-  const dioPivot = new THREE.Group(); dioPivot.add(dio); scene.add(dioPivot);
-  const DU = dio.material.uniforms;
-
   const key = new THREE.DirectionalLight(0xdfe8ff, 2.2); key.position.set(0, 10, 4); scene.add(key);
   scene.add(new THREE.HemisphereLight(0x8f98aa, 0x0d0e12, 0.5));
 
@@ -405,6 +357,22 @@ export function createStage(canvas, images, depths, opts = {}) {
     U.cA.value.set(...ca); U.cB.value.set(...cb); U.zA.value = za; U.zB.value = zb;
     U.dollyA.value = 0.035 * fu; U.dollyB.value = 0.035 * Math.max(0, fu - 1 + 0.0);
     U.mouse.value.set(st.mouse[0], st.mouse[1]); U.prog.value = ia === ib ? 0 : (prog >= 1 ? 1.0001 : prog);
+    // the transition camera: A pushes in on its figure, B grows out of the same point and settles on its own framing
+    U.zbk.value = 0;
+    if (prog > 0 && prog < 1) {
+      const SA = toScreen(ia, za, ca, ...P(ia)), SB = toScreen(ib, zb, cb, ...P(ib));
+      const pe = prog * prog * (3 - 2 * prog);
+      const ax = lerp(SA[0], SB[0], pe), ay = lerp(SA[1], SB[1], pe);
+      const zA2 = za * (1 + 2.6 * Math.pow(prog, 1.8));
+      const kA = kOf(ia), pA = P(ia);
+      U.zA.value = zA2; U.cA.value.set(pA[0] - (ax - 0.5) * kA[0] / zA2, pA[1] - (ay - 0.5) * kA[1] / zA2);
+      const eb = prog < 0.5 ? 4 * prog * prog * prog : 1 - Math.pow(-2 * prog + 2, 3) / 2;
+      const zB2 = zb * lerp(0.12, 1, eb);
+      const kB = kOf(ib), pB = P(ib);
+      U.zB.value = zB2; U.cB.value.set(pB[0] - (ax - 0.5) * kB[0] / zB2, pB[1] - (ay - 0.5) * kB[1] / zB2);
+      U.anc.value.set(ax, ay);
+      U.zbk.value = 0.32 * sstep(0.0, 0.7, prog);
+    }
     if (prog >= 1) { U.texA.value = texs[ib]; U.depA.value = deps[ib]; U.aspA.value = asp(ib); U.cA.value.set(...cb); U.zA.value = zb; U.dollyA.value = 0; U.prog.value = 0; }
     U.t.value = t;
     U.focusD.value = st.focus.d; U.blurK.value = st.focus.k * (prog > 0 && prog < 1 ? 0.3 : 1);
@@ -467,33 +435,6 @@ export function createStage(canvas, images, depths, opts = {}) {
         m4.compose(pv, q, sv); const m = rockSets[fr.set]; m.setMatrixAt(m.count++, m4);
       }
       rockSets.forEach((m) => { m.instanceMatrix.needsUpdate = true; });
-    }
-
-    // ---- 3D diorama (drag to turn the place) ----
-    const D3 = st.dio || { tilt: 0, rx: 0, ry: 0, lx: 0, ly: 0 };
-    const tl = D3.tilt;
-    dioPivot.visible = tl > 0.002;
-    U.dim.value = sstep(0.0, 0.5, tl) * 0.92;
-    if (dioPivot.visible) {
-      const useB = mixE > 0.5, i = useB ? ib : ia, z = useB ? zb : za, c = useB ? cb : ca;
-      const k = kOf(i);
-      const pw = 2 * HH * aspect * z / k[0], ph2 = 2 * HH * z / k[1];
-      dio.scale.set(pw, ph2, 1);
-      dio.position.set((0.5 - c[0]) * pw, (c[1] - 0.5) * ph2, 0);
-      DU.tex.value = texs[i]; DU.dep.value = deps[i];
-      DU.texel.value.set(1 / depths[i].width, 1 / depths[i].height);
-      const depthAmp = HH * 0.55;
-      DU.disp.value = depthAmp * sstep(0, 1, tl);
-      DU.tilt.value = tl; DU.relief.value = sstep(0.05, 0.9, tl);
-      const S = useB ? B : A;
-      DU.tint.value.set(...S.look.tint); DU.sat.value = S.look.sat; DU.expo.value = st.expo;
-      DU.lightDir.value.set(0.35 + D3.lx * 0.9, 0.55 - D3.ly * 0.9, 0.9);
-      // turn about the middle of the relief's thickness, pull back a little so the edges show
-      dioPivot.position.set(0, 0, 0);
-      dio.position.z = -depthAmp * 0.45 * sstep(0, 1, tl);
-      dioPivot.rotation.set(D3.rx, D3.ry, 0);
-      dioPivot.scale.setScalar(1 - 0.16 * sstep(0, 1, tl));
-      parts.forEach((p) => { if (p.visible) p.material.uniforms.k.value *= 1 - tl * 0.6; });
     }
 
     grade.uniforms.t.value = t; grade.uniforms.fade.value = st.fade; grade.uniforms.vig.value = 1 - st.print * 0.6;

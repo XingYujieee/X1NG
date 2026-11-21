@@ -12,114 +12,75 @@ const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-/* ---------------------------------------------------------------- Iris --- */
-const STOPS = ['1.4', '2', '2.8', '4', '5.6', '8', '11', '16', '22'];
-
+/* ----------------------------------------------------- Curtain transition --- */
+/* A dark curtain with a curved leading edge rises over the page (the page drifts up and
+   dims under it), the destination's name slides up in large type, then the curtain lifts
+   away with the curve reversed while the new page eases up into place.
+   (Kept the createIris name/API so callers didn't change.) */
 export function createIris() {
   const el = document.createElement('div');
-  el.className = 'iris';
+  el.className = 'curtain';
   el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = '<canvas></canvas><div class="iris__label"><span class="mono iris__stop">ƒ/1.4</span><span class="iris__to"></span></div>';
+  el.innerHTML = `<svg class="curtain__svg" preserveAspectRatio="none"><path/></svg>
+    <div class="curtain__label"><span class="mono curtain__kicker">X1NG</span><span class="curtain__to"><span class="curtain__line"><span class="curtain__en"></span></span><span class="curtain__line"><span class="curtain__zh"></span></span></span></div>
+    <i class="curtain__bar"></i>`;
   document.body.append(el);
-  const cv = el.querySelector('canvas');
-  const ctx = cv.getContext('2d');
-  const stopEl = el.querySelector('.iris__stop');
-  const toEl = el.querySelector('.iris__to');
-  const N = 7;
-  const state = { open: 1, cx: 0.5, cy: 0.5 };
-  let W = 0, H = 0, dpr = 1;
-
-  const resize = () => {
-    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    W = innerWidth; H = innerHeight;
-    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-    draw();
-  };
-
+  const svg = el.querySelector('svg'), path = el.querySelector('path');
+  const lines = el.querySelectorAll('.curtain__line > span');
+  const enEl = el.querySelector('.curtain__en'), zhEl = el.querySelector('.curtain__zh'), kick = el.querySelector('.curtain__kicker');
+  const bar = el.querySelector('.curtain__bar');
+  const st = { p: 0, mode: 'up' };   // p: 0 = no curtain, 1 = fully covered
+  let W = innerWidth, H = innerHeight;
+  const resize = () => { W = innerWidth; H = innerHeight; svg.setAttribute('viewBox', `0 0 ${W} ${H}`); draw(); };
   function draw() {
-    const o = state.open;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, W, H);
-    el.classList.toggle('is-active', o < 0.999);
-    if (o >= 0.999) return;
-    const cx = state.cx * W, cy = state.cy * H;
-    const far = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy));
-    const R = o * far * 1.32;                       // hole radius (polygon circumradius)
-    const twist = (1 - o) * 1.25 + 0.3;              // blades rotate as they close
-    const L = far * 3;
-    const V = [], D = [];
-    for (let i = 0; i < N; i++) {
-      const a = twist + (i / N) * Math.PI * 2;
-      V.push([cx + Math.cos(a) * R, cy + Math.sin(a) * R]);
-      const m = twist + ((i + 0.5) / N) * Math.PI * 2 + Math.PI / 2; // direction of edge i → i+1
-      D.push([Math.cos(m), Math.sin(m)]);
+    const p = st.p, c = Math.sin(Math.PI * Math.min(1, Math.max(0, p))) * H * 0.22;
+    el.classList.toggle('is-active', p > 0.001);
+    if (st.mode === 'up') {           // rising from the bottom, edge bulges upwards
+      const y = H * (1 - p);
+      path.setAttribute('d', `M0 ${H} L0 ${y} Q${W / 2} ${y - c} ${W} ${y} L${W} ${H} Z`);
+    } else {                          // leaving through the top, edge bulges downwards
+      const y = H * p;
+      path.setAttribute('d', `M0 0 L${W} 0 L${W} ${y} Q${W / 2} ${y + c} 0 ${y} Z`);
     }
-    // base: everything outside the aperture
-    ctx.beginPath();
-    ctx.rect(0, 0, W, H);
-    if (R > 0.5) V.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
-    ctx.fillStyle = '#0b0c10';
-    ctx.fill('evenodd');
-    // each blade = region between two consecutive extended polygon edges
-    for (let i = 0; i < N; i++) {
-      const b = V[(i + 1) % N], c = V[(i + 2) % N];
-      const d1 = D[i], d2 = D[(i + 1) % N];
-      ctx.beginPath();
-      ctx.moveTo(b[0], b[1]);
-      ctx.lineTo(b[0] + d1[0] * L, b[1] + d1[1] * L);
-      ctx.lineTo(c[0] + d2[0] * L, c[1] + d2[1] * L);
-      ctx.lineTo(c[0], c[1]);
-      ctx.closePath();
-      const g = ctx.createLinearGradient(b[0], b[1], b[0] + d1[0] * far, b[1] + d1[1] * far);
-      const k = i % 2 ? 0 : 6;
-      g.addColorStop(0, `rgb(${22 + k},${24 + k},${33 + k})`);
-      g.addColorStop(0.35, `rgb(${12 + k},${13 + k},${18 + k})`);
-      g.addColorStop(1, '#0b0c10');
-      ctx.fillStyle = g;
-      ctx.fill();
-      // blade edge highlight
-      ctx.beginPath();
-      ctx.moveTo(b[0], b[1]);
-      ctx.lineTo(b[0] + d1[0] * L, b[1] + d1[1] * L);
-      ctx.strokeStyle = `rgba(120,135,255,${0.18 + (1 - o) * 0.22})`;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-    // blue rim on the aperture opening
-    if (R > 1) {
-      ctx.beginPath();
-      V.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
-      ctx.closePath();
-      ctx.strokeStyle = 'rgba(34,51,255,.9)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    }
-    const s = STOPS[Math.round(clamp(1 - o, 0, 1) * (STOPS.length - 1))];
-    stopEl.textContent = `ƒ/${s}`;
   }
-
-  window.addEventListener('resize', resize);
-  resize();
+  const setLabel = (label = '') => {
+    const [en, zh] = label.split(' · ');
+    enEl.textContent = en || ''; zhEl.textContent = zh || '';
+    kick.textContent = en ? 'X1NG — Next' : 'X1NG';
+  };
+  addEventListener('resize', resize); resize();
+  const main = () => document.getElementById('main');
 
   return {
     el,
-    /** jump to fully closed (no animation) — used before the first paint of a new page */
-    shut(label = '') { gsap?.killTweensOf(state); state.open = 0; state.cx = 0.5; state.cy = 0.5; toEl.textContent = label; el.classList.add('show-label'); draw(); },
-    close({ x = 0.5, y = 0.5, label = '', duration = 0.85 } = {}) {
+    shut(label = '') { gsap?.killTweensOf(st); st.mode = 'down'; st.p = 1; setLabel(label); el.classList.add('show-label'); gsap?.set(lines, { yPercent: 0 }); draw(); },
+    close({ label = '', duration = 0.95 } = {}) {
       return new Promise((res) => {
-        state.cx = x; state.cy = y; toEl.textContent = label;
-        if (reduced || !gsap) { state.open = 0; draw(); res(); return; }
+        setLabel(label);
+        if (reduced || !gsap) { st.p = 1; st.mode = 'up'; draw(); res(); return; }
+        st.mode = 'up'; st.p = 0;
         el.classList.add('show-label');
-        gsap.killTweensOf(state);
-        gsap.to(state, { open: 0, duration, ease: 'expo.inOut', onUpdate: draw, onComplete: res });
+        gsap.killTweensOf(st);
+        const m = main();
+        if (m) gsap.to(m, { y: -innerHeight * 0.08, opacity: 0.6, duration, ease: 'power3.inOut' });
+        gsap.set(lines, { yPercent: 110 });
+        gsap.set(bar, { scaleX: 0 });
+        const tl = gsap.timeline({ onComplete: res });
+        tl.to(st, { p: 1, duration, ease: 'power3.inOut', onUpdate: draw })
+          .to(lines, { yPercent: 0, duration: 0.7, ease: 'expo.out', stagger: 0.07 }, duration * 0.55)
+          .to(bar, { scaleX: 0.7, duration: 0.8, ease: 'power2.out' }, duration * 0.5);
       });
     },
-    open({ duration = 1.15, delay = 0.05 } = {}) {
+    open({ duration = 1.05, delay = 0.1 } = {}) {
       return new Promise((res) => {
-        if (reduced || !gsap) { state.open = 1; draw(); res(); return; }
-        gsap.killTweensOf(state);
-        el.classList.remove('show-label');
-        gsap.to(state, { open: 1, duration, delay, ease: 'expo.inOut', onUpdate: draw, onComplete: res });
+        if (reduced || !gsap) { st.p = 0; draw(); res(); return; }
+        gsap.killTweensOf(st);
+        st.mode = 'down'; st.p = 1;
+        const m = main();
+        if (m) gsap.fromTo(m, { y: innerHeight * 0.1 }, { y: 0, duration: duration + 0.2, delay: delay + 0.15, ease: 'expo.out', clearProps: 'transform' });
+        gsap.to(bar, { scaleX: 1, duration: 0.3, ease: 'power2.out', delay });
+        gsap.to(lines, { yPercent: -110, duration: 0.55, ease: 'power3.in', stagger: 0.05, delay });
+        gsap.to(st, { p: 0, duration, delay: delay + 0.3, ease: 'power3.inOut', onUpdate: draw, onComplete: () => { el.classList.remove('show-label'); res(); } });
       });
     },
   };

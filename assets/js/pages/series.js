@@ -27,9 +27,16 @@ function renderTravelIndex() {
         <h1 class="h1" data-lens="游记"><span data-split>Travel</span><sup>${pad(travel.length)}</sup></h1>
         <div class="travel-intro" data-fade>
           <p class="lead">${travel.length} journeys, ${total} frames — each one a chapter, with field notes or a written journal. <span class="zh muted">游记：每段旅程是一章，配攻略或随笔。</span></p>
-          <button type="button" class="pill pill--blue roll-host" data-drive><span class="dot"></span><span data-roll>Drive through them · 开车逛游记</span></button>
+
         </div>
       </div>
+    </section>
+    <section class="wrap">
+      <button type="button" class="drive-cta" data-drive data-cursor="Drive">
+        <span class="drive-cta__car" aria-hidden="true"><i></i><b></b><b></b></span>
+        <span class="drive-cta__text"><span class="mono">Play · 可玩</span><strong>Drive through the chapters</strong><span class="zh">开一辆小车，在沙漠里逛完三章游记——撞倒照片，开进圆圈就进入那一章。</span></span>
+        <span class="drive-cta__keys mono"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Start →</span></span>
+      </button>
     </section>
     <section class="wrap chapters">
       ${travel.map((t) => {
@@ -50,7 +57,7 @@ function renderTravelIndex() {
             </div>
           </div>
           <a class="chapter__cover" href="travel.html?id=${t.id}" data-cursor="Open chapter" data-reveal>
-            <img src="${cover.m}" alt="${esc(cover.title)}" loading="lazy" data-parallax="5" data-relief>
+            <img src="${cover.m}" alt="${esc(cover.title)}" srcset="${cover.m} 1280w, ${cover.l} 2400w" sizes="(max-width: 860px) 100vw, 62vw" loading="lazy" data-parallax="5">
           </a>
           <div class="chapter__strip">
             ${thumbs.map((p, i) => `<a href="travel.html?id=${t.id}" data-reveal data-reveal-delay="${(0.1 + i * 0.07).toFixed(2)}" aria-label="${esc(p.title)}"><img src="${p.s}" alt="" loading="lazy"></a>`).join('')}

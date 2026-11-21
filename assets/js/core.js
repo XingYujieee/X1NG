@@ -30,6 +30,7 @@ export const NAV_MORE = [
   { href: 'corridor.html', en: 'Corridor', zh: '走廊', key: 'corridor' },
   { href: 'raw.html', en: 'RAW Lab', zh: '后期', key: 'raw' },
   { href: 'projects.html#cv', en: 'CV', zh: '简历', key: 'cv' },
+  { href: 'travel.html?drive', en: 'Drive', zh: '开车逛游记', key: 'drive' },
 ];
 
 let lenis = null;
@@ -251,7 +252,7 @@ export const setCursor = (label) => {
   if (label) { $('.cursor__text', c).textContent = label; c.classList.add('is-active'); } else c.classList.remove('is-active');
 };
 
-/* ---------- Page transitions: aperture iris ---------- */
+/* ---------- Page transitions: curved curtain (fx.js) ---------- */
 const TKEY = 'x1ng:transition';
 const LKEY = 'x1ng:transition-label';
 let iris = null;

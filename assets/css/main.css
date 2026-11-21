@@ -752,19 +752,21 @@ body.field-mode .toolbar { visibility: hidden; }
 /* ---------- Arriving: cover the first paint until the iris takes over ---------- */
 html.is-arriving body::before { content: ''; position: fixed; inset: 0; z-index: 259; background: var(--dark); }
 
-/* ---------- Iris (page transition) ---------- */
-.iris { position: fixed; inset: 0; z-index: 260; pointer-events: none; visibility: hidden; }
-.iris.is-active { visibility: visible; pointer-events: auto; }
-.iris canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.iris__label {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  display: grid; justify-items: center; gap: 14px; text-align: center; color: var(--on-dark);
-  opacity: 0; transition: opacity .35s;
-}
-.iris.show-label .iris__label { opacity: 1; transition-delay: .35s; }
-.iris__stop { color: var(--blue-2); letter-spacing: .2em; }
-.iris__to { font-size: clamp(22px, 2.6vw, 40px); letter-spacing: -.035em; line-height: 1; }
-.iris__to:empty { display: none; }
+/* ---------- Curtain (page transition) ---------- */
+.curtain { position: fixed; inset: 0; z-index: 260; pointer-events: none; visibility: hidden; }
+.curtain.is-active { visibility: visible; pointer-events: auto; }
+.curtain__svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.curtain__svg path { fill: var(--dark); }
+.curtain__label { position: absolute; left: var(--gutter); right: var(--gutter); bottom: clamp(70px, 12vh, 140px); display: grid; gap: 18px; color: var(--on-dark); opacity: 0; transition: opacity .2s; }
+.curtain.show-label .curtain__label { opacity: 1; }
+.curtain__kicker { color: var(--on-dark-2); }
+.curtain__to { display: grid; gap: 6px; }
+.curtain__line { display: block; overflow: hidden; padding-bottom: .06em; }
+.curtain__line > span { display: inline-block; }
+.curtain__en { font-size: clamp(56px, 11vw, 180px); line-height: .9; letter-spacing: -.06em; font-weight: 450; }
+.curtain__zh { font-size: clamp(16px, 1.6vw, 22px); letter-spacing: .14em; color: var(--on-dark-2); }
+.curtain__bar { position: absolute; left: var(--gutter); right: var(--gutter); bottom: clamp(40px, 7vh, 80px); height: 1px; background: rgba(238, 240, 246, .18); transform-origin: left; }
+.curtain__bar::after { content: ''; position: absolute; inset: 0; background: var(--blue-2); transform-origin: left; }
 
 /* ---------- Preloader: aperture ring ---------- */
 .preloader__ring { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; transform: translate(-50%, -50%); display: grid; place-items: center; }
@@ -1014,14 +1016,6 @@ body::after {
 @media (max-width: 960px) { .cv__grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 640px) { .cv__grid { grid-template-columns: 1fr; } .cv__head { grid-template-columns: 1fr; } }
 
-/* ---------- Hero · 3D diorama (drag) ---------- */
-.vf { --orbit: 0; }
-.vf__stage { cursor: grab; }
-.vf.is-orbit .vf__stage { cursor: grabbing; }
-.vf__copy { opacity: calc(1 - var(--orbit) * .85); transition: opacity .2s; }
-.vf__chapter { filter: opacity(calc(1 - var(--orbit) * .85)); }
-.vf__af { opacity: calc(1 - var(--orbit)); }
-
 /* ---------- Relief prints (relief.js) ---------- */
 canvas.relief { display: block; width: 100%; height: 100%; }
 .card__media canvas.relief { height: 118%; }
@@ -1106,3 +1100,46 @@ body.field-mode .bend-canvas { display: none; }
   mix-blend-mode: difference;
 }
 .lens-on .lens, .lens-on .cursor { opacity: 0 !important; }
+
+/* ---------- The darkroom print (relief.js) ---------- */
+.darkroom { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: var(--gutter); align-items: center; }
+.darkroom__text { display: grid; gap: 20px; align-content: start; }
+.darkroom__lede { color: var(--ink-2); line-height: 1.6; max-width: 36ch; }
+.darkroom__lede .zh { display: block; margin-top: 10px; font-size: 14px; line-height: 1.9; }
+.darkroom__print { margin: 0; position: relative; aspect-ratio: 3 / 2; border-radius: var(--radius); overflow: hidden; background: #efede7; box-shadow: 0 30px 80px -40px rgba(13, 14, 19, .35), inset 0 0 0 1px rgba(13, 14, 19, .06); cursor: crosshair; }
+.darkroom__print img, .darkroom__print canvas.relief { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (max-width: 860px) { .darkroom { grid-template-columns: 1fr; } }
+.relief-ui { position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; align-items: center; gap: 14px; pointer-events: none; color: rgba(13, 14, 19, .62); }
+.relief-ui__hint { transition: opacity .6s; }
+.relief-ui.is-going .relief-ui__hint { opacity: 0; }
+.relief-ui__meter { margin-left: auto; display: flex; align-items: center; gap: 10px; opacity: 0; transition: opacity .4s; }
+.relief-ui.is-going .relief-ui__meter { opacity: 1; }
+.relief-ui__meter i { width: 90px; height: 2px; background: rgba(13, 14, 19, .14); position: relative; overflow: hidden; }
+.relief-ui__meter i::after { content: ''; position: absolute; inset: 0; background: var(--blue); transform: scaleX(var(--p, 0)); }
+.relief-ui__meter i { --p: 0; }
+.relief-ui.is-done { color: rgba(255, 255, 255, .85); }
+.relief-ui.is-done .relief-ui__meter { opacity: 0; }
+.relief-ui__reset { pointer-events: auto; margin-left: auto; padding: 8px 12px; border-radius: 999px; background: rgba(11, 12, 16, .55); color: #fff; backdrop-filter: blur(6px); }
+
+/* ---------- Travel · drive call-to-action ---------- */
+.drive-cta {
+  width: 100%; margin-top: clamp(30px, 4vw, 56px); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: clamp(18px, 3vw, 44px);
+  padding: clamp(20px, 2.6vw, 34px) clamp(22px, 3vw, 40px); border-radius: var(--radius); text-align: left;
+  background: radial-gradient(120% 160% at 0% 0%, #3346ff 0%, var(--blue) 45%, #1622b8 100%); color: #fff;
+  box-shadow: 0 30px 70px -40px rgba(34, 51, 255, .7); transition: transform .8s var(--ease-out);
+}
+.drive-cta:hover { transform: translateY(-4px); }
+.drive-cta__text { display: grid; gap: 8px; }
+.drive-cta__text .mono { color: rgba(255, 255, 255, .7); }
+.drive-cta__text strong { font-weight: 450; font-size: clamp(28px, 3.4vw, 54px); letter-spacing: -.045em; line-height: 1; }
+.drive-cta__text .zh { color: rgba(255, 255, 255, .78); font-size: 14px; line-height: 1.7; }
+.drive-cta__keys { display: flex; align-items: center; gap: 6px; }
+.drive-cta__keys kbd { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: rgba(255, 255, 255, .14); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .2); font: inherit; }
+.drive-cta__keys span { margin-left: 14px; }
+.drive-cta__car { position: relative; width: 92px; height: 54px; }
+.drive-cta__car i { position: absolute; left: 6px; right: 6px; top: 12px; height: 26px; border-radius: 8px; background: #fff; box-shadow: 18px -12px 0 -6px #dfe4ff; animation: car-bob 1.2s ease-in-out infinite; }
+.drive-cta__car b { position: absolute; bottom: 6px; width: 16px; height: 16px; border-radius: 50%; background: #0b0c10; box-shadow: inset 0 0 0 4px #2b2f3d; animation: wheel 0.6s linear infinite; }
+.drive-cta__car b:first-of-type { left: 14px; } .drive-cta__car b:last-of-type { right: 14px; }
+@keyframes car-bob { 50% { transform: translateY(-2px); } }
+@keyframes wheel { to { transform: rotate(360deg); } }
+@media (max-width: 760px) { .drive-cta { grid-template-columns: 1fr; } .drive-cta__car, .drive-cta__keys kbd { display: none; } }

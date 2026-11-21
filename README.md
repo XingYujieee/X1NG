@@ -81,17 +81,18 @@ Current frames are a procedural placeholder — see `motion-source/photographer-
 - **New frames #126–131 (Egypt):** sit in the archive with their styles like every other frame, and form
   Travel chapter 03 (linked to the `egypt/` journal). Home has a sticky horizontal strip of the travel
   chapters (`.tv`, built in `pages/home.js`) and a "Beyond the camera" projects teaser.
-- **`assets/js/fx.js`** — shared camera-body effects: aperture-iris page transition and preloader exit (canvas),
+- **`assets/js/fx.js`** — shared camera-body effects: curved-curtain page transition with the destination title, and preloader exit,
   "develop" reveal for photos (`data-reveal`: clip wipe + chemical fade), magnetic buttons, viewfinder lens
   cursor, mono-label scramble (`data-scramble`), film grain. All off under `prefers-reduced-motion`.
-- **Hero 3D:** drag the viewfinder photo and it lifts off as a depth-map relief (`viewfinder/stage.js`, diorama mesh).
-- **`relief.js`** — `img[data-relief]` → plaster bas-relief that develops into colour as it scrolls up; hover = raking light.
+- **Hero transitions** (`viewfinder/stage.js`): each scene pushes in on the small figure (radial zoom blur) and the
+  next landscape opens out of that figure like a print, then settles on its own framing.
+- **`relief.js`** — `img[data-relief]` → a blank plaster sheet; brushing it raises the photo as a white relief; past
+  50 % coverage it glows and the photograph develops. Used only on the home "Darkroom" print and the About portrait.
 - **`ink.js`** — monopo-style colour fluid in dark sections (travel strip, band, CV, next panels), pushed by the cursor.
 - **Work grid paper curl** (`webgl/bend.js`, Unseen-style): prints drawn by WebGL behind the page curl over a
   cylinder at the screen's top/bottom edges, RGB-split when scrolling fast (desktop only).
 - **Lens text** (`lenstext.js`, monopo-style): `data-lens="中文"` on a heading → a glass lens follows the cursor and
   shows the Chinese inside it.
-- **Relief prints** rise out of the plaster around the cursor (Immersive-style local relief).
 - **Work → 3D World** (`webgl/world.js`): endless curved wall of prints, drag anywhere, click to fly in.
 - **Travel → Drive** (`drive/drive.js`, own bundle + vendored `cannon-es`): drive a little car to each chapter,
   knock over its prints; loaded only on demand (`travel.html?drive` opens it directly).

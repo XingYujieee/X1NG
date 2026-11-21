@@ -22,7 +22,7 @@ $('[data-cards]').innerHTML = series.slice(0, 4).map((s, i) => {
   const cover = byN(s.cover);
   return `<a class="card roll-host" href="series.html?id=${s.id}" data-cursor="Open series" data-scramble-host>
     <div class="card__media" data-reveal>
-      <img src="${cover.m}" alt="${esc(cover.title)} — ${esc(s.en)}" loading="lazy" data-parallax="6" data-relief>
+      <img src="${cover.m}" alt="${esc(cover.title)} — ${esc(s.en)}" loading="lazy" data-parallax="6">
       <span class="count mono">${pad(s.frames.length)} frames</span>
     </div>
     <div class="card__meta mono"><span data-scramble>${pad(i + 1)} / ${esc(s.region)}</span><span data-scramble>${s.tags.join(' • ')}</span></div>
