@@ -34,7 +34,7 @@ function renderTravelIndex() {
     <section class="wrap">
       <button type="button" class="drive-cta" data-drive data-cursor="Drive">
         <span class="drive-cta__car" aria-hidden="true"><i></i><b></b><b></b></span>
-        <span class="drive-cta__text"><span class="mono">Play · 可玩</span><strong>Drive through the chapters</strong><span class="zh">开一辆小车，在沙漠里逛完三章游记——撞倒照片，开进圆圈就进入那一章。</span></span>
+        <span class="drive-cta__text"><span class="mono">Play · 可玩</span><strong>Drive across the places</strong><span class="zh">一座按拍摄地点造的小岛：沙漠、丹霞、雪山、草甸与城市。每个地点是一站，开进圆圈按 Enter 看那里拍的照片；N 切换昼夜，T 切换天气。</span></span>
         <span class="drive-cta__keys mono"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Start →</span></span>
       </button>
     </section>
@@ -75,18 +75,31 @@ function openDrive() {
   if ($('.drive')) return;
   const host = document.createElement('div');
   host.className = 'drive';
-  host.innerHTML = '<div class="drive__load mono">Loading the desert · 正在铺沙</div>';
+  host.innerHTML = '<div class="drive__load mono">Building the island · 正在造岛</div>';
   document.body.append(host);
   getLenis()?.stop();
   document.documentElement.classList.add('drive-open');
-  const chapters = travel.map((t) => ({
-    chapter: t.chapter, en: t.en, zh: t.zh, year: t.year, region: t.region,
-    href: `travel.html?id=${t.id}`, journal: t.journal ? t.journal.href : null,
-    thumbs: [t.cover, ...t.frames.filter((n) => n !== t.cover)].slice(0, 5).map((n) => byN(n).s),
-  }));
+  // one stop per place in the archive
+  const egypt = travel.find((t) => t.id === 'egypt');
+  const PLACE_STOPS = [
+    ['yunnan', 'Yunnan', 'Yunnan', '云南', 'Lijiang · Shangri-La · Meili', 'yunnan'],
+    ['qinggan', 'Qinghai–Gansu', 'Qinghai–Gansu', '青甘', 'Danxia · salt lakes · desert', 'qinggan'],
+    ['beijing', 'Beijing', 'Beijing', '北京', 'The old city', null],
+    ['nanjing', 'Nanjing', 'Nanjing', '南京', 'Zijin Mountain', null],
+    ['shanghai', 'Shanghai', 'Shanghai', '上海', 'The Bund · Lujiazui', null],
+    ['luxor', 'Luxor', 'Luxor', '卢克索', 'Egypt · balloons at dawn', 'egypt'],
+    ['giza', 'Giza', 'Giza', '吉萨', 'Egypt · the pyramids', 'egypt'],
+    ['cairo', 'Cairo', 'Cairo', '开罗', 'Egypt · old Cairo', 'egypt'],
+    ['road', '', 'On the Road', '在路上', 'Everywhere else', null],
+  ];
+  const stops = PLACE_STOPS.map(([key, place, en, zh, region, chapter]) => ({
+    key, en, zh, region,
+    href: chapter ? `travel.html?id=${chapter}` : null, hrefLabel: chapter === 'egypt' && egypt?.journal ? 'Egypt chapter' : 'Chapter',
+    photos: photos.filter((p) => p.place === place).map((p) => ({ s: p.s, m: p.m, ratio: p.ratio, title: p.title, zh: p.zh, n: p.n })),
+  })).filter((s) => s.photos.length);
   const done = () => { host.remove(); document.documentElement.classList.remove('drive-open'); getLenis()?.start(); };
   const go = () => document.fonts.ready.then(() => window.X1NG_DRIVE.mount(host, {
-    chapters,
+    stops,
     onOpen: (href) => { window.navigateTo ? window.navigateTo(href) : (location.href = href); },
     onClose: done,
   }));
