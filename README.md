@@ -94,12 +94,18 @@ Current frames are a procedural placeholder — see `motion-source/photographer-
 - **Lens text** (`lenstext.js`, monopo-style): `data-lens="中文"` on a heading → a glass lens follows the cursor and
   shows the Chinese inside it.
 - **Work → 3D World** (`webgl/world.js`): endless curved wall of prints, drag anywhere, click to fly in.
-- **Travel → Drive** (`drive/drive.js` + `drive/world.js`, own bundle + vendored `cannon-es`): an island laid out
-  like the places in the archive (Egypt dunes/Nile/pyramids, Qinghai–Gansu yardangs, snowy range, Yunnan meadows,
-  Beijing gate, Nanjing/Shanghai towers, the sea as the edge). One stop per place — drive into its ring, Enter
-  shows that place's photos in-world. Heightfield terrain, grass pressed by the tyres, tyre tracks, brake/indicator/
-  reverse/head lights, day–night (N), weather per region or T (rain, snow, sandstorm), minimap, 1–9 jump.
-  Loaded only on demand (`travel.html?drive`; test params `&at=giza&tod=0.93&wx=sand`).
+- **Travel → Drive** — built the way bruno-simon.com is built: **Blender for the models, three.js for real time, Rapier for physics**.
+  - `assets/tools/drive_assets.py` models everything in Blender (run with `pip install bpy` or inside Blender): the travel 4x4
+    (roof rack, spare wheel, round lights; lights are separate `car__head/tail/reverse/indL/indR` objects), regional trees
+    (fir, palm, ginkgo, plane, poplar…), props, and landmarks per place (pyramids & Sphinx, Luxor temple, Cairo mosque,
+    Dunhuang pavilion, Shangri-La stupa, Beijing gate & corner tower & the Egg, Nanjing gate & Zifeng, Lujiazui & the Bund).
+    Objects named `<asset>__colN` are convex collision shapes. Output: `media/drive/*.glb` + `resources/drive.blend`.
+  - `drive/terrain.js` island shape and roads · `physics.js` Rapier world + raycast vehicle (low centre of mass: no wheelies;
+    reverse, handbrake drift, self-righting) · `places.js` what stands where · `world.js` ground, water, landmarks, regional
+    vegetation, grass that parts for the car, kicked-up leaves, shaking trees, animals, balloons, boats, prayer flags ·
+    `stops.js` the exhibition platforms (museum label, prints that stand up when you arrive) · `drive.js` car, camera, weather,
+    day/night, HUD. `node assets/tools/drive_test.mjs` checks the vehicle headlessly.
+  - Loaded only on demand (`travel.html?drive`; test params `&at=giza&tod=0.93&wx=sand&cam=2`).
 - **Hero transition** (`viewfinder/stage.js`): between places the camera flies through a dark space — each photo
   becomes a relief (vertices pulled towards its own camera by depth, so the hand-off from/to the flat view is exact).
 
