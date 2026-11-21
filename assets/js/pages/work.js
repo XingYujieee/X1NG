@@ -3,7 +3,7 @@ import { photos, CATEGORIES, STYLES, styleById, byN, texSrc } from '../data.js';
 import { openLightbox } from '../lightbox.js';
 import { webglAvailable } from '../webgl/hero.js';
 
-const app = boot({ page: 'work', next: { href: 'series.html', label: 'The Series', sub: 'Seven curated stories · 七个系列', image: byN(102).m } });
+const app = boot({ page: 'work', next: { href: 'series.html', label: 'The Series', sub: 'Five ongoing studies · 五个系列', image: byN(102).m } });
 const params = new URLSearchParams(location.search);
 let filter = styleById(params.get('style')) ? params.get('style') : 'all';
 let view = params.get('view') === 'field' ? 'field' : 'grid';
@@ -19,10 +19,13 @@ $('[data-chips-field]').innerHTML = chipHtml();
 /* ---------- Grid ---------- */
 const grid = $('[data-grid]');
 grid.innerHTML = photos.map((p) => `
-  <a class="tile" href="work.html?p=${p.n}" data-n="${p.n}" data-style="${p.style}" data-cursor="View" aria-label="${esc(p.title)} ${esc(p.zh)}">
+  <a class="tile" href="work.html?p=${p.n}" data-n="${p.n}" data-style="${p.style}" data-cursor="View" data-reveal aria-label="${esc(p.title)} ${esc(p.zh)}">
     <img src="${p.s}" srcset="${p.s} 640w, ${p.m} 1280w" sizes="(max-width: 700px) 50vw, 25vw" width="${p.w}" height="${p.h}" alt="${esc(p.title)}${p.place ? ` — ${esc(p.place)}` : ''}" loading="lazy" decoding="async">
     <span class="tile__cap"><b>${esc(p.title)}</b><span class="mono">${esc(p.place || styleById(p.style).en)}</span></span>
   </a>`).join('');
+// Unseen-style paper curl: the grid's prints are drawn by WebGL behind the page (desktop only)
+if (window.matchMedia('(min-width: 761px) and (hover: hover)').matches) import('../webgl/bend.js').then(({ mountBend }) => mountBend(grid));
+
 $$('.tile img', grid).forEach((img) => { if (img.complete) img.classList.add('is-loaded'); else img.addEventListener('load', () => img.classList.add('is-loaded'), { once: true }); });
 
 grid.addEventListener('click', (e) => {
@@ -79,7 +82,7 @@ async function setView(next) {
   history.replaceState(null, '', u);
   if (view === 'field') {
     if (!field) {
-      const { createField } = await import('../webgl/field.js');
+      const { createField } = await import('../webgl/world.js');
       field = createField(fieldEl, {
         onHover(it) { fieldTitle.innerHTML = it ? `${esc(it.title)}<span class="zh">${esc(it.zh)}</span>` : ''; },
         onSelect(it) { openAt(it.n); },
@@ -102,7 +105,6 @@ if (!canField) $$('[data-view="field"]').forEach((b) => { b.disabled = true; b.t
 /* ---------- Init ---------- */
 applyFilter(filter, false);
 app.ready();
-if (!reduced) gsap.from($$('.tile', grid).filter((t) => !t.classList.contains('is-hidden')).slice(0, 12), { opacity: 0, y: 60, duration: 1.2, ease: 'expo.out', stagger: 0.05, delay: 0.3 });
 if (view === 'field') setView('field');
 const deep = +params.get('p');
 if (deep && byN(deep)) setTimeout(() => openAt(deep), 400);

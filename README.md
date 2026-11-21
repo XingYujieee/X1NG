@@ -21,8 +21,10 @@ bash assets/tools/build.sh   # needs Node.js
 | --- | --- |
 | `index.html` | Viewfinder hero (four places, scroll-driven real-time WebGL, click to focus, hold for long exposure), intro, featured series, archive marquee, subjects index, CTA |
 | `beneath.html` | The viewfinder hero on its own page |
-| `work.html` | All 125 frames: style filters, masonry grid, lightbox (keyboard / swipe), **Field 3D** cylinder view. Deep links: `?style=gold`, `?view=field`, `?p=39` |
-| `series.html` | Series index; `series.html?id=yunnan` etc. for each story (Yunnan & Qinghai–Gansu include the travel guides) |
+| `work.html` | The curated archive (104 frames, newest first): style filters, masonry grid, lightbox (keyboard / swipe), **Field 3D** cylinder view. Deep links: `?style=gold`, `?view=field`, `?p=39` |
+| `series.html` | Ongoing themes (cities, above, geometry, people, wild); `series.html?id=cities` etc. |
+| `travel.html` | Travel chapters — Yunnan, Qinghai–Gansu (with field guides), Egypt (links to the `egypt/` journal); `travel.html?id=egypt`. Old `series.html?id=yunnan` links redirect here |
+| `projects.html` | Projects + CV (`#cv`). Content lives in `assets/js/profile.js`; `todo: true` items show as dashed placeholders, set `CV.pdf` to show the download button |
 | `raw.html` | RAW → final comparisons with Baidu Netdisk downloads |
 | `about.html` | Bio, subjects, contact |
 
@@ -70,6 +72,42 @@ How it was made and how to rebuild or swap in AI transitions: `motion-source/cor
 The photographer in the hero is a **sprite-atlas motion**: 48 pre-rendered frames of a clockwise gaze orbit,
 scrubbed by the pointer with oil-motion's damped frame animator (`assets/js/motion/`). Click him to take a shot.
 Current frames are a procedural placeholder — see `motion-source/photographer-gaze/README.md` to replace them with AI-generated frames.
+
+## Nov 2026 edit — curation, Egypt, FX layer
+
+- **Curation:** `RETIRED` in `assets/js/data.js` lists the 27 frames taken off the site (weaker or near-duplicate
+  shots). Files stay in `media/`, numbering and deep links stay stable — delete a number to put a frame back.
+  `photos` = what the site shows; `allPhotos`/`byN` still reach every numbered frame.
+- **New frames #126–131 (Egypt):** sit in the archive with their styles like every other frame, and form
+  Travel chapter 03 (linked to the `egypt/` journal). Home has a sticky horizontal strip of the travel
+  chapters (`.tv`, built in `pages/home.js`) and a "Beyond the camera" projects teaser.
+- **`assets/js/fx.js`** — shared camera-body effects: curved-curtain page transition with the destination title, and preloader exit,
+  "develop" reveal for photos (`data-reveal`: clip wipe + chemical fade), magnetic buttons, viewfinder lens
+  cursor, mono-label scramble (`data-scramble`), film grain. All off under `prefers-reduced-motion`.
+- **Hero transitions** (`viewfinder/stage.js`): each scene pushes in on the small figure (radial zoom blur) and the
+  next landscape opens out of that figure like a print, then settles on its own framing.
+- **`relief.js`** — `img[data-relief]` → a blank plaster sheet; brushing it raises the photo as a white relief; past
+  50 % coverage it glows and the photograph develops. Used only on the home "Darkroom" print and the About portrait.
+- **`ink.js`** — monopo-style colour fluid in dark sections (travel strip, band, CV, next panels), pushed by the cursor.
+- **Work grid paper curl** (`webgl/bend.js`, Unseen-style): prints drawn by WebGL behind the page curl over a
+  cylinder at the screen's top/bottom edges, RGB-split when scrolling fast (desktop only).
+- **Lens text** (`lenstext.js`, monopo-style): `data-lens="中文"` on a heading → a glass lens follows the cursor and
+  shows the Chinese inside it.
+- **Work → 3D World** (`webgl/world.js`): endless curved wall of prints, drag anywhere, click to fly in.
+- **Travel → Drive** — built the way bruno-simon.com is built: **Blender for the models, three.js for real time, Rapier for physics**.
+  - `assets/tools/drive_assets.py` models everything in Blender (run with `pip install bpy` or inside Blender): the travel 4x4
+    (roof rack, spare wheel, round lights; lights are separate `car__head/tail/reverse/indL/indR` objects), regional trees
+    (fir, palm, ginkgo, plane, poplar…), props, and landmarks per place (pyramids & Sphinx, Luxor temple, Cairo mosque,
+    Dunhuang pavilion, Shangri-La stupa, Beijing gate & corner tower & the Egg, Nanjing gate & Zifeng, Lujiazui & the Bund).
+    Objects named `<asset>__colN` are convex collision shapes. Output: `media/drive/*.glb` + `resources/drive.blend`.
+  - `drive/terrain.js` island shape and roads · `physics.js` Rapier world + raycast vehicle (low centre of mass: no wheelies;
+    reverse, handbrake drift, self-righting) · `places.js` what stands where · `world.js` ground, water, landmarks, regional
+    vegetation, grass that parts for the car, kicked-up leaves, shaking trees, animals, balloons, boats, prayer flags ·
+    `stops.js` the exhibition platforms (museum label, prints that stand up when you arrive) · `drive.js` car, camera, weather,
+    day/night, HUD. `node assets/tools/drive_test.mjs` checks the vehicle headlessly.
+  - Loaded only on demand (`travel.html?drive`; test params `&at=giza&tod=0.93&wx=sand&cam=2`).
+- **Hero transition** (`viewfinder/stage.js`): between places the camera flies through a dark space — each photo
+  becomes a relief (vertices pulled towards its own camera by depth, so the hand-off from/to the flat view is exact).
 
 ## Styles
 
