@@ -110,6 +110,12 @@ Current frames are a procedural placeholder — see `motion-source/photographer-
     skips the car, fixed-step physics drawn interpolated, anti-roll bars, boost (Shift), hop (Space), handbrake (B),
     WebAudio engine with gears plus tyre/wind/rain/impact sounds (`audio.js`), skid marks, speedometer, radar, full map (M)
     with visited places and click-to-go.
+  - Visual pass: `materials.js` gives every Blender material procedural detail with bump (stone courses, brick bond,
+    roof tiles down the slope, window grids lit at night, bark, leaves, straw) and lets the weather land on it (snow on
+    up-facing surfaces, wet sheen, dust); `grass.js` dense near-field grass from a baked mask, with gusts; trees between
+    the camera and the car dissolve; each stop is a curved gallery wall with framed prints, captions and picture lights,
+    seen from a viewpoint checked to be clear; `weather.js` snow flakes, rain streaks + splashes, sandstorm dust clouds,
+    and a colour grade per weather.
   - Loaded only on demand (`travel.html?drive`; test params `&at=giza&tod=0.93&wx=sand&view=map`).
 - **Hero transition** (`viewfinder/stage.js`): between places the camera flies through a dark space — each photo
   becomes a relief (vertices pulled towards its own camera by depth, so the hand-off from/to the flat view is exact).

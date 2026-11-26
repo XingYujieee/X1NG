@@ -26,7 +26,9 @@ import { OutputPass } from '../../vendor/three-addons/postprocessing/OutputPass.
 import { PLACES, START, WATER_Y, SIZE_X, SIZE_Z, biomeAt, nearestPlace, islandD, buildGrid } from './terrain.js';
 import { createPhysics } from './physics.js';
 import { loadAssets } from './assets.js';
-import { buildWorld, WIND } from './world.js';
+import { buildWorld } from './world.js';
+import { ENV } from './materials.js';
+import { buildWeather, GradeShader, gradeFor } from './weather.js';
 import { buildStops } from './stops.js';
 import { createAudio } from './audio.js';
 
@@ -99,7 +101,9 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
       <div class="dv-mapkey mono"><span class="dv-visited"></span><span>点一个地点直接过去 · click a place to go there</span></div>
     </dialog>
     <div class="drive__viewer" hidden>
-      <figure><img alt=""><figcaption class="mono"></figcaption></figure>
+      <div class="dv-vbg"></div>
+      <figure><img alt=""><figcaption></figcaption></figure>
+      <div class="dv-strip" role="listbox" aria-label="Photographs"></div>
       <button type="button" class="drive__vbtn" data-v="prev" aria-label="Previous">←</button>
       <button type="button" class="drive__vbtn" data-v="next" aria-label="Next">→</button>
       <button type="button" class="drive__vbtn" data-v="close" aria-label="Back to driving">Esc · 回到车上</button>
@@ -112,7 +116,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     <div class="drive__load mono"><span>Building the island · 正在造岛</span><i><b></b></i></div>`;
   const $ = (s) => host.querySelector(s);
   const canvas = $('.drive__canvas'), card = $('.drive__card'), regionEl = $('.drive__region');
-  const viewer = $('.drive__viewer'), vImg = viewer.querySelector('img'), vCap = viewer.querySelector('figcaption'), flash = $('.drive__flash');
+  const viewer = $('.drive__viewer'), vImg = viewer.querySelector('figure img'), vCap = viewer.querySelector('figcaption'), flash = $('.drive__flash');
   const placeEl = $('.dv-place'), speedEl = $('.dv-speed output'), timeBtn = $('[data-act="time"]'), wxBtn = $('[data-act="weather"]'), soundBtn = $('[data-act="sound"]');
   const mapDlg = $('.dv-mapdlg'), fullMap = $('.dv-fullmap'), visitedEl = $('.dv-visited');
   const bar = $('.drive__load b');
@@ -177,6 +181,8 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   if (!coarse) composer.addPass(bloom);
   const blur = new ShaderPass(SpeedBlur);
   if (!reduced) composer.addPass(blur);
+  const grade = new ShaderPass(GradeShader);
+  composer.addPass(grade);
   composer.addPass(new OutputPass());
 
   /* ---------- world ---------- */
@@ -186,6 +192,31 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   const ST = buildStops(scene, physics, lib, grid, stopData);
   const stops = ST.stops;
   const { sample } = grid;
+  // a clear viewpoint for each stop: no wall, landmark, hill or canopy between the camera and the prints
+  {
+    const ball = new R.Ball(0.45), q = { x: 0, y: 0, z: 0, w: 1 }, dir = new THREE.Vector3(), seg = new THREE.Vector3();
+    const canopies = [];
+    for (const type in W.trees) for (const t of W.trees[type]) if (!['shrub', 'tuft', 'reeds', 'bush'].includes(type)) canopies.push([t.x, t.y + 2.8 * t.s, t.z, 2.4 * t.s]);
+    const clear = (from, to) => {
+      dir.subVectors(to, from); const len = dir.length(); dir.divideScalar(len);
+      const hit = physics.world.castShape(from, q, dir, ball, 0, len, false, R.QueryFilterFlags.EXCLUDE_DYNAMIC);
+      if (hit) return false;
+      for (let k = 1; k <= 12; k++) { seg.copy(from).addScaledVector(dir, len * k / 12); if (sample(seg.x, seg.z) > seg.y - 0.8) return false; }
+      for (const [x, y, z, r] of canopies) {
+        const u = Math.max(0, Math.min(1, ((x - from.x) * dir.x + (y - from.y) * dir.y + (z - from.z) * dir.z) / len));
+        if (Math.hypot(from.x + dir.x * len * u - x, from.y + dir.y * len * u - y, from.z + dir.z * len * u - z) < r) return false;
+      }
+      return true;
+    };
+    for (const s of ST.stops) {
+      let best = null;
+      search: for (const D of [10.5, 9, 12, 7.5]) for (const b of [0, -0.3, 0.3, -0.55, 0.55, -0.8, 0.8]) for (const hgt of [4.6, 3.4]) {
+        const c = new THREE.Vector3(s.x + Math.sin(b) * D, s.gy + hgt, s.z + Math.cos(b) * D);
+        if (clear(s.focus, c)) { best = c; break search; }
+      }
+      s.cam = best || new THREE.Vector3(s.x, s.gy + 9, s.z + 6);
+    }
+  }
   progress.world = 1; showProgress();
   const audio = createAudio();
 
@@ -243,41 +274,8 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   const dm = new THREE.Matrix4(), dq = new THREE.Quaternion(), ds = new THREE.Vector3(), dcol = new THREE.Color(), de = new THREE.Euler();
   const puff = (p, v, s, col, g = 1.5, debris = false) => { const pf = puffs[puffI = (puffI + 1) % DUST]; Object.assign(pf, { life: 1, s, g, debris }); pf.p.copy(p); pf.v.copy(v); dust.setColorAt(puffI, col); dust.instanceColor.needsUpdate = true; };
 
-  /* ---------- weather particles (one cloud that follows the camera) ---------- */
-  const WN = coarse ? 3500 : 9000;
-  const wpos = new Float32Array(WN * 3); for (let i = 0; i < WN * 3; i++) wpos[i] = Math.random();
-  const wgeo = new THREE.BufferGeometry(); wgeo.setAttribute('position', new THREE.BufferAttribute(wpos, 3));
-  const wxU = { t: { value: 0 }, center: { value: new THREE.Vector3() }, kind: { value: 0 }, amount: { value: 0 }, wind: { value: new THREE.Vector2() }, scale: { value: 400 }, night: { value: 0 } };
-  const wx = new THREE.Points(wgeo, new THREE.ShaderMaterial({
-    uniforms: wxU, transparent: true, depthWrite: false,
-    vertexShader: `
-      uniform float t, kind, amount, scale; uniform vec3 center; uniform vec2 wind; varying float vA; varying float vK;
-      void main(){
-        vec3 box = vec3(60.0, 26.0, 60.0);
-        float r = fract(position.x * 7.13 + position.z * 3.7);
-        vA = step(r, amount); vK = kind;
-        vec3 vel = kind < 0.5 ? vec3(wind.x * 0.4, -26.0, wind.y * 0.4)
-                 : kind < 1.5 ? vec3(wind.x * 0.25 + sin(t + r * 20.0) * 0.6, -2.2, wind.y * 0.25 + cos(t * 0.8 + r * 13.0) * 0.6)
-                 : vec3(wind.x * 2.6, sin(t * 2.0 + r * 30.0) * 1.2, wind.y * 2.6);
-        vec3 p = position * box + vel * t;
-        vec3 o = center - box * 0.5; o.y = center.y - 8.0;
-        p = mod(p - o, box) + o;
-        vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_PointSize = clamp((kind < 0.5 ? 0.22 : 0.16) * scale / -mv.z, 0.0, 40.0);
-        gl_Position = projectionMatrix * mv;
-      }`,
-    fragmentShader: `
-      uniform float night; varying float vA; varying float vK;
-      void main(){
-        if (vA < 0.5) discard;
-        vec2 c = gl_PointCoord - 0.5; float a; vec3 col;
-        if (vK < 0.5) { a = (1.0 - smoothstep(0.0, 0.05, abs(c.x + c.y * 0.18))) * (1.0 - smoothstep(0.3, 0.5, abs(c.y))) * 0.55; col = vec3(0.78, 0.86, 1.0); }
-        else if (vK < 1.5) { a = (1.0 - smoothstep(0.15, 0.5, length(c))) * 0.9; col = vec3(1.0); }
-        else { a = (1.0 - smoothstep(0.0, 0.5, length(c * vec2(0.5, 2.2)))) * 0.75; col = vec3(0.86, 0.66, 0.42); }
-        gl_FragColor = vec4(col * mix(1.0, 0.5, night), a);
-      }`,
-  }));
-  wx.frustumCulled = false; wx.renderOrder = 5; scene.add(wx);
+  /* ---------- weather ---------- */
+  const weather = buildWeather(scene, { coarse, sample });
 
   /* ---------- fireflies over the meadows at night ---------- */
   const FF = 260, ffPos = new Float32Array(FF * 3), ffBase = [];
@@ -353,6 +351,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   let tod = qs.has('tod') ? parseFloat(qs.get('tod')) : 0.42, todTarget = null, lightsForced = null;
   let wxMode = WEATHERS.includes(qs.get('wx')) ? qs.get('wx') : 'auto', wxKind = 'clear', wxAmt = 0;
   let nightK = 0, regionKey = null, regionT = 0, phase = PHASES[0];
+  const windV = new THREE.Vector2();
   // camera
   let view = qs.get('view') === 'map' ? 'map' : 'chase';
   let camYaw = 0, orbit = 0.0, pitch = 0.34, dist = 9.5, shake = 0, drag = null, cine = 0, viewK = view === 'map' ? 1 : 0;
@@ -370,19 +369,29 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   let snapCam = true;
 
   /* ---------- photo viewer ---------- */
+  const vBg = viewer.querySelector('.dv-vbg'), vStrip = viewer.querySelector('.dv-strip');
   function showPhoto() {
     const ph = viewing.photos[vIndex];
-    vImg.classList.remove('is-in'); vImg.src = ph.m; vImg.onload = () => vImg.classList.add('is-in');
-    vCap.innerHTML = `<span>${esc(viewing.en)} · ${esc(viewing.zh)}</span><span>${esc(ph.title)} <span class="zh">${esc(ph.zh)}</span></span><span>${String(vIndex + 1).padStart(2, '0')} / ${String(viewing.photos.length).padStart(2, '0')}</span>`;
+    vImg.classList.remove('is-in');
+    const img = new Image(); img.src = ph.m;
+    img.decode().catch(() => {}).then(() => { if (viewing && viewing.photos[vIndex] === ph) { vImg.src = ph.m; requestAnimationFrame(() => vImg.classList.add('is-in')); } });
+    vBg.style.backgroundImage = `url("${ph.s}")`;
+    vCap.innerHTML = `<div class="dv-vplace"><span class="mono">${String(vIndex + 1).padStart(2, '0')} / ${String(viewing.photos.length).padStart(2, '0')}</span><strong>${esc(viewing.en)}</strong><span class="zh">${esc(viewing.zh)}</span></div>
+      <div class="dv-vtitle"><strong>${esc(ph.title)}</strong><span class="zh">${esc(ph.zh)}</span></div>`;
+    vStrip.querySelectorAll('button').forEach((b, i) => { b.classList.toggle('is-on', i === vIndex); if (i === vIndex) b.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' }); });
   }
-  function openViewer(s) { viewing = s; vIndex = 0; viewer.hidden = false; host.classList.add('is-viewing'); Object.keys(keys).forEach((k) => { keys[k] = 0; }); audio.pause(true); showPhoto(); }
+  function openViewer(s) {
+    vStrip.innerHTML = s.photos.map((ph, i) => `<button type="button" data-i="${i}" aria-label="${esc(ph.title)}"><img src="${esc(ph.s)}" alt="" loading="lazy"></button>`).join('');
+    viewing = s; vIndex = 0; viewer.hidden = false; host.classList.add('is-viewing'); Object.keys(keys).forEach((k) => { keys[k] = 0; }); audio.pause(true); showPhoto(); }
   function closeViewer() { viewing = null; viewer.hidden = true; host.classList.remove('is-viewing'); audio.pause(false); }
   const stepPhoto = (d) => { vIndex = (vIndex + d + viewing.photos.length) % viewing.photos.length; showPhoto(); };
   viewer.addEventListener('click', (e) => {
     const v = e.target.closest('[data-v]')?.dataset.v;
     if (v === 'prev') stepPhoto(-1); if (v === 'next') stepPhoto(1);
-    if (v === 'close' || e.target === viewer) closeViewer();
+    const t = e.target.closest('[data-i]'); if (t) { vIndex = +t.dataset.i; showPhoto(); }
+    if (v === 'close' || e.target === viewer || e.target === vBg) closeViewer();
   });
+  { let sx = null; viewer.addEventListener('pointerdown', (e) => { if (!e.target.closest('button')) sx = e.clientX; }); viewer.addEventListener('pointerup', (e) => { if (sx !== null && Math.abs(e.clientX - sx) > 50) stepPhoto(e.clientX < sx ? 1 : -1); sx = null; }); }
 
   /* ---------- input ---------- */
   const map = { KeyW: 'gas', ArrowUp: 'gas', KeyS: 'brake', ArrowDown: 'brake', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right', KeyB: 'hand', ShiftLeft: 'boost', ShiftRight: 'boost' };
@@ -465,7 +474,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     if (wxKind === 'snow') { skyC.lerp(tmpC.copy(SNOW_FOG).multiplyScalar(lerp(0.3, 1, dayK)), a * 0.55); haze = a * 0.6; }
     if (wxKind === 'rain') { skyC.lerp(tmpC.copy(RAIN_FOG).multiplyScalar(lerp(0.3, 1, dayK)), a * 0.6); haze = a * 0.7; }
     scene.fog.color.copy(skyC);
-    scene.fog.density = (view === 'map' ? 0.0045 : 0.0085) + (wxKind === 'sand' ? 0.034 : wxKind === 'snow' ? 0.014 : wxKind === 'rain' ? 0.01 : 0) * a;
+    scene.fog.density = (view === 'map' ? 0.005 : 0.0105) + (wxKind === 'sand' ? 0.042 : wxKind === 'snow' ? 0.016 : wxKind === 'rain' ? 0.011 : 0) * a;
     skyU.horizon.value.copy(skyC);
     skyU.top.value.copy(TOP_NIGHT).lerp(TOP_DAY, dayK).lerp(TOP_DUSK, horizon * 0.5);
     skyU.night.value = nightK; skyU.haze.value = haze;
@@ -485,7 +494,8 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     W.glow.forEach((g) => { g.m.emissiveIntensity = lerp(g.day, g.night, smooth(0.25, 0.75, nightK)); });
     W.grassU.light.value.setRGB(lerp(0.13, 1, dayK) * dim, lerp(0.17, 1, dayK) * dim, lerp(0.3, 1, dayK) * dim);
     W.waterMat.uniforms.night.value = nightK; W.waterMat.uniforms.sky.value.copy(skyC);
-    wxU.night.value = nightK;
+    ENV.night.value = nightK;
+    W.grassU.sunCol.value.copy(sun.color).multiplyScalar(sun.intensity / 2.6);
     ffMat.opacity = smooth(0.5, 0.9, nightK) * (wxKind === 'clear' ? 1 : 1 - a);
     phase = [...PHASES].sort((p, q) => Math.abs(((f - p.tod + 1.5) % 1) - 0.5) - Math.abs(((f - q.tod + 1.5) % 1) - 0.5))[0];
     return f;
@@ -508,7 +518,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     const w = host.clientWidth, h = host.clientHeight;
     renderer.setSize(w, h, false); composer.setSize(w, h);
     camera.aspect = w / h; camera.updateProjectionMatrix();
-    wxU.scale.value = h * renderer.getPixelRatio() * 0.9;
+    weather?.resize(h, renderer.getPixelRatio());
     blur.uniforms.aspect.value = w / h;
   };
   resize(); addEventListener('resize', resize);
@@ -631,8 +641,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
       desired.lerp(tmpV, viewK); lookT.lerp(tmpV2.set(P.x + V.x * 0.35, P.y * 0.5, P.z + V.z * 0.35), viewK);
     }
     if (current && cine > 0.001) {
-      tmpV.set(current.x + 3.5, current.gy + 6.5, current.z + 15.5);
-      desired.lerp(tmpV, cine); lookT.lerp(current.focus, cine);
+      desired.lerp(current.cam, cine); lookT.lerp(current.focus, cine);
     }
     // keep the camera clear of hills, walls and landmarks (trees open up instead)
     const gy = sample(desired.x, desired.z); if (desired.y < gy + 1.3) desired.y = gy + 1.3;
@@ -654,9 +663,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
     camera.updateMatrixWorld();
     sky.position.copy(camera.position);
-    { const v = tmpV.set(P.x, P.y + 0.3, P.z).project(camera), pr = renderer.getPixelRatio();
-      WIND.carScreen.value.set((v.x + 1) / 2 * host.clientWidth * pr, (v.y + 1) / 2 * host.clientHeight * pr, v.z * 0.5 + 0.5);
-      WIND.seeR.value = host.clientHeight * pr * (view === 'map' ? 0.12 : 0.16); }
+    W.occlude(camera.position, camLook, dt);
     // speed blur, never over the car
     {
       let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
@@ -681,17 +688,20 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     const want = wxMode === 'auto' ? (onSnow ? 'snow' : n.d < 26 ? REGION_WX[n.key] || 'clear' : 'clear') : wxMode;
     if (want === wxKind) wxAmt = Math.min(1, wxAmt + dt * 0.5);
     else { wxAmt = Math.max(0, wxAmt - dt * 0.7); if (wxAmt === 0) wxKind = want; }
-    wxU.kind.value = wxKind === 'rain' ? 0 : wxKind === 'snow' ? 1 : 2;
-    wxU.amount.value = wxKind === 'clear' ? 0 : wxAmt * (wxKind === 'sand' ? 1 : 0.85);
-    wxU.t.value = tt; wxU.center.value.copy(camera.position);
     const gust = 0.5 + 0.5 * Math.sin(tt * 0.7) * Math.sin(tt * 0.31);
     const windStr = wxKind === 'sand' ? 4 + gust * 6 : wxKind === 'rain' ? 2 : wxKind === 'snow' ? 1.2 : 0.6;
-    wxU.wind.value.set(windStr * 1.4 * wxAmt + 0.3, windStr * 0.5 * wxAmt);
-    WIND.strength.value = 0.6 + (wxKind === 'clear' ? 0 : wxAmt * windStr * 0.3);
+    windV.set(windStr * 1.4 * wxAmt + 0.3, windStr * 0.5 * wxAmt);
+    ENV.windS.value = 0.6 + (wxKind === 'clear' ? 0 : wxAmt * windStr * 0.3);
+    // what the weather leaves behind builds up slowly and goes away slowly
+    ENV.snow.value = damp(ENV.snow.value, wxKind === 'snow' ? wxAmt * 0.85 : 0, wxKind === 'snow' ? 0.18 : 0.08, dt);
+    ENV.wet.value = damp(ENV.wet.value, wxKind === 'rain' ? wxAmt : 0, wxKind === 'rain' ? 0.35 : 0.06, dt);
+    ENV.sand.value = damp(ENV.sand.value, wxKind === 'sand' ? wxAmt : 0, 0.6, dt);
     const f = applySky(P);
+    weather.update(dt, tt, wxKind, wxAmt, camera.position, P, windV, nightK, scene.fog.color);
+    { const g = gradeFor(wxKind, wxAmt, nightK); grade.uniforms.tint.value.set(g[0], g[1], g[2]); grade.uniforms.sat.value = g[3]; grade.uniforms.contrast.value = g[4]; grade.uniforms.lift.value = g[5]; grade.uniforms.vig.value = g[6]; grade.uniforms.t.value = tt % 10; }
 
     W.update(dt, tt, {
-      carPos: new THREE.Vector3(P.x, P.y - 0.5, P.z), vel: new THREE.Vector3(V.x, V.y, V.z), speed, focus: P,
+      carPos: new THREE.Vector3(P.x, P.y - 0.5, P.z), vel: new THREE.Vector3(V.x, V.y, V.z), speed, focus: P, camPos: camera.position,
       onShake: (t) => {
         const c = tmpC.set(t.type === 'ginkgo' ? '#efbd2c' : t.type === 'blossom' ? '#f2b6c6' : t.type === 'palm' ? '#6f9a3c' : t.type.startsWith('fir') ? '#3b6b47' : '#86a24a');
         for (let k = 0; k < 7; k++) puff(new THREE.Vector3(t.x + (Math.random() - 0.5) * 2, t.y + 2.2 + Math.random() * 2 * t.s, t.z + (Math.random() - 0.5) * 2), new THREE.Vector3((Math.random() - 0.5) * 1.5, 0.3, (Math.random() - 0.5) * 1.5), 0.45, c, 2.5);
@@ -736,8 +746,9 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     onClose?.();
   };
   window.__drive = {
+    park: (i) => { const s = stops[i]; car.place(s.x, s.gy + 1.2, s.z + 1.5, yawNorth); snapCam = true; },
     stops, get car() { return car.body.translation(); }, carApi: car, jumpTo, nextPhase, open: (i) => openViewer(stops[i]), keys,
-    setTod: (x) => { tod = x; }, setWx: (x) => { wxMode = x; wxKind = x === 'auto' ? wxKind : x; wxAmt = 1; }, setView: (v) => { view = v; }, setOrbit: (o, p, d) => { orbit = o; if (p != null) pitch = p; if (d != null) dist = d; },
+    setTod: (x) => { tod = x; }, setWx: (x) => { wxMode = x; wxKind = x === 'auto' ? wxKind : x; wxAmt = 1; ENV.snow.value = x === 'snow' ? 0.85 : 0; ENV.wet.value = x === 'rain' ? 1 : 0; ENV.sand.value = x === 'sand' ? 1 : 0; }, setView: (v) => { view = v; }, setOrbit: (o, p, d) => { orbit = o; if (p != null) pitch = p; if (d != null) dist = d; },
   };
   return { close: () => close() };
 }

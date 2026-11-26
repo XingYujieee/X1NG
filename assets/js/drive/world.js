@@ -8,47 +8,15 @@ import { mergeGeometries } from '../../vendor/three-addons/utils/BufferGeometryU
 import { instance, instanced } from './assets.js';
 import { PLACES, START, WATER_Y, SIZE_X, SIZE_Z, NX, NZ, X0, Z0, biomeAt, nearestPlace, fbm, smooth, NILE_X, HUANGPU, islandD } from './terrain.js';
 import { LANDMARKS, DECOR, ANIMALS, BALLOONS, BOATS, FLAGS, FLAGPOLES, dynamicProps } from './places.js';
+import { ENV, KIND, enhance } from './materials.js';
+import { buildGrass } from './grass.js';
 
 const C = (h) => new THREE.Color(h);
 const BIOME_COL = { desert: C('#e7c890'), danxia: C('#cf7b52'), meadow: C('#86a85a'), autumn: C('#b5a65f'), plane: C('#8ba45c'), coast: C('#a4b37c'), field: C('#d3b66c') };
 const ROAD_COL = { desert: C('#d2ab72'), danxia: C('#b7744f'), meadow: C('#a48a62'), autumn: C('#a59a86'), plane: C('#9b978e'), coast: C('#a19d94'), field: C('#b49763') };
 const ROCK = C('#7b6a5c'), SNOW = C('#f4f6fb'), WET = C('#b9a57a'), PLAZA = C('#cfc8b8');
 
-/* a shared wind: sway for every plant, a push away from the car for the low ones */
-export const WIND = { t: { value: 0 }, strength: { value: 0.6 }, car: { value: new THREE.Vector3(0, -99, 0) }, carR: { value: 1.7 }, carScreen: { value: new THREE.Vector3(-1e4, -1e4, 0) }, seeR: { value: 120 } };
-function windPatch(mat, { bend = 0.06, push = 0, rigid = 0.6, see = false } = {}) {
-  const m = mat.clone();
-  m.onBeforeCompile = (sh) => {
-    Object.assign(sh.uniforms, { wT: WIND.t, wS: WIND.strength, wCar: WIND.car, wCarR: WIND.carR, wCarS: WIND.carScreen, wSeeR: WIND.seeR });
-    // trees between the camera and the car open up (dithered), so the car never disappears behind a canopy
-    if (see) sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      uniform vec3 wCarS; uniform float wSeeR;`).replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
-      { vec2 dq = gl_FragCoord.xy - wCarS.xy; float dd = length(dq);
-        if (gl_FragCoord.z < wCarS.z - 0.0005 && dd < wSeeR) {
-          float k = 1.0 - smoothstep(wSeeR * 0.55, wSeeR, dd);
-          float b = fract(dot(floor(gl_FragCoord.xy), vec2(0.5, 0.25)) + fract(floor(gl_FragCoord.y) * 0.5) * 0.5);
-          if (b < k * 0.85) discard;
-        } }`);
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', `#include <common>
-      uniform float wT, wS, wCarR; uniform vec3 wCar;`).replace('#include <begin_vertex>', `#include <begin_vertex>
-      #ifdef USE_INSTANCING
-        vec3 wRoot = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]);
-      #else
-        vec3 wRoot = vec3(0.0);
-      #endif
-      float wH = max(0.0, transformed.y - ${rigid.toFixed(2)});
-      float wPh = wRoot.x * 0.21 + wRoot.z * 0.17;
-      float wSw = (sin(wT * 1.7 + wPh) + 0.4 * sin(wT * 3.9 + wPh * 2.3)) * wS;
-      transformed.x += wSw * ${bend.toFixed(3)} * wH * wH;
-      transformed.z += cos(wT * 1.3 + wPh) * wS * ${(bend * 0.5).toFixed(3)} * wH * wH;
-      ${push ? `vec2 wd = wRoot.xz - wCar.xz; float wl = length(wd);
-      float wk = (1.0 - smoothstep(wCarR * 0.4, wCarR, wl)) * step(abs(wRoot.y - wCar.y), 2.5);
-      vec2 wdir = wl > 0.001 ? wd / wl : vec2(1.0, 0.0);
-      transformed.xz += wdir * wk * ${push.toFixed(2)} * transformed.y; transformed.y *= 1.0 - wk * 0.45;` : ''}`);
-  };
-  m.customProgramCacheKey = () => `wind${bend}${push}${rigid}${see}`;
-  return m;
-}
+const windPatch = (mat, { bend = 0.06, push = 0, rigid = 0.6, fade = false } = {}, name) => enhance(mat.clone(), { name: name || mat.name, wind: { bend, push, rigid }, fade });
 
 export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
   const { sample, slope, road, at } = grid;
@@ -61,7 +29,7 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
 
   /* ---------- ground ---------- */
   const geo = new THREE.PlaneGeometry(SIZE_X, SIZE_Z, NX, NZ); geo.rotateX(-Math.PI / 2);
-  const pos = geo.attributes.position, col = new Float32Array(pos.count * 3), aux = new Float32Array(pos.count * 2), c = new THREE.Color(), rc = new THREE.Color();
+  const pos = geo.attributes.position, col = new Float32Array(pos.count * 3), aux = new Float32Array(pos.count * 3), c = new THREE.Color(), rc = new THREE.Color();
   for (let k = 0; k < pos.count; k++) {
     const x = pos.getX(k), z = pos.getZ(k), i = Math.round(x - X0), j = Math.round(z - Z0), h = at(i, j);
     pos.setY(k, h);
@@ -77,25 +45,50 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     c.lerp(WET, (1 - smooth(-0.25, 0.2, h)) * 0.85);
     const n = (fbm(x * 0.7, z * 0.7) - 0.5) * 0.07;
     col[k * 3] = c.r + n; col[k * 3 + 1] = c.g + n; col[k * 3 + 2] = c.b + n;
-    aux[k * 2] = (w.desert || 0) + (w.danxia || 0) * 0.6; aux[k * 2 + 1] = smooth(6.0, 9.0, h);
+    aux[k * 3] = (w.desert || 0) + (w.danxia || 0) * 0.6; aux[k * 3 + 1] = smooth(6.0, 9.0, h); aux[k * 3 + 2] = 1 - smooth(1.4, 2.8, rd);
   }
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  geo.setAttribute('aux', new THREE.BufferAttribute(aux, 2));
+  geo.setAttribute('aux', new THREE.BufferAttribute(aux, 3));
   geo.computeVertexNormals();
   const groundMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96 });
-  groundMat.onBeforeCompile = (sh) => {   // fine grain everywhere, wind ripples on the sand
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec2 aux; varying vec2 vAux; varying vec3 vWp;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvAux = aux; vWp = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+  groundMat.onBeforeCompile = (sh) => {   // grain, sand ripples, gravel roads, and the weather (snow cover, wet sheen, drifting sand)
+    Object.assign(sh.uniforms, { dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand });
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aux; varying vec3 vAux; varying vec3 vWp; varying vec3 vWn;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvAux = aux; vWp = (modelMatrix * vec4(transformed, 1.0)).xyz; vWn = normal;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      varying vec2 vAux; varying vec3 vWp;
+      uniform float dTime, dSnow, dWet, dSand;
+      varying vec3 vAux; varying vec3 vWp; varying vec3 vWn;
       float gH(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-      float gN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); return mix(mix(gH(i), gH(i+vec2(1,0)), f.x), mix(gH(i+vec2(0,1)), gH(i+vec2(1,1)), f.x), f.y); }`)
+      float gN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); return mix(mix(gH(i), gH(i+vec2(1,0)), f.x), mix(gH(i+vec2(0,1)), gH(i+vec2(1,1)), f.x), f.y); }
+      float gF(vec2 p){ return gN(p) * 0.5 + gN(p * 2.1) * 0.25 + gN(p * 4.3) * 0.125 + gN(p * 8.7) * 0.0625; }
+      float gHt = 0.0;`)
       .replace('#include <color_fragment>', `#include <color_fragment>
       float grain = gN(vWp.xz * 1.7) * 0.6 + gN(vWp.xz * 6.0) * 0.4;
-      diffuseColor.rgb *= 0.93 + grain * 0.12;
+      diffuseColor.rgb *= 0.92 + grain * 0.14;
+      // patches of darker and lighter ground
+      diffuseColor.rgb *= 0.9 + gF(vWp.xz * 0.12) * 0.2;
+      // sand ripples, and in a sandstorm they stream across in the wind
       float rip = sin(vWp.x * 2.2 + sin(vWp.z * 0.35) * 2.5 + gN(vWp.xz * 0.4) * 3.0);
-      diffuseColor.rgb *= 1.0 - vAux.x * smoothstep(0.55, 1.0, rip) * 0.07;
-      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.96, 0.97, 1.0), vAux.y * (0.6 + grain * 0.3));`);
+      diffuseColor.rgb *= 1.0 - vAux.x * smoothstep(0.55, 1.0, rip) * 0.08;
+      float drift = smoothstep(0.6, 1.0, gN(vec2(vWp.x * 0.6 - dTime * 6.0, vWp.z * 4.0))) * dSand;
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.78, 0.55), drift * 0.45 * (0.4 + vAux.x));
+      // gravel on the roads, two worn tyre lines
+      float pebble = step(0.82, gH(floor(vWp.xz * 9.0))) * vAux.z;
+      diffuseColor.rgb *= 1.0 - pebble * 0.18 + vAux.z * (gN(vWp.xz * 14.0) - 0.5) * 0.12;
+      gHt = rip * vAux.x * 0.3 + pebble * 0.6 + grain * 0.25;
+      // snow: the cap on the peaks, and snowfall settling on everything that faces up
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.96, 0.97, 1.0), vAux.y * (0.6 + grain * 0.3));
+      float settle = dSnow * smoothstep(0.55, 0.85, vWn.y) * smoothstep(0.2, 0.7, gF(vWp.xz * 0.5) + dSnow * 0.5);
+      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.95, 1.0), settle);
+      // rain: darker ground and puddles in the low spots
+      float puddle = smoothstep(0.62, 0.7, gF(vWp.xz * 0.18)) * dWet * (0.4 + vAux.z * 0.6);
+      diffuseColor.rgb *= 1.0 - dWet * 0.3 - puddle * 0.25;`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      roughnessFactor = mix(roughnessFactor, 0.35, dWet * 0.6); roughnessFactor = mix(roughnessFactor, 0.04, puddle);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      { vec3 sp = -vViewPosition; vec3 sx = normalize(dFdx(sp)), sy = normalize(dFdy(sp)); vec3 r1 = cross(sy, normal), r2 = cross(normal, sx);
+        float det = dot(sx, r1) * faceDirection; vec2 dh = vec2(dFdx(gHt), dFdy(gHt)) * 0.35 * (1.0 - puddle);
+        normal = normalize(abs(det) * normal - sign(det) * (dh.x * r1 + dh.y * r2)); }`);
   };
   const terrain = new THREE.Mesh(geo, groundMat); terrain.receiveShadow = true; scene.add(terrain);
 
@@ -162,6 +155,7 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     const mesh = new THREE.Mesh(mergeGeometries(geos, false), mat); mesh.castShadow = true; mesh.receiveShadow = true; scene.add(mesh);
   }
   const M = lib.__materials;
+  for (const n in M) if (KIND[n]) enhance(M[n]);
   if (M.lantern) glow.push({ m: M.lantern, day: 0.0, night: 1.6 });
   for (const [name, x, z, ry, s, y] of DECOR) {
     const A = lib[name]; if (!A || !A.roles.lamp) continue;
@@ -221,10 +215,12 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     const list = trees[type];
     const { group, meshes } = instanced(lib, type, list.map((t) => mtx(t.x, t.y, t.z, t.ry, t.s)), {
       shadow: !LOW[type],
-      patch: (mat, name) => windPatch(mat, LOW[type] ? { bend: 0.05, push: 0.9, rigid: 0.05 } : { bend: name.startsWith('bark') ? 0.004 : 0.008, rigid: 1.2, see: true }),
+      patch: (mat, name) => windPatch(mat, LOW[type] ? { bend: 0.05, push: 0.9, rigid: 0.05 } : { bend: name.startsWith('bark') ? 0.004 : 0.008, rigid: 1.2, fade: true }, name),
     });
+    if (!LOW[type]) for (const m of meshes) { const fa = new THREE.InstancedBufferAttribute(new Float32Array(list.length), 1); fa.setUsage(THREE.DynamicDrawUsage); m.geometry = m.geometry.clone(); m.geometry.setAttribute('aFade', fa); }
+    list.forEach((t) => { t.fade = 0; });
     scene.add(group); treeMeshes[type] = meshes;
-    if (SOLID[type]) for (const t of list) physics.statics.cyl(t.x, t.y + 1.5, t.z, 1.5, SOLID[type] * t.s);
+    if (SOLID[type]) for (const t of list) physics.statics.cyl(t.x, t.y + 1.5, t.z, 1.5, SOLID[type] * t.s, 'tree');
   }
   const shaking = new Set();
   function hitTrees(carPos, speed, onShake) {
@@ -250,65 +246,27 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     }
   }
 
-  /* ---------- grass and flowers ---------- */
-  const TRAIL = 48;
-  const grassU = { t: WIND.t, wind: WIND.strength, car: WIND.car, trail: { value: Array.from({ length: TRAIL }, () => new THREE.Vector4(0, -99, 0, 1)) }, light: { value: new THREE.Color(1, 1, 1) } };
-  const blade = new THREE.BufferGeometry();
-  blade.setAttribute('position', new THREE.Float32BufferAttribute([-0.06, 0, 0, 0.06, 0, 0, -0.04, 0.3, 0, 0.04, 0.3, 0, 0, 0.62, 0], 3));
-  blade.setIndex([0, 1, 2, 2, 1, 3, 2, 3, 4]);
-  const GN = coarse ? 14000 : 34000;
-  const grass = new THREE.InstancedMesh(blade, new THREE.ShaderMaterial({
-    uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), grassU), side: THREE.DoubleSide, fog: true,
-    vertexShader: `#include <fog_pars_vertex>
-      uniform float t, wind; uniform vec3 car; uniform vec4 trail[${TRAIL}]; varying float vY; varying vec3 vC; attribute vec3 tint;
-      void main(){
-        vec3 p = position; vY = p.y / 0.62; vC = tint;
-        vec4 w = instanceMatrix * vec4(p, 1.0);
-        vec3 root = (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-        float s = sin(t * 1.8 + root.x * 0.35 + root.z * 0.27) + sin(t * 3.1 + root.x * 0.9) * 0.35;
-        w.x += s * 0.12 * wind * vY * vY; w.z += s * 0.06 * wind * vY * vY;
-        float press = 0.0; vec2 dir = vec2(0.0);
-        for (int i = 0; i < ${TRAIL}; i++) {
-          vec2 d = root.xz - trail[i].xz; float r = length(d);
-          float k = (1.0 - smoothstep(0.3, 1.0, r)) * (1.0 - trail[i].w);
-          if (k > press) { press = k; dir = r > 0.001 ? d / r : vec2(1.0, 0.0); }
-        }
-        vec2 dc = root.xz - car.xz; float rc = length(dc);
-        float kc = (1.0 - smoothstep(0.9, 2.0, rc)) * step(abs(root.y - car.y), 2.0);
-        if (kc > press) { press = kc; dir = rc > 0.001 ? dc / rc : vec2(1.0, 0.0); }
-        w.xz += dir * press * vY * 0.5; w.y -= press * vY * 0.45;
-        vec4 mvPosition = viewMatrix * w; gl_Position = projectionMatrix * mvPosition;
-        #include <fog_vertex>
-      }`,
-    fragmentShader: `#include <fog_pars_fragment>
-      uniform vec3 light; varying float vY; varying vec3 vC;
-      void main(){ vec3 c = mix(vC * 0.5, vC * 1.12, vY) * light; gl_FragColor = vec4(c, 1.0);
-        #include <fog_fragment>
-      }`,
-  }), GN);
-  const tint = new Float32Array(GN * 3);
-  const GRASS = { meadow: [0.25, 0.45, 0.38, 1], autumn: [0.13, 0.42, 0.45, 0.85], plane: [0.24, 0.42, 0.36, 0.9], coast: [0.26, 0.38, 0.4, 0.55], field: [0.12, 0.5, 0.55, 0.6] };
-  let gp = 0;
+  /* ---------- grass (dense, around the camera) and meadow flowers ---------- */
+  const grass = buildGrass(scene, grid, { coarse, free });
   const FN = coarse ? 1500 : 3500;
-  const flowers = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.09, 0).translate(0, 0.42, 0), windPatch(new THREE.MeshStandardMaterial({ roughness: 0.8 }), { bend: 0.15, push: 1.1, rigid: 0 }), FN);
+  const flowers = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.08, 0).translate(0, 0.4, 0), windPatch(new THREE.MeshStandardMaterial({ roughness: 0.8, name: 'flower' }), { bend: 0.15, push: 1.1, rigid: 0 }), FN);
   let fp = 0;
   const FLOWER_COLS = ['#f4f1e6', '#f2c94c', '#e88aa8', '#a78bd8', '#f4f1e6'].map(C);
-  for (let tries = 0; tries < GN * 8 && gp < GN; tries++) {
+  for (let tries = 0; tries < FN * 30 && fp < FN; tries++) {
     const x = X0 + rnd() * SIZE_X, z = Z0 + rnd() * SIZE_Z, w = biomeAt(x, z);
-    let b = null, bw = 0; for (const k in GRASS) if ((w[k] || 0) > bw) { bw = w[k]; b = k; }
-    if (!b || rnd() > bw * 1.3 || fbm(x * 0.08, z * 0.08) < 0.36) continue;
+    if ((w.meadow || 0) < 0.55 || fbm(x * 0.08, z * 0.08) < 0.4) continue;
     const h = sample(x, z);
-    if (h < 0.05 || h > 6 || road(x, z) < 2.2 || nearStop(x, z, 7.5) || slope(x, z) > 0.6 || !free(x, z)) continue;
-    const g = GRASS[b], s = (0.7 + rnd() * 0.7) * g[3];
-    tmpM.compose(tmpP.set(x, h - 0.02, z), tmpQ.setFromEuler(new THREE.Euler(0, rnd() * 6.28, (rnd() - 0.5) * 0.3)), tmpS.set(s, s * (0.8 + rnd() * 0.6), s));
-    grass.setMatrixAt(gp, tmpM);
-    t2.setHSL(g[0] + rnd() * 0.05, g[1] + rnd() * 0.12, g[2] + rnd() * 0.1); tint.set([t2.r, t2.g, t2.b], gp * 3); gp++;
-    if (b === 'meadow' && fp < FN && rnd() < 0.18) { flowers.setMatrixAt(fp, tmpM.compose(tmpP.set(x + 0.2, h, z + 0.1), tmpQ.identity(), tmpS.set(1, 0.8 + rnd() * 0.6, 1))); flowers.setColorAt(fp, FLOWER_COLS[Math.floor(rnd() * 5)]); fp++; }
+    if (h < 0.05 || h > 6 || road(x, z) < 2.4 || nearStop(x, z, 7.5) || slope(x, z) > 0.5 || !free(x, z)) continue;
+    flowers.setMatrixAt(fp, tmpM.compose(tmpP.set(x, h, z), tmpQ.identity(), tmpS.set(1, 0.8 + rnd() * 0.6, 1))); flowers.setColorAt(fp, FLOWER_COLS[Math.floor(rnd() * 5)]); fp++;
   }
-  grass.count = gp; flowers.count = fp;
-  grass.geometry.setAttribute('tint', new THREE.InstancedBufferAttribute(tint, 3));
-  grass.frustumCulled = false; flowers.frustumCulled = false;
-  scene.add(grass, flowers);
+  flowers.count = fp; flowers.frustumCulled = false; scene.add(flowers);
+  // soft contact shadows under trees and landmarks keep things grounded
+  const blobTex = (() => { const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x = cv.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,0,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(cv); })();
+  const blobList = [];
+  for (const type in trees) if (SOLID[type]) for (const t of trees[type]) blobList.push([t.x, t.y + 0.06, t.z, 2.2 * t.s]);
+  const blobs = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, opacity: 0.6 }), Math.max(1, blobList.length));
+  blobList.forEach(([x, y, z, r], i) => blobs.setMatrixAt(i, tmpM.compose(tmpP.set(x, y, z), tmpQ.identity(), tmpS.set(r * 2, 1, r * 2))));
+  blobs.count = blobList.length; blobs.renderOrder = 1; scene.add(blobs);
 
   /* ---------- fallen leaves: ginkgo gold in Beijing, plane-tree brown in Nanjing; the car kicks them up ---------- */
   const leafTex = (() => {
@@ -376,7 +334,7 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
           fall.setColorAt(i, t2.setHSL(fc[0] + Math.random() * 0.04, fc[1], fc[2] + Math.random() * 0.1)); colDirty = true;
         }
       } else {
-        f.p.x += (Math.sin(tt * 1.3 + f.ph) * 0.6 + WIND.strength.value * 0.6) * dt; f.p.z += Math.cos(tt * 1.1 + f.ph) * 0.4 * dt; f.p.y -= 0.7 * dt;
+        f.p.x += (Math.sin(tt * 1.3 + f.ph) * 0.6 + ENV.windS.value * 0.6) * dt; f.p.z += Math.cos(tt * 1.1 + f.ph) * 0.4 * dt; f.p.y -= 0.7 * dt;
         if (f.p.y < sample(f.p.x, f.p.z)) f.life = 0;
       }
       tmpM.compose(f.p, tmpQ.setFromEuler(eul.set(Math.sin(tt * 3 + f.ph) * 1.2, tt * 2 + f.ph, Math.cos(tt * 2.6 + f.ph))), tmpS.set(1, 1, 1));
@@ -400,7 +358,7 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
   if (fgeo.length) {
     const fm = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.9 });
     fm.onBeforeCompile = (sh) => {
-      sh.uniforms.wT = WIND.t; sh.uniforms.wS = WIND.strength;
+      sh.uniforms.wT = ENV.time; sh.uniforms.wS = ENV.windS;
       sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float wT, wS;').replace('#include <begin_vertex>', `#include <begin_vertex>
         transformed.x += sin(wT * 6.0 + position.x * 3.0 + position.z * 2.0) * 0.08 * (0.6 + wS);
         transformed.z += cos(wT * 5.0 + position.x * 2.0) * 0.08 * (0.6 + wS);`);
@@ -459,22 +417,42 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     const g = instance(lib, kind); scene.add(g);
     const gy = sample(x, z);
     let body;
-    if (kind === 'haybale') body = physics.dynamic({ type: 'roundcyl', hh: 0.49, r: 0.56, b: 0.06, rot: { x: Math.SQRT1_2, y: 0, z: 0, w: Math.SQRT1_2 } }, { x, y: gy + 0.64 + layer * 1.07, z, ry, mass: 1.2, friction: 0.8, restitution: 0.05 });
-    else if (kind === 'haybale_sq') body = physics.dynamic({ type: 'box', hx: 0.55, hy: 0.23, hz: 0.28 }, { x, y: gy + 0.25, z, ry, mass: 0.8, friction: 0.8 });
-    else if (kind === 'cone') { body = physics.dynamic({ type: 'cone', hh: 0.37, r: 0.3 }, { x, y: gy + 0.39, z, ry, mass: 0.15, restitution: 0.3 }); g.children.forEach((m) => { m.position.y = -0.37; }); }
+    if (kind === 'haybale') body = physics.dynamic({ type: 'roundcyl', hh: 0.49, r: 0.56, b: 0.06, rot: { x: Math.SQRT1_2, y: 0, z: 0, w: Math.SQRT1_2 } }, { x, y: gy + 0.64 + layer * 1.07, z, ry, mass: 1.2, friction: 0.8, restitution: 0.05, kind: 'hay' });
+    else if (kind === 'haybale_sq') body = physics.dynamic({ type: 'box', hx: 0.55, hy: 0.23, hz: 0.28 }, { x, y: gy + 0.25, z, ry, mass: 0.8, friction: 0.8, kind: 'hay' });
+    else if (kind === 'cone') { body = physics.dynamic({ type: 'cone', hh: 0.37, r: 0.3 }, { x, y: gy + 0.39, z, ry, mass: 0.15, restitution: 0.3, kind: 'rubber' }); g.children.forEach((m) => { m.position.y = -0.37; }); }
     else body = physics.dynamic({ type: 'box', hx: 0.4, hy: 0.4, hz: 0.4 }, { x, y: gy + 0.41 + layer * 0.81, z, ry, mass: 0.5 });
     dyn.push({ g, body });
   }
   const syncOne = (d) => { const p = d.body.translation(), q = d.body.rotation(); d.g.position.set(p.x, p.y, p.z); d.g.quaternion.set(q.x, q.y, q.z, q.w); };
   dyn.forEach(syncOne);
 
-  let trailI = 0;
   return {
-    terrain, water, waterMat, grassU, glow, trees, htex,
-    pressGrass(x, z, tt) { grassU.trail.value[trailI = (trailI + 1) % TRAIL].set(x, tt, z, 0); },
+    terrain, water, waterMat, grassU: grass.U, glow, trees, htex,
+    pressGrass(x, z, tt) { grass.press(x, z, tt); },
+    /* trees between the camera and the car dissolve away (and come back when they're clear) */
+    occlude(cam, target, dt) {
+      const abx = target.x - cam.x, aby = target.y - cam.y, abz = target.z - cam.z, ab2 = abx * abx + aby * aby + abz * abz || 1;
+      for (const type in SOLID) {
+        const list = trees[type]; if (!list) continue;
+        let dirty = false;
+        const rr = type === 'plane' ? 2.6 : type === 'palm' ? 2.2 : type === 'poplar' ? 1.4 : 2.0, hc = type === 'poplar' ? 3.6 : type === 'palm' ? 3.4 : 2.8;
+        for (let i = 0; i < list.length; i++) {
+          const t = list[i];
+          const cx = t.x, cy = t.y + hc * t.s, cz = t.z;
+          if (Math.abs(cx - cam.x) > 40 && Math.abs(cx - target.x) > 40) { if (t.fade > 0) { t.fade = 0; dirty = true; } continue; }
+          let u = ((cx - cam.x) * abx + (cy - cam.y) * aby + (cz - cam.z) * abz) / ab2; u = Math.max(0, Math.min(1, u));
+          const dx = cam.x + abx * u - cx, dy = cam.y + aby * u - cy, dz = cam.z + abz * u - cz;
+          const d = Math.sqrt(dx * dx + dy * dy * 0.6 + dz * dz);
+          const want = u < 0.97 && d < rr * t.s + 0.4 ? 1 : 0;
+          const f = t.fade + (want - t.fade) * Math.min(1, dt * (want ? 7 : 3));
+          if (Math.abs(f - t.fade) > 0.002 || (want === 0 && t.fade > 0 && f < 0.01)) { t.fade = f < 0.01 && !want ? 0 : f; dirty = true; }
+        }
+        if (dirty) for (const m of treeMeshes[type]) { const a = m.geometry.attributes.aFade; for (let i = 0; i < list.length; i++) a.array[i] = list[i].fade; a.needsUpdate = true; }
+      }
+    },
     update(dt, tt, ctx) {
-      WIND.t.value = tt; WIND.car.value.copy(ctx.carPos);
-      for (let i = 0; i < TRAIL; i++) { const v = grassU.trail.value[i]; v.w = Math.min(1, Math.max(0, (tt - v.y) / 7)); }
+      ENV.time.value = tt; ENV.car.value.copy(ctx.carPos);
+      grass.update(tt, ctx.camPos || ctx.focus);
       waterMat.uniforms.t.value = tt; waterMat.uniforms.car.value.copy(ctx.carPos);
       hitTrees(ctx.carPos, ctx.speed, ctx.onShake);
       updateShaking(dt);
