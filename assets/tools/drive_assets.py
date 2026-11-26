@@ -56,7 +56,7 @@ P = {   # palette
     'shrub': M('shrub', '#7d7a45', 0.95), 'tuft': M('tuft', '#c7a861', 0.95), 'reed': M('reed', '#9aa45a', 0.9), 'bush': M('bush', '#557f3a', 0.9),
     'blossom': M('blossom', '#f2b6c6', 0.85),
     'hay': M('hay', '#d9b45c', 0.95), 'hay_end': M('hay_end', '#c79d45', 0.95), 'wrap': M('wrap', '#f2efe6', 0.5),
-    'lantern': M('lantern', '#d8261f', 0.6, 0, '#ff4a2a', 0.0), 'gold': M('gold', '#d4a23a', 0.35, 0.7), 'iron': M('iron', '#23252b', 0.6, 0.4),
+    'lantern': M('lantern', '#d8261f', 0.6, 0, '#ff4a2a', 0.0), 'gold': M('gold', '#d4a23a', 0.35, 0.7), 'iron': M('iron', '#2a2c31', 0.45, 0.75),
     'lamp': M('lamp', '#fff4d6', 0.3, 0, '#ffe2a8', 0.0), 'wood': M('wood', '#8a6240', 0.85), 'wood_dark': M('wood_dark', '#5a3d27', 0.85),
     'stupa': M('stupa', '#f4f1ea', 0.7), 'sail': M('sail', '#f3efe6', 0.8), 'rope': M('rope', '#b49a72', 0.9),
     'sand': M('sand', '#e2c48e', 0.95), 'sandstone': M('sandstone', '#d6b077', 0.95), 'limestone': M('limestone', '#e8d6ae', 0.9),
@@ -232,6 +232,16 @@ def roof(w, d, h, lift, mat, loc, overhang=0.0, thick=0.12, curve=1.6, ridge=0.0
         for i in range(int(fd * 2 / 0.55) + 1):
             parts.append(box(0.2, 0.18, 0.16, (lx + sx * (fw + 0.08), ly - fd + i * 0.55, lz - 0.06), P['blue_paint']))
     return join(parts, name)
+
+def arch_frame(cx, yf, zs, r, mat, w=0.22, t=0.1):
+    """a stone ring round the top of an archway on the face at y=yf (springline at zs), with jambs down to the ground"""
+    ring = cyl(r + w, t, (cx, yf, zs), mat, n=40, rot=(math.pi / 2, 0, 0))
+    boolean(ring, cyl(r, t * 4, (cx, yf, zs), P['trim'], n=40, rot=(math.pi / 2, 0, 0)))
+    boolean(ring, box(2 * r + 2 * w + 0.4, t * 4, r + 0.6, (cx, yf, zs - (r + 0.6) / 2), P['trim']))
+    out = [ring]
+    for sx in (1, -1): out.append(box(w, t, zs, (cx + sx * (r + w / 2), yf, zs / 2), mat))
+    out.append(box(w * 1.3, t * 1.4, w * 0.9, (cx, yf, zs + r + w * 0.35), mat))     # keystone
+    return out
 
 def bend_x(o, k):
     """bend a mesh along its local x (for fronds): z -= k * x^2"""
@@ -525,10 +535,15 @@ def make_props():
     lt += [box(0.02, 0.02, 0.3, (math.cos(k) * 0.05, math.sin(k) * 0.05, -0.88), P['red_dark']) for k in range(6)]
     o = join(lt, 'lantern'); finish(o, 'lantern')
     # Bund lamp post with a globe
-    lp = [cyl(0.14, 0.3, (0, 0, 0.15), P['iron'], n=8), cyl(0.06, 3.1, (0, 0, 1.7), P['iron'], n=8, r2=0.045), cyl(0.12, 0.1, (0, 0, 3.25), P['iron'], n=8)]
-    for k in range(2): lp.append(cyl(0.025, 0.7, ((k * 2 - 1) * 0.3, 0, 3.25), P['iron'], n=5, rot=(0, math.pi / 2, 0)))
+    lp = [box(0.42, 0.42, 0.12, (0, 0, 0.06), P['granite']), cyl(0.16, 0.45, (0, 0, 0.34), P['iron'], n=16, r2=0.11), cyl(0.13, 0.06, (0, 0, 0.6), P['iron'], n=16),
+          cyl(0.055, 2.7, (0, 0, 1.95), P['iron'], n=12, r2=0.04), cyl(0.07, 0.08, (0, 0, 1.2), P['iron'], n=12), cyl(0.08, 0.1, (0, 0, 3.28), P['iron'], n=12)]
+    for k in range(2):
+        sx = k * 2 - 1
+        lp.append(cyl(0.02, 0.56, (sx * 0.28, 0, 3.3), P['iron'], n=6, rot=(0, math.pi / 2, 0)))
+        lp.append(cyl(0.045, 0.05, (sx * 0.56, 0, 3.33), P['iron'], n=12))           # globe collar
+    lp.append(cyl(0.05, 0.06, (0, 0, 3.4), P['iron'], n=12)); lp.append(cyl(0.012, 0.16, (0, 0, 3.64), P['iron'], n=6))
     finish(join(lp, 'lamp_bund'), 'lamp_bund')
-    named(join([sphere(0.17, (s * 0.62, 0, 3.4), P['lamp'], sub=2) for s in (1, -1)] + [sphere(0.2, (0, 0, 3.55), P['lamp'], sub=2)], 'lamp_bund__lamp'), 'lamp_bund__lamp')
+    named(join([uvsphere(0.1, (s * 0.56, 0, 3.45), P['lamp'], seg=16, ring=10) for s in (1, -1)] + [uvsphere(0.12, (0, 0, 3.52), P['lamp'], seg=16, ring=10)], 'lamp_bund__lamp'), 'lamp_bund__lamp')
     # modern street lamp
     finish(join([cyl(0.07, 4.0, (0, 0, 2.0), P['steel'], n=8), box(0.9, 0.12, 0.06, (0.4, 0, 4.0), P['steel'])], 'lamp_modern'), 'lamp_modern')
     named(box(0.5, 0.1, 0.03, (0.6, 0, 3.96), P['lamp']), 'lamp_modern__lamp')
@@ -572,6 +587,13 @@ def make_props():
         for sy in (1, -1): bl.append(cyl(0.015, 1.4, (sx * 0.45, sy * 0.45, 1.25), P['rope'], n=4, rot=(sy * 0.25, -sx * 0.25, 0)))
     finish(join(bl, 'balloon'), 'balloon')
     named(sphere(0.18, (0, 0, 1.05), P['amber'], sub=1), 'balloon__glow')
+    # rubble: a few broken stones for wall bases and road edges
+    rb = []
+    for k in range(6):
+        a = k * 1.9; r = 0.12 + (k % 3) * 0.12
+        o = sphere(0.09 + (k % 3) * 0.05, (math.cos(a) * r, math.sin(a) * r, 0.03), P['granite'] if k % 2 else P['limestone'], sub=1, noise=0.55, scale=(1.3, 1, 0.6), seed=k + 70)
+        rb.append(o)
+    finish(join(rb, 'rubble'), 'rubble')
     # bench, cone, crate, barrier
     finish(join([box(1.6, 0.42, 0.06, (0, 0, 0.45), P['wood']), box(1.6, 0.06, 0.36, (0, 0.2, 0.68), P['wood'])] + [box(0.06, 0.42, 0.45, (s * 0.7, 0, 0.22), P['iron']) for s in (1, -1)], 'bench'), 'bench')
     finish(join([cyl(0.3, 0.75, (0, 0, 0.375), P['cone'], n=14, r2=0.04), box(0.6, 0.6, 0.05, (0, 0, 0.025), P['cone']), cyl(0.2, 0.12, (0, 0, 0.32), P['white'], n=14, r2=0.15)], 'cone'), 'cone')
@@ -717,7 +739,9 @@ def make_landmarks():
     for k in range(-2, 3):
         boolean(gt[0], box(1.4 if k else 1.8, 6.0, 2.6 if k else 3.0, (k * 3.0, 0, 1.3 if k else 1.5), P['trim']))
     for k in range(-2, 3):
-        boolean(gt[0], cyl(0.7 if k else 0.9, 6.0, (k * 3.0, 0, 2.6 if k else 3.0), P['trim'], n=12, rot=(math.pi / 2, 0, 0)))
+        boolean(gt[0], cyl(0.7 if k else 0.9, 6.0, (k * 3.0, 0, 2.6 if k else 3.0), P['trim'], n=40, rot=(math.pi / 2, 0, 0)))
+    for k in range(-2, 3):
+        for yf in (2.75, -2.75): gt += arch_frame(k * 3.0, yf, 2.6 if k else 3.0, 0.7 if k else 0.9, P['marble'], w=0.2 if k else 0.26)
     for k in range(-14, 15): gt.append(box(0.12, 0.12, 0.5, (k * 0.55, -2.8, 4.7), P['marble']))
     gt.append(box(16, 0.1, 0.12, (0, -2.8, 4.95), P['marble']))
     gt.append(box(12, 3.8, 3.0, (0, 0, 6.0), P['red']))
@@ -750,7 +774,8 @@ def make_landmarks():
     finish(join(hh, 'hutong'), 'hutong'); col_box('hutong', 0, 4, 3, 3, (0, 0, 1.5))
     # ---------- Nanjing: city wall gate (Zhonghua Men) and Zifeng Tower
     ng = [box(14, 6, 6.5, (0, 0, 3.25), P['brick_grey'])]
-    boolean(ng[0], box(2.6, 7, 3.4, (0, 0, 1.7), P['trim'])); boolean(ng[0], cyl(1.3, 7, (0, 0, 3.4), P['trim'], n=14, rot=(math.pi / 2, 0, 0)))
+    boolean(ng[0], box(2.6, 7, 3.4, (0, 0, 1.7), P['trim'])); boolean(ng[0], cyl(1.3, 7, (0, 0, 3.4), P['trim'], n=40, rot=(math.pi / 2, 0, 0)))
+    for yf in (3.05, -3.05): ng += arch_frame(0, yf, 3.4, 1.3, P['brick_dark'], w=0.4, t=0.12)
     for k in range(-12, 13):
         if k % 2 == 0: ng.append(box(0.5, 0.5, 0.5, (k * 0.55, -2.8, 6.75), P['brick_dark']))
     ng.append(box(14, 0.4, 0.3, (0, -2.85, 6.4), P['brick_dark']))

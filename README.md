@@ -122,6 +122,12 @@ Current frames are a procedural placeholder — see `motion-source/photographer-
     so buildings get real-scale masonry with normal maps; the ground splats eight layers by region, road, slope and altitude
     (triplanar rock on steep faces). Trees are branched in Blender and carry alpha-tested leaf cards; roofs have rafter ends
     and bracket bands; the sky is baked into an environment map; the frame is multisampled.
+  - Light pass (`light.js`): the sun runs a low arc (side light, long shadows); soft 4K shadows that the grass receives;
+    ambient occlusion (GTAO) from the frame's own depth; fog as aerial perspective (thinner with height, brighter toward
+    the sun); one cloud layer drawn in the sky and casting slow shadows on everything below it; ACES with a sky-light fill.
+    Walls get grime and moss at the base (read from the terrain height), rain streaks, mottled roughness; windows show a
+    room behind the glass (interior mapping); archways have stone frames; rubble and weeds where walls meet the ground.
+    Quality steps down by itself if the frame rate stays low (`&hq` disables that).
   - Loaded only on demand (`travel.html?drive`; test params `&at=giza&tod=0.93&wx=sand&view=map`).
 - **Hero transition** (`viewfinder/stage.js`): between places the camera flies through a dark space — each photo
   becomes a relief (vertices pulled towards its own camera by depth, so the hand-off from/to the flat view is exact).

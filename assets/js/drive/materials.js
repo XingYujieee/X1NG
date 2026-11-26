@@ -11,10 +11,12 @@
    ========================================================================== */
 import * as THREE from '../../vendor/three.min.js';
 import { TEX } from './textures.js';
+import { CLOUD_GLSL, SUN, CLOUD, CLOUD_OFF } from './light.js';
+import { SIZE_X, SIZE_Z, NX, NZ, X0, Z0 } from './terrain.js';
 
 export const ENV = {
   time: { value: 0 }, snow: { value: 0 }, wet: { value: 0 }, sand: { value: 0 }, night: { value: 0 },
-  windS: { value: 0.6 }, sun: { value: new THREE.Vector3(0, 1, 0) }, car: { value: new THREE.Vector3(0, -99, 0) }, carR: { value: 1.7 },
+  windS: { value: 0.6 }, sun: SUN, cloud: CLOUD, cloudOff: CLOUD_OFF, ground: { value: null }, car: { value: new THREE.Vector3(0, -99, 0) }, carR: { value: 1.7 },
 };
 
 export const KIND = {
@@ -65,6 +67,34 @@ const COMMON = /* glsl */`
   }
   float dHt = 0.0; float dLit = 0.0; float dRough = -1.0; vec3 dTN = vec3(0.0, 0.0, 1.0); float dUseTN = 0.0;
   uniform highp sampler2DArray tAlb, tNor; varying vec2 vTU;
+  uniform sampler2D tGround; vec3 dRoom = vec3(0.0);
+  float groundAt(vec2 xz){
+    vec2 uv = vec2((xz.x - ${X0.toFixed(1)}) / ${SIZE_X.toFixed(1)}, (xz.y - ${Z0.toFixed(1)}) / ${SIZE_Z.toFixed(1)});
+    uv = uv * vec2(${(NX / (NX + 1)).toFixed(5)}, ${(NZ / (NZ + 1)).toFixed(5)}) + vec2(${(0.5 / (NX + 1)).toFixed(5)}, ${(0.5 / (NZ + 1)).toFixed(5)});
+    return texture(tGround, uv).r;
+  }
+  // a room behind the glass (interior mapping): the ray from the eye continues into a box behind each pane
+  vec3 dInterior(vec3 P, vec3 N, vec2 uvm, vec2 cell, float depth, float seed){
+    vec3 V = normalize(P - cameraPosition);
+    vec3 dp1 = dFdx(P), dp2 = dFdy(P); vec2 du1 = dFdx(uvm), du2 = dFdy(uvm);
+    vec3 T = dp1 * du2.y - dp2 * du1.y, B = dp2 * du1.x - dp1 * du2.x;
+    float lt = length(T), lb = length(B); if (lt < 1e-6 || lb < 1e-6) return vec3(0.05);
+    T /= lt; B /= lb;
+    vec3 rd = vec3(dot(V, T) / cell.x, dot(V, B) / cell.y, max(dot(V, -N), 0.02) / depth);
+    vec2 cu = uvm / cell; vec2 id = floor(cu); vec3 ro = vec3(fract(cu), 0.0);
+    vec3 tx = vec3((step(0.0, rd.x) - ro.x) / rd.x, (step(0.0, rd.y) - ro.y) / rd.y, (1.0 - ro.z) / rd.z);
+    float t = min(min(tx.x, tx.y), tx.z); vec3 hp = ro + rd * t;
+    float r = dH(vec3(id, seed)), r2 = dH(vec3(id, seed + 3.0));
+    vec3 wall = mix(vec3(0.62, 0.55, 0.46), vec3(0.52, 0.56, 0.58), r);
+    vec3 c;
+    if (t == tx.z) { c = wall * 0.85; c *= 1.0 - 0.25 * smoothstep(0.3, 0.0, abs(hp.x - 0.5) - 0.2); c = mix(c, vec3(0.35, 0.3, 0.26), step(0.75, r2) * step(hp.y, 0.55) * step(0.25, hp.x) * step(hp.x, 0.6)); }
+    else if (t == tx.y) c = rd.y > 0.0 ? vec3(0.32, 0.25, 0.19) * (0.8 + 0.4 * r2) : vec3(0.78, 0.76, 0.72);
+    else c = wall;
+    c *= mix(1.0, 0.45, hp.z);                       // darker deeper in the room
+    c *= 0.55 + 0.45 * smoothstep(0.0, 0.5, 1.0 - hp.z);
+    float blind = step(0.55, r2) * step(fract(cu.y), 0.28 + r * 0.3);     // half-drawn blinds
+    return mix(c, vec3(0.82, 0.8, 0.74), blind * 0.9);
+  }
 `;
 
 const v3 = (c) => `vec3(${c.map((x) => x.toFixed(4)).join(', ')})`;
@@ -79,9 +109,23 @@ function textured(kind, name, T) {
     float macro = 0.88 + 0.24 * dF(vDW * 0.21) + (dot(tb, vec3(0.333)) / ${(mean.reduce((a, b) => a + b) / 3).toFixed(4)} - 1.0) * 0.18;
     col *= clamp(detail, 0.0, 2.2) * macro;
     dTN = texture(tNor, vec3(tu, ${L}.0)).xyz * 2.0 - 1.0; dUseTN = 1.0;
+    // weathering: grime (and moss away from the desert) in the first metre above the ground, rain streaks down the walls
+    float nn = dF(vDW * 1.7);
+    float above = vDW.y - groundAt(vDW.xz);
+    float base = (1.0 - smoothstep(0.0, 0.9 + nn * 0.5, above)) * step(-0.5, above);
+    col *= 1.0 - base * (0.22 + nn * 0.18);
+    float moss = smoothstep(-48.0, -36.0, vDW.x) * smoothstep(0.45, 0.75, nn) * base;
+    col = mix(col, col * vec3(0.62, 0.78, 0.48), moss * 0.8);
+    float vert = 1.0 - smoothstep(0.5, 0.8, abs(vDN.y));
+    float streak = smoothstep(0.5, 0.95, dN(vec3((vDW.x + vDW.z) * 2.7, vDW.y * 0.22, 5.0))) * smoothstep(0.2, 0.7, dN(vec3((vDW.x + vDW.z) * 0.4, vDW.y * 0.6, 9.0)));
+    col *= 1.0 - streak * 0.16 * vert;
+    // roughness mottled like real stone and plaster (0.75–0.95), smoother where it's worn
+    dRough = clamp(0.84 + (nn - 0.5) * 0.28 + base * 0.06 - streak * 0.06, 0.7, 0.97);
     ${kind === 'glass' ? `{ vec2 cell = floor(tu * vec2(4.0, 5.0)); float frame = step(0.8, dot(ta, vec3(0.333)));
-      dLit = (1.0 - frame) * step(0.5, dH(vec3(cell, ${L}.0 + floor(vDW.x * 0.1)))); dRough = mix(0.06, 0.45, frame); }` : ''}
-    ${kind === 'tile' ? 'dRough = 0.5;' : ''}
+      dLit = (1.0 - frame) * step(0.5, dH(vec3(cell, ${L}.0 + floor(vDW.x * 0.1))));
+      dRoom = dInterior(vDW, normalize(vDN), vTU, vec2(${(SX / 4).toFixed(2)}, ${(SY / 5).toFixed(2)}), 1.6, ${L}.0) * (1.0 - frame);
+      col = mix(vec3(0.015), col, frame); dRough = mix(0.04, 0.4, frame); }` : ''}
+    ${kind === 'tile' ? 'dRough = 0.55 + (nn - 0.5) * 0.2;' : ''}
   }`;
 }
 
@@ -188,7 +232,7 @@ export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, f
   const prev = mat.onBeforeCompile;
   mat.onBeforeCompile = (sh, r) => {
     prev?.call(mat, sh, r);
-    Object.assign(sh.uniforms, { tAlb: TEX.alb, tNor: TEX.nor, dSun: ENV.sun, dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, dNight: ENV.night, wS: ENV.windS, wCar: ENV.car, wCarR: ENV.carR });
+    Object.assign(sh.uniforms, { tGround: ENV.ground, cCover: ENV.cloud, cOff: ENV.cloudOff, tAlb: TEX.alb, tNor: TEX.nor, dSun: ENV.sun, dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, dNight: ENV.night, wS: ENV.windS, wCar: ENV.car, wCarR: ENV.carR });
     let vs = sh.vertexShader, fs = sh.fragmentShader;
     vs = vs.replace('#include <common>', `#include <common>
       uniform float dTime, wS, wCarR; uniform vec3 wCar;
@@ -223,6 +267,7 @@ export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, f
         ${fade ? 'vFade = aFade;' : ''} }`);
     fs = fs.replace('#include <common>', `#include <common>
       ${COMMON}
+      ${CLOUD_GLSL}
       ${fade ? 'varying float vFade;' : ''}`);
     fs = fs.replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
       ${fade ? `if (vFade > 0.001) { float ign = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))); if (ign < vFade) discard; }` : ''}`);
@@ -235,6 +280,8 @@ export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, f
         col *= 1.0 - dWet * 0.26;
         col = mix(col, vec3(0.78, 0.6, 0.4), dSand * 0.22 * smoothstep(-0.2, 0.7, vDN.y));
         diffuseColor.rgb = col; }`);
+    fs = fs.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+      { float cs = cloudShadow(vDW, dSun); reflectedLight.directDiffuse *= cs; reflectedLight.directSpecular *= cs; }`);
     fs = fs.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
       if (dRough >= 0.0) roughnessFactor = dRough;
       roughnessFactor = mix(roughnessFactor, 0.22, dWet * smoothstep(0.4, 0.95, vDN.y));`);
@@ -248,7 +295,7 @@ export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, f
         vec3 tn = vec3(dTN.xy * ${(bump * 2).toFixed(2)} * vec2(1.0, -1.0), dTN.z);
         normal = normalize(T * (tn.x * sc) + B * (tn.y * sc) + normal * tn.z);
       } else normal = dPerturb(-vViewPosition, normal, vec2(dFdx(dHt), dFdy(dHt)) * ${bump.toFixed(2)}, faceDirection);`);
-    if (k === 'glass' || T?.[0] === 15) fs = fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance *= dLit;');
+    if (k === 'glass' || T?.[0] === 15) fs = fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance *= dLit; totalEmissiveRadiance += dRoom * (0.32 * (1.0 - dNight) + 0.06) + dRoom * dLit * dNight * vec3(1.6, 1.25, 0.8);');
     if (k === 'card') fs = fs.replace('#include <alphatest_fragment>', `
       #ifdef USE_MAP
       { // keep the leaves solid as the card shrinks: mip levels average the alpha down, so scale it back up with the level

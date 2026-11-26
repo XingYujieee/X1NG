@@ -11,6 +11,7 @@ import { LANDMARKS, DECOR, ANIMALS, BALLOONS, BOATS, FLAGS, FLAGPOLES, dynamicPr
 import { ENV, KIND, enhance } from './materials.js';
 import { buildGrass } from './grass.js';
 import { LEAVES, TEX } from './textures.js';
+import { CLOUD_GLSL } from './light.js';
 
 const C = (h) => new THREE.Color(h);
 const BIOME_COL = { desert: C('#e7c890'), danxia: C('#cf7b52'), meadow: C('#86a85a'), autumn: C('#b5a65f'), plane: C('#8ba45c'), coast: C('#a4b37c'), field: C('#d3b66c') };
@@ -70,14 +71,15 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
   const groundMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96 });
   const GL = [[0, 2.4], [1, 2.6], [2, 5.0], [3, 7.0], [4, 6.0], [5, 5.0], [6, 3.6], [7, 3.2]];   // layer, metres per tile
   groundMat.onBeforeCompile = (sh) => {   // splatted textures, sand ripples, and the weather (snow cover, wet sheen, drifting sand)
-    Object.assign(sh.uniforms, { dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, tAlb: TEX.alb, tNor: TEX.nor });
+    Object.assign(sh.uniforms, { dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, tAlb: TEX.alb, tNor: TEX.nor, dSun: ENV.sun, cCover: ENV.cloud, cOff: ENV.cloudOff });
     const mean = (l) => `vec3(${TEX.mean[l].map((v) => v.toFixed(4)).join(', ')})`;
     const tri = (l) => l === 3 || l === 4;   // rock layers: triplanar on the slopes
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aux; attribute vec4 sw0, sw1; varying vec3 vAux; varying vec3 vWp; varying vec3 vWn; varying vec4 vS0, vS1;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvAux = aux; vS0 = sw0; vS1 = sw1; vWp = (modelMatrix * vec4(transformed, 1.0)).xyz; vWn = normal;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      uniform float dTime, dSnow, dWet, dSand;
+      uniform float dTime, dSnow, dWet, dSand; uniform vec3 dSun;
       uniform highp sampler2DArray tAlb, tNor;
+      ${CLOUD_GLSL}
       varying vec3 vAux; varying vec3 vWp; varying vec3 vWn; varying vec4 vS0, vS1;
       float gH(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float gN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); return mix(mix(gH(i), gH(i+vec2(1,0)), f.x), mix(gH(i+vec2(0,1)), gH(i+vec2(1,1)), f.x), f.y); }
@@ -128,6 +130,8 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
       diffuseColor.rgb *= 1.0 - dWet * 0.3 - puddle * 0.25;`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
       roughnessFactor = mix(roughnessFactor, 0.35, dWet * 0.6); roughnessFactor = mix(roughnessFactor, 0.04, puddle);`)
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+      { float cs = cloudShadow(vWp, dSun); reflectedLight.directDiffuse *= cs; reflectedLight.directSpecular *= cs; }`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
       { vec3 wn = normalize(vWn); vec3 o = gTN * 0.9 * (1.0 - puddle); o -= wn * dot(o, wn);
         normal = normalize((viewMatrix * vec4(normalize(wn + o), 0.0)).xyz); }`);
@@ -204,7 +208,7 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     const A = lib[name]; if (!A || !A.roles.lamp) continue;
     for (const r of A.roles.lamp) { const mesh = new THREE.Mesh(r.geometry, r.material); mesh.applyMatrix4(mtx(x, sample(x, z) + y, z, ry, s)); scene.add(mesh); glow.push({ m: r.material, day: 0, night: 2.4 }); }
   }
-  for (const n of ['glass_city', 'glass_dark']) if (M[n]) { M[n].envMapIntensity = 2.2; M[n].emissive = C('#ffcf8a'); glow.push({ m: M[n], day: 0, night: 0.22 }); }
+  for (const n of ['glass_city', 'glass_dark']) if (M[n]) { M[n].metalness = 0; M[n].roughness = 0.05; M[n].envMapIntensity = 1.6; M[n].emissive = C('#ffcf8a'); glow.push({ m: M[n], day: 0, night: 0.22 }); }
   if (M.pearl) { M.pearl.emissive = C('#ff4fa3'); glow.push({ m: M.pearl, day: 0, night: 0.9 }); }
 
   /* ---------- trees and plants of each place ---------- */
@@ -271,6 +275,35 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
       else if (rnd() < 0.02) addTree('bush', x, z, 0.5 + rnd() * 0.4);
     }
   }
+  // where buildings meet the ground: a few broken stones and weeds along the walls, and some at the road edges
+  const rubble = [];
+  const fb = new THREE.Box3(), pb = new THREE.Box3();
+  for (const [name, x, z, ry, sc, yo = 0] of LANDMARKS) {
+    const A = lib[name]; if (!A || /^(egg|zifeng|pearl_tower|shanghai_tower|jinmao|swfc|tower\d|yardang)$/.test(name)) continue;
+    fb.makeEmpty(); for (const p of A.parts) { p.geometry.computeBoundingBox(); fb.union(p.geometry.boundingBox); }
+    const m = mtx(x, sample(x, z) + yo, z, ry, sc), cs = Math.cos(ry), sn = Math.sin(ry);
+    const ex = (fb.max.x - fb.min.x) / 2 * (sc || 1), ez = (fb.max.z - fb.min.z) / 2 * (sc || 1);
+    const cx = (fb.max.x + fb.min.x) / 2 * (sc || 1), cz = (fb.max.z + fb.min.z) / 2 * (sc || 1);
+    const per = 4 * (ex + ez);
+    for (let d = 0; d < per; d += 0.9 + rnd() * 0.8) {
+      // walk the footprint rectangle
+      let lx, lz, t = d;
+      if (t < 2 * ex) { lx = -ex + t; lz = -ez; } else if ((t -= 2 * ex) < 2 * ez) { lx = ex; lz = -ez + t; } else if ((t -= 2 * ez) < 2 * ex) { lx = ex - t; lz = ez; } else { t -= 2 * ex; lx = -ex; lz = ez - t; }
+      const out = 0.15 + rnd() * 0.45, nx = Math.abs(lx) >= ex - 1e-3 ? Math.sign(lx) : 0, nz = nx ? 0 : Math.sign(lz);
+      const ox = cx + lx + nx * out, oz = cz + lz + nz * out;
+      const wx = x + ox * cs + oz * sn, wz = z - ox * sn + oz * cs;
+      if (road(wx, wz) < 1.6 || nearStop(wx, wz, 7)) continue;
+      const r = rnd();
+      if (r < 0.3) rubble.push(mtx(wx, sample(wx, wz), wz, rnd() * 6.28, 0.6 + rnd() * 0.7));
+      else if (r < 0.62) addTree('tuft', wx, wz, 0.6 + rnd() * 0.7);
+    }
+  }
+  for (let n = 0; n < (coarse ? 900 : 2200); n++) {
+    const x = X0 + rnd() * SIZE_X, z = Z0 + rnd() * SIZE_Z, rd = road(x, z);
+    if (rd < 2.5 || rd > 3.4 || nearStop(x, z, 8) || sample(x, z) < 0.05 || !free(x, z)) continue;
+    if (rnd() < 0.45) rubble.push(mtx(x, sample(x, z), z, rnd() * 6.28, 0.4 + rnd() * 0.6)); else addTree('tuft', x, z, 0.5 + rnd() * 0.6);
+  }
+  if (lib.rubble && rubble.length) scene.add(instanced(lib, 'rubble', rubble, { shadow: true }).group);
   const SOLID = { fir: 0.3, fir_snow: 0.3, palm: 0.24, ginkgo: 0.28, plane: 0.34, poplar: 0.24, blossom: 0.2 };
   const LOW = { shrub: 1, tuft: 1, reeds: 1, bush: 1 };
   const treeMeshes = {};
@@ -311,6 +344,7 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
 
   /* ---------- grass (dense, around the camera) and meadow flowers ---------- */
   const grass = buildGrass(scene, grid, { coarse, free });
+  ENV.ground.value = grass.U.hTex.value;   // buildings read the ground height for grime and moss at their base
   const FN = coarse ? 1500 : 3500;
   const flowers = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.08, 0).translate(0, 0.4, 0), windPatch(new THREE.MeshStandardMaterial({ roughness: 0.8, name: 'flower' }), { bend: 0.15, push: 1.1, rigid: 0 }), FN);
   let fp = 0;

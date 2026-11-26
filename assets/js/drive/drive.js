@@ -23,6 +23,8 @@ import { RenderPass } from '../../vendor/three-addons/postprocessing/RenderPass.
 import { UnrealBloomPass } from '../../vendor/three-addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from '../../vendor/three-addons/postprocessing/ShaderPass.js';
 import { OutputPass } from '../../vendor/three-addons/postprocessing/OutputPass.js';
+import { GTAOPass } from '../../vendor/three-addons/postprocessing/GTAOPass.js';
+import { patchFog, injectAir, AIR, CLOUD_GLSL } from './light.js';
 import { PLACES, START, WATER_Y, SIZE_X, SIZE_Z, biomeAt, nearestPlace, islandD, buildGrid } from './terrain.js';
 import { createPhysics } from './physics.js';
 import { loadAssets } from './assets.js';
@@ -139,6 +141,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   await new Promise((r) => setTimeout(r, 30));
 
   /* ---------- renderer / scene ---------- */
+  patchFog();
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, stencil: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, coarse ? 1.25 : 1.7));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -149,28 +152,43 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   const hemi = new THREE.HemisphereLight(0xdcecff, 0x8a7458, 1.1);
   const sun = new THREE.DirectionalLight(0xffffff, 2.4);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(coarse ? 1024 : 2048, coarse ? 1024 : 2048);
-  Object.assign(sun.shadow.camera, { left: -38, right: 38, top: 38, bottom: -38, near: 1, far: 180 });
-  sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.05;
+  sun.shadow.mapSize.set(coarse ? 1024 : 4096, coarse ? 1024 : 4096);
+  Object.assign(sun.shadow.camera, { left: -34, right: 34, top: 34, bottom: -34, near: 1, far: 180 });
+  sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.04; sun.shadow.radius = coarse ? 1 : 3; sun.shadow.blurSamples = 12;
   const moon = new THREE.DirectionalLight(0x8aa2ff, 0);
   scene.add(hemi, sun, sun.target, moon, moon.target);
 
   // sky: a gradient dome with the sun and, at night, stars; its horizon is the fog colour
-  const skyU = { top: { value: new THREE.Color() }, horizon: { value: new THREE.Color() }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color() }, night: { value: 0 }, haze: { value: 0 } };
+  const skyU = { top: { value: new THREE.Color() }, horizon: { value: new THREE.Color() }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color() }, night: { value: 0 }, haze: { value: 0 }, cloudLit: { value: 1 }, cCover: ENV.cloud, cOff: ENV.cloudOff };
   const sky = new THREE.Mesh(new THREE.SphereGeometry(420, 32, 16), new THREE.ShaderMaterial({
     uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false,
     vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); vec4 p = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * p; gl_Position.z = gl_Position.w; }',
     fragmentShader: `
-      uniform vec3 top, horizon, sunDir, sunCol; uniform float night, haze; varying vec3 vD;
+      uniform vec3 top, horizon, sunDir, sunCol; uniform float night, haze, cloudLit; varying vec3 vD;
+      ${CLOUD_GLSL}
       float h3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
       void main(){
-        vec3 d = normalize(vD); float h = d.y;
-        vec3 c = mix(horizon, top, smoothstep(-0.02, 0.45, h) * (1.0 - haze));
-        float s = max(dot(d, normalize(sunDir)), 0.0);
-        c += sunCol * (pow(s, 900.0) * 6.0 + pow(s, 12.0) * 0.25) * (1.0 - haze * 0.8) * step(0.0, h + 0.05);
+        vec3 d = normalize(vD); float h = d.y; vec3 sd = normalize(sunDir);
+        float s = max(dot(d, sd), 0.0);
+        // a deep zenith fading to a bright, hazy horizon; warmer on the sun's side
+        vec3 c = mix(horizon, top, pow(smoothstep(-0.02, 1.0, h), 0.55) * (1.0 - haze));
+        c += sunCol * pow(s, 3.0) * 0.18 * (1.0 - smoothstep(0.0, 0.5, h)) * (1.0 - haze * 0.6);
+        c += sunCol * (pow(s, 2400.0) * 9.0 + pow(s, 48.0) * 0.45 + pow(s, 8.0) * 0.12) * (1.0 - haze * 0.85) * step(0.0, h + 0.03);
+        // stars
         vec3 g = floor(d * 260.0);
         float st = step(0.9965, h3(g)) * smoothstep(0.05, 0.3, h) * night * (1.0 - haze);
         c += vec3(st) * (0.6 + 0.4 * h3(g + 1.0));
+        // the cloud deck (60 m up): the same field that throws shadows on the island
+        if (h > 0.01) {
+          vec3 o = cameraPosition; float t = (60.0 - o.y) / h; vec2 p = o.xz + d.xz * t;
+          float cd = cloudDensity(p);
+          float edge = cloudDensity(p + sd.xz * 6.0);
+          vec3 lit = mix(vec3(0.62, 0.66, 0.74), vec3(1.0, 0.98, 0.95), clamp(1.0 - edge * 0.8, 0.0, 1.0)) * cloudLit;
+          lit += sunCol * pow(s, 6.0) * 0.6 * (1.0 - cd);    // silver lining toward the sun
+          float fade = smoothstep(0.01, 0.22, h);
+          c = mix(c, mix(lit, horizon, 1.0 - fade), cd * fade * 0.92 * (1.0 - haze * 0.7));
+        }
+        c = mix(c, horizon * 0.9, smoothstep(0.0, -0.2, h));
         gl_FragColor = vec4(c, 1.0);
       }`,
   }));
@@ -195,7 +213,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
         gl_FragColor = vec4(c, 1.0);
       }`,
   })));
-  let envRT = null, envKey = '', envT = 0;
+  let envRT = null, envKey = '', envT = 0, airT = 0;
   const bakeEnv = () => {
     const k = [skyU.horizon.value.getHexString(), skyU.top.value.getHexString(), skyU.sunDir.value.toArray().map((v) => v.toFixed(2)).join(), skyU.haze.value.toFixed(2)].join('|');
     if (k === envKey) return; envKey = k;
@@ -205,8 +223,18 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   scene.environmentIntensity = 0.55;
 
   const rt = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, stencilBuffer: true, samples: coarse ? 0 : 4 });
+  if (!coarse) { rt.depthTexture = new THREE.DepthTexture(2, 2); rt.depthTexture.format = THREE.DepthStencilFormat; rt.depthTexture.type = THREE.UnsignedInt248Type; }
   const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, camera));
+  // ambient occlusion from the depth of the frame just drawn (contact darkening under cars, eaves, trees, in corners)
+  let gtao = null;
+  if (!coarse) {
+    gtao = new GTAOPass(scene, camera, 2, 2, { depthTexture: composer.readBuffer.depthTexture }, { radius: 1.8, distanceExponent: 2, thickness: 2.5, scale: 1.8, samples: 12, distanceFallOff: 1.0 }, { lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 });
+    gtao.blendIntensity = 1.0;
+    const r0 = gtao.render.bind(gtao);
+    gtao.render = (r, wb, rb, ...rest) => { gtao.gtaoMaterial.uniforms.tDepth.value = rb.depthTexture; gtao.pdMaterial.uniforms.tDepth.value = rb.depthTexture; return r0(r, wb, rb, ...rest); };
+    composer.addPass(gtao);
+  }
   const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.55, 0.85);
   if (!coarse) composer.addPass(bloom);
   const blur = new ShaderPass(SpeedBlur);
@@ -493,6 +521,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   const TOP_DAY = new THREE.Color('#5f9fd6'), TOP_NIGHT = new THREE.Color('#050816'), TOP_DUSK = new THREE.Color('#6b6fa8');
   const SAND_FOG = new THREE.Color('#d2a466'), SNOW_FOG = new THREE.Color('#dfe6ee'), RAIN_FOG = new THREE.Color('#7f8c9c');
   const skyC = new THREE.Color(), tmpC = new THREE.Color();
+  const LT = { hemi: 1, env: 1, exp: 1, sun: 1 };
   function applySky(focus) {
     const f = ((tod % 1) + 1) % 1, th = (f - 0.25) * Math.PI * 2, el = Math.sin(th);
     const dayK = smooth(-0.1, 0.22, el); nightK = 1 - dayK;
@@ -508,27 +537,29 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     skyU.horizon.value.copy(skyC);
     skyU.top.value.copy(TOP_NIGHT).lerp(TOP_DAY, dayK).lerp(TOP_DUSK, horizon * 0.5);
     skyU.night.value = nightK; skyU.haze.value = haze;
-    const sunDir = new THREE.Vector3(-Math.cos(th), Math.sin(th) * 0.9 + 0.05, 0.45).normalize();
+    const sunDir = new THREE.Vector3(-Math.cos(th), Math.sin(th) * 0.55 + 0.03, 0.62).normalize();   // a low arc (≈43° at noon): side light all day, long shadows
     skyU.sunDir.value.copy(sunDir); skyU.sunCol.value.set('#ffd9a8').multiplyScalar(dayK);
     const dim = 1 - (wxKind === 'clear' ? 0 : a * 0.35);
     sun.color.set('#ffb27a').lerp(tmpC.set('#fff8ee'), smooth(0.02, 0.45, el));
-    sun.intensity = 2.6 * dayK * dim;
+    sun.intensity = 3.2 * dayK * dim * LT.sun;
     sun.position.set(focus.x + sunDir.x * 50, focus.y + Math.max(12, sunDir.y * 60), focus.z + sunDir.z * 50);
     sun.target.position.copy(focus);
     moon.intensity = 0.9 * nightK; moon.position.set(focus.x + 20, focus.y + 40, focus.z - 10); moon.target.position.copy(focus);
-    hemi.intensity = (0.32 + 0.4 * dayK) * dim;
+    hemi.intensity = (0.2 + 0.2 * dayK) * dim * LT.hemi;
     envGround.value.set('#7d6b55').lerp(tmpC.set('#0d1020'), nightK).multiplyScalar(0.9);
-    scene.environmentIntensity = lerp(0.85, 0.35, nightK) * dim;
+    scene.environmentIntensity = lerp(0.62, 0.3, nightK) * dim * LT.env;
     ENV.sun.value.copy(sunDir);
+    AIR.fogSunCol.value.copy(sun.color).multiplyScalar(dayK * (1 - haze * 0.4) * 0.75);
+    skyU.cloudLit.value = lerp(0.07, 1, dayK) * (1 - haze * 0.3);
     hemi.color.copy(skyC).lerp(tmpC.set('#ffffff'), 0.35);
     hemi.groundColor.set('#8a7458').lerp(tmpC.set('#1a1f33'), nightK);
-    renderer.toneMappingExposure = lerp(1.05, 1.28, nightK);
+    renderer.toneMappingExposure = lerp(1.06, 1.3, nightK) * LT.exp;
     bloom.strength = 0.22 + nightK * 0.45;
     W.glow.forEach((g) => { g.m.emissiveIntensity = lerp(g.day, g.night, smooth(0.25, 0.75, nightK)); });
     W.grassU.light.value.setRGB(lerp(0.13, 1, dayK) * dim, lerp(0.17, 1, dayK) * dim, lerp(0.3, 1, dayK) * dim);
     W.waterMat.uniforms.night.value = nightK; W.waterMat.uniforms.sky.value.copy(skyC);
     ENV.night.value = nightK;
-    W.grassU.sunCol.value.copy(sun.color).multiplyScalar(sun.intensity / 2.6);
+    W.grassU.sunCol.value.copy(sun.color).multiplyScalar(sun.intensity / 3.2);
     ffMat.opacity = smooth(0.5, 0.9, nightK) * (wxKind === 'clear' ? 1 : 1 - a);
     phase = [...PHASES].sort((p, q) => Math.abs(((f - p.tod + 1.5) % 1) - 0.5) - Math.abs(((f - q.tod + 1.5) % 1) - 0.5))[0];
     return f;
@@ -549,7 +580,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   const tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3(), q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion();
   const resize = () => {
     const w = host.clientWidth, h = host.clientHeight;
-    renderer.setSize(w, h, false); composer.setSize(w, h);
+    renderer.setSize(w, h, false); composer.setSize(w, h); if (gtao) { const pr = renderer.getPixelRatio(); gtao.setSize(Math.round(w * pr * 0.5), Math.round(h * pr * 0.5)); }
     camera.aspect = w / h; camera.updateProjectionMatrix();
     weather?.resize(h, renderer.getPixelRatio());
     blur.uniforms.aspect.value = w / h;
@@ -563,11 +594,27 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   const shapeBall = new R.Ball(0.35), identQ = { x: 0, y: 0, z: 0, w: 1 };
   const camFilter = (c) => physics.kinds.get(c.handle) !== 'tree';
 
+  // keep it smooth on slower GPUs: if the frame rate stays low, drop the costliest effects one step at a time
+  const forceHQ = new URLSearchParams(location.search).has('hq');
+  let perfN = 0, perfT = 0, perfLvl = 0;
+  function adapt(rdt, tt) {
+    if (forceHQ || perfLvl >= 3 || tt < 3 || document.hidden || rdt > 0.5) return;
+    perfN++; perfT += rdt;
+    if (perfN < 90) return;
+    const avg = perfT / perfN; perfN = 0; perfT = 0;
+    if (avg < 1 / 42) return;
+    perfLvl++;
+    if (perfLvl === 1 && gtao) gtao.enabled = false;
+    else if (perfLvl <= 2) { sun.shadow.mapSize.set(2048, 2048); sun.shadow.map?.dispose(); sun.shadow.map = null; sun.shadow.radius = 2; }
+    else { renderer.setPixelRatio(Math.min(devicePixelRatio, 1.15)); resize(); }
+  }
   function frame(now) {
     if (!alive) return;
     raf = requestAnimationFrame(frame);
-    const dt = Math.min(0.08, (now - last) / 1000); last = now;
+    const rawDt = (now - last) / 1000;
+    const dt = Math.min(0.08, rawDt); last = now;
     const tt = (now - startT) / 1000;
+    adapt(rawDt, tt);
     if (mapDlg.open) return;
 
     if (todTarget) { todTarget.t = Math.min(1, todTarget.t + dt / 2.4); const e = todTarget.t * todTarget.t * (3 - 2 * todTarget.t); tod = lerp(todTarget.from, todTarget.to, e); if (todTarget.t >= 1) todTarget = null; }
@@ -732,6 +779,10 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     ENV.sand.value = damp(ENV.sand.value, wxKind === 'sand' ? wxAmt : 0, 0.6, dt);
     const f = applySky(P);
     envT -= dt; if (envT <= 0) { envT = 0.5; bakeEnv(); }
+    airT -= dt; if (airT <= 0) { airT = 2; injectAir(scene); }
+    // the cloud deck drifts with the wind; more cloud in rain and snow, almost none in a sandstorm
+    ENV.cloudOff.value.x += (1.3 + windV.x * 0.5) * dt; ENV.cloudOff.value.y += (0.5 + windV.y * 0.5) * dt;
+    ENV.cloud.value = damp(ENV.cloud.value, wxKind === 'clear' ? 0.34 : wxKind === 'sand' ? 0.34 * (1 - wxAmt) : 0.34 + wxAmt * 0.55, 0.15, dt);
     weather.update(dt, tt, wxKind, wxAmt, camera.position, P, windV, nightK, scene.fog.color);
     { const g = gradeFor(wxKind, wxAmt, nightK); grade.uniforms.tint.value.set(g[0], g[1], g[2]); grade.uniforms.sat.value = g[3]; grade.uniforms.contrast.value = g[4]; grade.uniforms.lift.value = g[5]; grade.uniforms.vig.value = g[6]; grade.uniforms.t.value = tt % 10; }
 
@@ -782,7 +833,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   };
   let dbgCam = null;
   window.__drive = {
-    look: (a) => { dbgCam = a; }, trees: W.trees,
+    look: (a) => { dbgCam = a; }, trees: W.trees, renderer, scene, composer, get gtao() { return gtao; }, AIR, ENV, THREE, LT, grade,
     lookAt: (type, i, d = 6, h = 2.5, a = 0.8) => { const t = W.trees[type][i]; dbgCam = [t.x + Math.cos(a) * d, t.y + h, t.z + Math.sin(a) * d, t.x, t.y + h * 0.8, t.z]; },
     park: (i) => { const s = stops[i]; car.place(s.x, s.gy + 1.2, s.z + 1.5, yawNorth); snapCam = true; },
     stops, get car() { return car.body.translation(); }, carApi: car, jumpTo, nextPhase, open: (i) => openViewer(stops[i]), keys,

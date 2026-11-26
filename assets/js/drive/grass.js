@@ -8,6 +8,7 @@
    went, and take snow on their tips.
    ========================================================================== */
 import * as THREE from '../../vendor/three.min.js';
+import { CLOUD_GLSL } from './light.js';
 import { ENV } from './materials.js';
 import { SIZE_X, SIZE_Z, NX, NZ, X0, Z0, PLACES, START, biomeAt, fbm, smooth } from './terrain.js';
 
@@ -64,10 +65,16 @@ export function buildGrass(scene, grid, { coarse = false, free = () => true } = 
     light: { value: new THREE.Color(1, 1, 1) }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color(1, 1, 1) },
   };
   const mat = new THREE.ShaderMaterial({
-    uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), U), side: THREE.DoubleSide, fog: true,
-    vertexShader: `#include <fog_pars_vertex>
+    uniforms: Object.assign(THREE.UniformsUtils.merge([THREE.UniformsLib.fog, THREE.UniformsLib.lights]), U, { dSun: ENV.sun, cCover: ENV.cloud, cOff: ENV.cloudOff }),
+    side: THREE.DoubleSide, fog: true, lights: true,
+    vertexShader: `#include <common>
+      #include <fog_pars_vertex>
+      #include <shadowmap_pars_vertex>
+      varying vec3 vW;
       uniform vec3 center, car; uniform float R, t, wind, snow; uniform sampler2D maskTex, hTex; uniform vec4 trail[${TRAIL}];
       attribute vec4 aOff; varying float vY; varying vec3 vC; varying float vSnow; varying float vFace;
+      float gH2(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float gN2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(gH2(i), gH2(i + vec2(1, 0)), f.x), mix(gH2(i + vec2(0, 1)), gH2(i + vec2(1, 1)), f.x), f.y); }
       vec3 hsl2rgb(vec3 c){ vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0); return c.z + c.y * (rgb - 0.5) * (1.0 - abs(2.0 * c.z - 1.0)); }
       void main(){
         vec2 wp = mod(aOff.xy - center.xz + R, 2.0 * R) - R + center.xz;
@@ -75,7 +82,8 @@ export function buildGrass(scene, grid, { coarse = false, free = () => true } = 
         vec4 m = texture2D(maskTex, uv);
         float edge = 1.0 - smoothstep(R * 0.7, R, length(wp - center.xz));
         float dens = m.r;
-        float h = (0.28 + aOff.z * 0.42) * m.a * 1.15 * edge * step(aOff.z, dens) * (1.0 - snow * 0.55);
+        float clump = gN2(wp * 0.45) * 0.7 + gN2(wp * 1.7) * 0.3;   // tufts and thin patches, not an even lawn
+        float h = (0.2 + aOff.z * 0.55) * m.a * 1.15 * edge * step(aOff.z, dens * (0.6 + clump * 0.7)) * (1.0 - snow * 0.55) * (0.55 + clump * 0.9);
         vec2 huv = uv * vec2(${(NX / (NX + 1)).toFixed(5)}, ${(NZ / (NZ + 1)).toFixed(5)}) + vec2(${(0.5 / (NX + 1)).toFixed(5)}, ${(0.5 / (NZ + 1)).toFixed(5)});
         float gy = texture2D(hTex, huv).r;
         vec3 p = position; vY = p.y;
@@ -99,25 +107,44 @@ export function buildGrass(scene, grid, { coarse = false, free = () => true } = 
         w.xz += dir * press * vY * h * 0.85; w.y -= press * vY * h * 0.7;
         vC = hsl2rgb(vec3(m.g * 0.4 + (aOff.z - 0.5) * 0.03, 0.35 + m.b * 0.25, m.b * (0.85 + aOff.z * 0.3)));
         vC = pow(vC, vec3(2.2));
+        float dry = step(0.84, fract(aOff.z * 7.31 + aOff.w * 0.37)) * (0.5 + 0.5 * (1.0 - clump));
+        vC = mix(vC, vec3(0.42, 0.33, 0.16) * (0.7 + aOff.z * 0.5), dry * 0.85);   // a few dry, straw-coloured blades
         vC *= 1.0 + g * 0.15 * vY;
         vSnow = snow; vFace = c;
-        vec4 mvPosition = viewMatrix * vec4(w, 1.0);
+        vec4 worldPosition = vec4(w, 1.0); vW = w;
+        vec4 mvPosition = viewMatrix * worldPosition;
+        vec3 transformedNormal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
         gl_Position = projectionMatrix * mvPosition;
+        #include <shadowmap_vertex>
         if (h < 0.01) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
         #include <fog_vertex>
       }`,
-    fragmentShader: `#include <fog_pars_fragment>
-      uniform vec3 light, sunCol; uniform float wet; varying float vY; varying vec3 vC; varying float vSnow; varying float vFace;
+    fragmentShader: `#include <common>
+      #include <packing>
+      #include <fog_pars_fragment>
+      #include <bsdfs>
+      #include <lights_pars_begin>
+      #include <shadowmap_pars_fragment>
+      #include <shadowmask_pars_fragment>
+      uniform vec3 dSun;
+      ${CLOUD_GLSL}
+      uniform vec3 light, sunCol; uniform float wet; varying float vY; varying vec3 vC; varying float vSnow; varying float vFace; varying vec3 vW;
       void main(){
-        vec3 c = mix(vC * 0.35, vC * 1.1, smoothstep(0.0, 1.0, vY));
-        c += vC * sunCol * 0.35 * smoothstep(0.55, 1.0, vY);
+        // sky light (darker at the root, where the blades shade each other) + the sun, through tree and cloud shadow
+        float sh = getShadowMask() * cloudShadow(vW, dSun);
+        float yy = smoothstep(0.0, 1.0, vY);
+        // the root takes the colour of the earth it grows from, so the blades come out of the ground instead of standing on it
+        vec3 base = mix(vC * 0.55, vec3(0.13, 0.11, 0.075), 0.45);
+        vec3 bc = mix(base, vC, smoothstep(0.0, 0.55, vY));
+        vec3 c = bc * light * mix(0.32, 0.62, yy) + bc * sunCol * sh * (0.3 + 0.7 * yy) * 0.95;
+        c += vC * sunCol * sh * 0.3 * smoothstep(0.6, 1.0, vY);
         c = mix(c, vec3(0.92, 0.95, 1.0) * light, vSnow * (0.35 + 0.6 * smoothstep(0.2, 1.0, vY)));
         c *= mix(light, vec3(1.0), vSnow * 0.5 * smoothstep(0.2, 1.0, vY)) * (1.0 - wet * 0.2);
         gl_FragColor = vec4(c, 1.0);
         #include <fog_fragment>
       }`,
   });
-  const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; scene.add(mesh);
+  const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; mesh.receiveShadow = true; scene.add(mesh);
   let ti = 0;
   return {
     U,
