@@ -26,6 +26,7 @@ import { OutputPass } from '../../vendor/three-addons/postprocessing/OutputPass.
 import { PLACES, START, WATER_Y, SIZE_X, SIZE_Z, biomeAt, nearestPlace, islandD, buildGrid } from './terrain.js';
 import { createPhysics } from './physics.js';
 import { loadAssets } from './assets.js';
+import { loadTextures } from './textures.js';
 import { buildWorld } from './world.js';
 import { ENV } from './materials.js';
 import { buildWeather, GradeShader, gradeFor } from './weather.js';
@@ -132,6 +133,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   const [R, lib] = await Promise.all([
     import(rapierUrl).then(async (m) => { const RR = m.default || m; await RR.init(); progress.rapier = 1; showProgress(); return RR; }),
     loadAssets(`${base}media/drive/`, (p) => { progress.assets = p; showProgress(); }),
+    loadTextures(`${base}media/drive/tex/`, { coarse }),
   ]);
   if (!alive) return { close() {} };
   await new Promise((r) => setTimeout(r, 30));
@@ -174,7 +176,35 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   }));
   sky.renderOrder = -1; sky.frustumCulled = false; scene.add(sky);
 
-  const rt = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, stencilBuffer: true });
+  // image-based light from the same sky (re-baked when the sky changes), so metal, glass and wet stone have something to reflect
+  // and the shade side of every surface picks up the sky's colour instead of a flat ambient
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envScene = new THREE.Scene();
+  const envGround = { value: new THREE.Color('#8a7458') };
+  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.ShaderMaterial({
+    uniforms: { ...skyU, ground: envGround }, side: THREE.BackSide, depthWrite: false,
+    vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `
+      uniform vec3 top, horizon, sunDir, sunCol, ground; uniform float night, haze; varying vec3 vD;
+      void main(){
+        vec3 d = normalize(vD); float h = d.y;
+        vec3 c = mix(horizon, top, smoothstep(-0.02, 0.45, h) * (1.0 - haze));
+        float s = max(dot(d, normalize(sunDir)), 0.0);
+        c += sunCol * (pow(s, 64.0) * 3.0 + pow(s, 6.0) * 0.3) * (1.0 - haze * 0.8) * step(0.0, h + 0.05);
+        c = mix(c, ground, smoothstep(0.02, -0.12, h));
+        gl_FragColor = vec4(c, 1.0);
+      }`,
+  })));
+  let envRT = null, envKey = '', envT = 0;
+  const bakeEnv = () => {
+    const k = [skyU.horizon.value.getHexString(), skyU.top.value.getHexString(), skyU.sunDir.value.toArray().map((v) => v.toFixed(2)).join(), skyU.haze.value.toFixed(2)].join('|');
+    if (k === envKey) return; envKey = k;
+    const next = pmrem.fromScene(envScene, 0, 0.1, 100, { size: 128 });
+    envRT?.dispose(); envRT = next; scene.environment = envRT.texture;
+  };
+  scene.environmentIntensity = 0.55;
+
+  const rt = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, stencilBuffer: true, samples: coarse ? 0 : 4 });
   const composer = new EffectComposer(renderer, rt);
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.55, 0.85);
@@ -486,7 +516,10 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     sun.position.set(focus.x + sunDir.x * 50, focus.y + Math.max(12, sunDir.y * 60), focus.z + sunDir.z * 50);
     sun.target.position.copy(focus);
     moon.intensity = 0.9 * nightK; moon.position.set(focus.x + 20, focus.y + 40, focus.z - 10); moon.target.position.copy(focus);
-    hemi.intensity = (0.55 + 0.6 * dayK) * dim;
+    hemi.intensity = (0.32 + 0.4 * dayK) * dim;
+    envGround.value.set('#7d6b55').lerp(tmpC.set('#0d1020'), nightK).multiplyScalar(0.9);
+    scene.environmentIntensity = lerp(0.85, 0.35, nightK) * dim;
+    ENV.sun.value.copy(sunDir);
     hemi.color.copy(skyC).lerp(tmpC.set('#ffffff'), 0.35);
     hemi.groundColor.set('#8a7458').lerp(tmpC.set('#1a1f33'), nightK);
     renderer.toneMappingExposure = lerp(1.05, 1.28, nightK);
@@ -663,6 +696,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
     camera.updateMatrixWorld();
     sky.position.copy(camera.position);
+    if (dbgCam) { camera.position.set(dbgCam[0], dbgCam[1], dbgCam[2]); camera.lookAt(dbgCam[3], dbgCam[4], dbgCam[5]); }
     W.occlude(camera.position, camLook, dt);
     // speed blur, never over the car
     {
@@ -697,6 +731,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     ENV.wet.value = damp(ENV.wet.value, wxKind === 'rain' ? wxAmt : 0, wxKind === 'rain' ? 0.35 : 0.06, dt);
     ENV.sand.value = damp(ENV.sand.value, wxKind === 'sand' ? wxAmt : 0, 0.6, dt);
     const f = applySky(P);
+    envT -= dt; if (envT <= 0) { envT = 0.5; bakeEnv(); }
     weather.update(dt, tt, wxKind, wxAmt, camera.position, P, windV, nightK, scene.fog.color);
     { const g = gradeFor(wxKind, wxAmt, nightK); grade.uniforms.tint.value.set(g[0], g[1], g[2]); grade.uniforms.sat.value = g[3]; grade.uniforms.contrast.value = g[4]; grade.uniforms.lift.value = g[5]; grade.uniforms.vig.value = g[6]; grade.uniforms.t.value = tt % 10; }
 
@@ -745,7 +780,10 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     composer.dispose?.(); renderer.dispose(); host.innerHTML = '';
     onClose?.();
   };
+  let dbgCam = null;
   window.__drive = {
+    look: (a) => { dbgCam = a; }, trees: W.trees,
+    lookAt: (type, i, d = 6, h = 2.5, a = 0.8) => { const t = W.trees[type][i]; dbgCam = [t.x + Math.cos(a) * d, t.y + h, t.z + Math.sin(a) * d, t.x, t.y + h * 0.8, t.z]; },
     park: (i) => { const s = stops[i]; car.place(s.x, s.gy + 1.2, s.z + 1.5, yawNorth); snapCam = true; },
     stops, get car() { return car.body.translation(); }, carApi: car, jumpTo, nextPhase, open: (i) => openViewer(stops[i]), keys,
     setTod: (x) => { tod = x; }, setWx: (x) => { wxMode = x; wxKind = x === 'auto' ? wxKind : x; wxAmt = 1; ENV.snow.value = x === 'snow' ? 0.85 : 0; ENV.wet.value = x === 'rain' ? 1 : 0; ENV.sand.value = x === 'sand' ? 1 : 0; }, setView: (v) => { view = v; }, setOrbit: (o, p, d) => { orbit = o; if (p != null) pitch = p; if (d != null) dist = d; },

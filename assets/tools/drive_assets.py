@@ -93,9 +93,11 @@ def place(o, loc=(0, 0, 0), rot=(0, 0, 0), scale=None):
     if scale: o.scale = scale if isinstance(scale, (tuple, list)) else (scale,) * 3
     return o
 
+BEVEL = [0.0]
 def box(sx, sy, sz, loc=(0, 0, 0), mat=None, bevel=0.0, seg=1, rot=(0, 0, 0), name='box'):
     bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1)
     bmesh.ops.scale(bm, vec=(sx, sy, sz), verts=bm.verts)
+    if not bevel and BEVEL[0] and '__col' not in name and mat is not P['trim']: bevel = min(BEVEL[0], 0.18 * min(sx, sy, sz))
     if bevel: bmesh.ops.bevel(bm, geom=bm.edges[:], offset=bevel, segments=seg, affect='EDGES', profile=0.5)
     return place(from_bm(bm, name, mat), loc, rot)
 
@@ -204,8 +206,32 @@ def roof(w, d, h, lift, mat, loc, overhang=0.0, thick=0.12, curve=1.6, ridge=0.0
     for f in bm.faces:
         if f.normal.z < 0: f.normal_flip()
     ret = bmesh.ops.solidify(bm, geom=bm.faces[:], thickness=thick)
-    o = from_bm(bm, name, mat)
-    return place(o, loc)
+    o = place(from_bm(bm, name, mat), loc)
+    if w < 1.2 or d < 1.0: return o
+    # rafter ends along every eave, and a painted bracket band (dougong, simplified) under them
+    lx, ly, lz = loc; parts = [o]
+    def eave_z(u): return lz + lift * (abs(u) ** 6) + lift * 0.25 * max(abs(u), 1.0) ** 8 - thick - 0.06
+    step = 0.3
+    for sy in (1, -1):
+        n_r = int(2 * w * 0.86 / step)
+        for i in range(n_r + 1):
+            x = -w * 0.86 + i * step
+            r = cyl(0.045, 0.42, (lx + x, ly + sy * (d * 0.93), eave_z(x / w)), P['wood_dark'], n=6, rot=(math.pi / 2 - sy * 0.25, 0, 0))
+            parts.append(r)
+    for sx in (1, -1):
+        n_r = int(2 * d * 0.86 / step)
+        for i in range(n_r + 1):
+            y = -d * 0.86 + i * step
+            parts.append(cyl(0.045, 0.42, (lx + sx * (w * 0.93), ly + y, eave_z(1.0) - 0.02), P['wood_dark'], n=6, rot=(0, math.pi / 2 + sx * 0.25, 0)))
+    fw, fd = w * 0.8, d * 0.8
+    parts.append(box(fw * 2, fd * 2, 0.32, (lx, ly, lz - 0.2), P['green_tile']))
+    for sy in (1, -1):
+        for i in range(int(fw * 2 / 0.55) + 1):
+            parts.append(box(0.18, 0.2, 0.16, (lx - fw + i * 0.55, ly + sy * (fd + 0.08), lz - 0.06), P['blue_paint']))
+    for sx in (1, -1):
+        for i in range(int(fd * 2 / 0.55) + 1):
+            parts.append(box(0.2, 0.18, 0.16, (lx + sx * (fw + 0.08), ly - fd + i * 0.55, lz - 0.06), P['blue_paint']))
+    return join(parts, name)
 
 def bend_x(o, k):
     """bend a mesh along its local x (for fronds): z -= k * x^2"""
@@ -304,63 +330,171 @@ def make_car():
     join(w, 'car__wheel')
 
 # ================================================================== TREES & PLANTS
+# leaf cards: quads textured with a spray of leaves (media/drive/tex/leaf_*.webp, alpha-tested in three.js)
+CARD = {k: M(f'card_{k}', c, 0.8) for k, c in (('fir', '#e8f0ea'), ('firsnow', '#e8f0ea'), ('ginkgo', '#ffffff'), ('plane', '#ffffff'), ('poplar', '#ffffff'),
+                                               ('blossom', '#ffffff'), ('palm', '#f2f6ee'), ('bush', '#e6eee0'), ('shrub', '#d8cfae'))}
+
+def _perp(d):
+    up = Vector((0, 0, 1)) if abs(d.z) < 0.95 else Vector((1, 0, 0))
+    return d.cross(up).normalized()
+
+class Cards:
+    """collects leaf cards for one tree into one bmesh per card material"""
+    def __init__(self): self.bms = {}
+    def add(self, key, base, d, w, L, roll=0.0, droop=0.0, seg=3, along='v', side=None):
+        bm, uvl = self.bms.get(key) or self.bms.setdefault(key, (lambda b: (b, b.loops.layers.uv.verify()))(bmesh.new()))
+        d = Vector(d).normalized(); base = Vector(base)
+        if side is None: side = Matrix.Rotation(roll, 3, d) @ _perp(d)
+        else: side = Vector(side).normalized()
+        rows = []
+        for i in range(seg + 1):
+            t = i / seg
+            c = base + d * (L * t) - Vector((0, 0, droop * t * t))
+            rows.append((bm.verts.new(c - side * w / 2), bm.verts.new(c + side * w / 2), t))
+        for i in range(seg):
+            (a0, a1, t0), (b0, b1, t1) = rows[i], rows[i + 1]
+            f = bm.faces.new([a0, a1, b1, b0])
+            for l, (u, v) in zip(f.loops, [(0, t0), (1, t0), (1, t1), (0, t1)]):
+                l[uvl].uv = (u, 0.03 + v * 0.95) if along == 'v' else (0.03 + v * 0.95, u)
+    def cluster(self, key, c, R, n, size, rng, up=0.3, droop=0.15):
+        """a shell of cards round a cluster centre, each facing outward (so from outside you see leaves, not card edges)"""
+        c = Vector(c)
+        for k in range(n):
+            z = rng.uniform(-0.45, 1.0); a = rng.uniform(0, TAU); r = math.sqrt(max(0, 1 - z * z))
+            d = Vector((math.cos(a) * r, math.sin(a) * r, z + up * 0.5)).normalized()
+            t = _perp(d); t = Matrix.Rotation(rng.uniform(0, TAU), 3, d) @ t
+            t = (t + Vector((0, 0, 0.6)) + d * 0.35).normalized()      # sprays grow upward and a little outward
+            sd = d.cross(t).normalized()
+            L = size * rng.uniform(0.85, 1.1)
+            base = c + d * (R * rng.uniform(0.45, 0.85)) - t * L * 0.45
+            self.add(key, base, t, size * rng.uniform(0.85, 1.05), L, side=sd, droop=droop * size)
+
+    def objects(self, name):
+        out = []
+        for key, (bm, _) in self.bms.items():
+            me = bpy.data.meshes.new(f'{name}_{key}'); bm.to_mesh(me); bm.free()
+            o = bpy.data.objects.new(f'{name}_{key}', me); CUR[0].objects.link(o); me.materials.append(CARD[key])
+            out.append(o)
+        self.bms = {}
+        return out
+
+def smooth_blob(r, loc, mat, scale=(1, 1, 0.8), seed=0, noise=0.25):
+    o = sphere(r, loc, mat, sub=2, noise=noise, scale=scale, seed=seed)
+    for p in o.data.polygons: p.use_smooth = True
+    return o
+
+def limb(p0, p1, r0, r1, mat, n=7):
+    p0, p1 = Vector(p0), Vector(p1); d = p1 - p0
+    o = cyl(r0, d.length, (0, 0, 0), mat, n=n, r2=r1, cap=False)
+    o.rotation_mode = 'QUATERNION'; o.rotation_quaternion = Vector((0, 0, 1)).rotation_difference(d.normalized())
+    o.location = (p0 + p1) / 2
+    for p in o.data.polygons: p.use_smooth = True
+    return o
+
+def trunk(h, r, mat, lean=(0, 0), n=9, flare=1.5):
+    """a tapering trunk with a slight bend and a root flare; returns (objects, top point)"""
+    pts = []; ps = []
+    for k in range(6):
+        t = k / 5
+        pts.append(Vector((lean[0] * t * t, lean[1] * t * t, h * t)))
+    for k in range(5):
+        r0 = r * (1 - 0.45 * k / 5) * (flare if k == 0 else 1); r1 = r * (1 - 0.45 * (k + 1) / 5)
+        ps.append(limb(pts[k] - Vector((0, 0, 0.05 if k == 0 else 0.02)), pts[k + 1] + Vector((0, 0, 0.02)), r0, r1, mat, n))
+    return ps, pts[-1]
+
+def branches(rng, start, d, L, r, depth, mat, tips, spread=0.55, up=0.25, kids=2):
+    """recursive limbs; collects tip positions (and their direction) for the leaf clusters"""
+    d = Vector(d).normalized(); end = Vector(start) + d * L
+    ps = [limb(start, end, r, r * 0.62, mat, 6 if depth else 5)]
+    if depth == 0: tips.append((end, d)); return ps
+    for k in range(kids):
+        a = rng.uniform(0, TAU)
+        nd = (d + Vector((math.cos(a), math.sin(a), 0)) * spread + Vector((0, 0, up))).normalized()
+        at = Vector(start) + d * L * rng.uniform(0.55, 0.95)
+        ps += branches(rng, at, nd, L * rng.uniform(0.55, 0.75), r * 0.6, depth - 1, mat, tips, spread, up, kids)
+    tips.append((end, d))
+    return ps
+
 def make_trees():
     CUR[0] = coll('trees')
-    # Yunnan fir, plain and snow-dusted
-    for name, snowy in (('fir', False), ('fir_snow', True)):
-        ps = [cyl(0.16, 1.4, (0, 0, 0.7), P['bark'], n=7, r2=0.1)]
-        for k, (z, r, h) in enumerate([(1.1, 1.25, 1.5), (1.9, 1.0, 1.4), (2.6, 0.75, 1.2), (3.2, 0.48, 1.0)]):
-            c = cyl(r, h, (0, 0, z + h / 2), P['fir'] if k % 2 == 0 else P['fir2'], n=8, r2=0.02)
-            for v in c.data.vertices:
-                if v.co.z < 0: v.co.x *= 1 + (rnd.random() - 0.5) * 0.25; v.co.y *= 1 + (rnd.random() - 0.5) * 0.25; v.co.z -= rnd.random() * 0.15
-            ps.append(c)
-            if snowy: ps.append(cyl(r * 0.55, h * 0.35, (0, 0, z + h * 0.82), P['snow'], n=8, r2=0.01))
-        finish(join(ps, name), name)
-    # palm: curved trunk of rings, drooping fronds, coconuts
-    ps = []; x = 0.0; lean = 0.18
-    for k in range(9):
-        z = k * 0.42; xo = lean * (k / 8) ** 2 * 3
-        ps.append(cyl(0.17 - k * 0.008, 0.44, (xo, 0, z + 0.22), P['bark_light'] if k % 2 else P['bark'], n=7, r2=0.15 - k * 0.008))
-    top = (lean * 3, 0, 3.8)
-    for k in range(8):
-        a = k / 8 * TAU + 0.2
-        f = box(1.7, 0.42, 0.04, (0, 0, 0), P['palm'] if k % 2 else P['palm_dark'])
-        me = f.data
-        bm = bmesh.new(); bm.from_mesh(me)
-        bmesh.ops.subdivide_edges(bm, edges=[e for e in bm.edges if abs(e.verts[0].co.x - e.verts[1].co.x) > 0.5], cuts=5)
-        for v in bm.verts:
-            u = (v.co.x + 0.85) / 1.7
-            v.co.y *= 1.1 - u * 0.9
-            v.co.x += 0.85
-            v.co.z -= 0.7 * u * u
-        bm.to_mesh(me); bm.free()
-        f.location = top; f.rotation_euler = (0, -0.25, a)
-        ps.append(f)
+    R = random.Random(21)
+    # Yunnan fir: whorls of drooping branches carrying flat sprays, a dark core for volume; the snow variant whitens on top in the shader
+    for name, key in (('fir', 'fir'), ('fir_snow', 'firsnow')):
+        C = Cards(); ps, top = trunk(4.5, 0.17, P['bark'], n=8, flare=1.6)
+        z = 0.75; w = 0
+        while z < 4.2:
+            t = (z - 0.75) / 3.45
+            L = 0.3 + 1.35 * (1 - t) ** 0.85
+            for k in range(5):
+                a = w * 2.39996 + k / 5 * TAU + R.uniform(-0.25, 0.25)
+                d = Vector((math.cos(a), math.sin(a), -0.12 - 0.15 * (1 - t)))
+                if L > 0.6: ps.append(limb((0, 0, z), Vector((0, 0, z)) + (d.normalized() - Vector((0, 0, 0.12))).normalized() * L * 0.55, 0.035, 0.012, P['bark'], 4))
+                C.add(key, (0, 0, z), d, L * 0.85, L * 1.05, R.uniform(-0.6, 0.6), 0.3 * L)
+                C.add(key, Vector((0, 0, z + 0.05)) + d.normalized() * L * 0.2, d + Vector((0, 0, 0.35)), L * 0.65, L * 0.8, R.uniform(0.7, 1.2) * R.choice((1, -1)), 0.15 * L)
+            z += 0.27; w += 1
+        for k in range(3):
+            C.add(key, (0, 0, 4.0), (math.cos(k * 2.1) * 0.25, math.sin(k * 2.1) * 0.25, 1), 0.45, 0.75, k * 1.05)
+        core = cyl(0.62, 3.0, (0, 0, 2.2), P['fir2'], n=10, r2=0.04)
+        for p in core.data.polygons: p.use_smooth = True
+        ps.append(core)
+        finish(join(ps + C.objects(name), name), name)
+    # palm: ringed, leaning trunk; long drooping frond cards; coconuts
+    C = Cards(); lean = 0.18
+    ps, _ = trunk(3.85, 0.17, P['bark_light'], lean=(lean * 3, 0), n=10, flare=1.35)
+    for k in range(1, 18):   # leaf-scar rings, tight and subtle
+        t = k / 18; z = 3.8 * t; xo = lean * 3 * t * t
+        r = 0.17 * (1 - 0.45 * t) * 1.06
+        ring = cyl(r, 0.05, (xo, 0, z), P['bark'], n=10, r2=r * 0.92)
+        for p in ring.data.polygons: p.use_smooth = True
+        ps.append(ring)
+    ps.append(smooth_blob(0.24, (lean * 3, 0, 3.75), P['bark'], scale=(1, 1, 1.2), seed=3))
+    top = Vector((lean * 3, 0, 3.8))
+    for k in range(12):
+        a = k / 12 * TAU + R.uniform(-0.15, 0.15); el = R.uniform(-0.05, 0.55) if k % 2 else R.uniform(0.25, 0.8)
+        d = Vector((math.cos(a), math.sin(a), el))
+        C.add('palm', top, d, 1.05, 2.3, R.uniform(-0.25, 0.25), 0.9, seg=4, along='u')
     for k in range(3): ps.append(sphere(0.11, (top[0] + math.cos(k * 2.1) * 0.15, math.sin(k * 2.1) * 0.15, top[2] - 0.15), P['coconut'], sub=1))
-    finish(join(ps, 'palm'), 'palm')
-    # Beijing ginkgo (autumn gold) and Nanjing plane tree
-    for name, mats, trunk_h, blobs in (
-        ('ginkgo', (P['ginkgo'], P['ginkgo2']), 2.0, [(0, 0, 3.0, 1.2), (0.6, 0.3, 2.5, 0.9), (-0.5, -0.4, 2.6, 0.85), (0.1, -0.2, 3.8, 0.8), (-0.3, 0.5, 3.4, 0.7)]),
-        ('plane', (P['plane'], P['plane2']), 2.2, [(0, 0, 3.2, 1.6), (1.2, 0.4, 2.9, 1.2), (-1.1, -0.3, 3.0, 1.25), (0.3, -1.0, 3.1, 1.1), (-0.2, 1.0, 3.5, 1.1), (0.2, 0.1, 4.1, 1.0)]),
-    ):
-        ps = [cyl(0.2 if name == 'plane' else 0.16, trunk_h, (0, 0, trunk_h / 2), P['bark_light'] if name == 'plane' else P['bark'], n=7, r2=0.12)]
-        ps.append(cyl(0.08, 1.2, (0.35, 0, trunk_h + 0.3), P['bark'], n=5, rot=(0, 0.6, 0)))
-        ps.append(cyl(0.08, 1.2, (-0.3, 0.1, trunk_h + 0.35), P['bark'], n=5, rot=(0, -0.55, 0.3)))
-        for k, (bx, by, bz, br) in enumerate(blobs):
-            ps.append(sphere(br, (bx, by, bz), mats[k % 2], sub=1, noise=0.3, scale=(1, 1, 0.78), seed=k * 13 + len(name)))
-        finish(join(ps, name), name)
-    # Gansu poplar: white trunk, a tall narrow crown
-    ps = [cyl(0.13, 2.2, (0, 0, 1.1), P['bark_white'], n=7, r2=0.09)]
-    for k, (z, r) in enumerate([(2.6, 0.75), (3.6, 0.7), (4.5, 0.55), (5.2, 0.38)]):
-        ps.append(sphere(r, (0, 0, z), P['poplar'] if k % 2 else P['bush'], sub=1, noise=0.25, scale=(1, 1, 1.5), seed=k + 3))
-    finish(join(ps, 'poplar'), 'poplar')
-    # Yunnan flowering tree (azalea-like)
-    ps = [cyl(0.12, 1.3, (0, 0, 0.65), P['bark'], n=6, r2=0.08)]
-    for k, (bx, by, bz, br) in enumerate([(0, 0, 1.7, 0.8), (0.5, 0.2, 1.4, 0.6), (-0.45, -0.25, 1.5, 0.55)]):
-        ps.append(sphere(br, (bx, by, bz), P['blossom'] if k != 1 else P['bush'], sub=1, noise=0.3, scale=(1, 1, 0.8), seed=k + 40))
-    finish(join(ps, 'blossom'), 'blossom')
-    # small plants
-    finish(join([sphere(0.32, (dx, dy, 0.18), P['shrub'], sub=1, noise=0.5, scale=(1, 1, 0.6), seed=i) for i, (dx, dy) in enumerate([(0, 0), (0.25, 0.15), (-0.2, 0.2)])], 'shrub'), 'shrub')
+    finish(join(ps + C.objects('palm'), 'palm'), 'palm')
+    # Beijing ginkgo (ascending limbs, autumn gold), Nanjing plane tree (broad crown, mottled bark), Gansu poplar, Yunnan blossom
+    def broadleaf(name, key, core_mat, trunk_h, trunk_r, bark, limbs, limb_len, limb_tilt, depth, cl_R, cl_n, cl_size, core=0.5, flare=1.4):
+        C = Cards(); ps, top = trunk(trunk_h, trunk_r, bark, lean=(R.uniform(-0.15, 0.15), R.uniform(-0.15, 0.15)), flare=flare)
+        tips = []
+        for k in range(limbs):
+            a = k / limbs * TAU + R.uniform(-0.3, 0.3)
+            d = Vector((math.cos(a) * math.sin(limb_tilt), math.sin(a) * math.sin(limb_tilt), math.cos(limb_tilt)))
+            ps += branches(R, top - Vector((0, 0, R.uniform(0, 0.4))), d, limb_len * R.uniform(0.85, 1.1), trunk_r * 0.55, depth, bark, tips)
+        ps.append(limb(top - Vector((0, 0, 0.2)), top + Vector((0, 0, limb_len * 0.9)), trunk_r * 0.5, trunk_r * 0.2, bark, 6))
+        tips.append((top + Vector((0, 0, limb_len * 0.95)), Vector((0, 0, 1))))
+        for (p, d) in tips:
+            C.cluster(key, p, cl_R, cl_n, cl_size, R)
+            if core: ps.append(smooth_blob(cl_R * core, p + Vector((0, 0, -0.08)), core_mat, seed=int(p.x * 100)))
+        finish(join(ps + C.objects(name), name), name)
+    broadleaf('ginkgo', 'ginkgo', P['ginkgo'], 2.2, 0.17, P['bark'], 4, 1.5, 0.55, 1, 0.65, 11, 1.05, core=0.34)
+    broadleaf('plane', 'plane', P['plane'], 2.1, 0.22, P['bark_light'], 4, 1.7, 0.85, 1, 0.85, 12, 1.3, core=0.42, flare=1.6)
+    broadleaf('blossom', 'blossom', P['blossom'], 0.9, 0.12, P['bark'], 3, 0.9, 0.7, 1, 0.5, 9, 0.85, core=0.4, flare=1.3)
+    # poplar: a tall white trunk with short ascending branches all the way up, a narrow crown
+    C = Cards(); ps, top = trunk(5.6, 0.14, P['bark_white'], n=8)
+    z = 1.9
+    while z < 5.4:
+        for k in range(3):
+            a = R.uniform(0, TAU); d = Vector((math.cos(a) * 0.35, math.sin(a) * 0.35, 1))
+            L = 0.9 * (1 - (z - 1.9) / 4.5) + 0.35
+            ps.append(limb((0, 0, z), Vector((0, 0, z)) + d.normalized() * L * 0.7, 0.04, 0.015, P['bark_white'], 4))
+            C.cluster('poplar', Vector((0, 0, z)) + d.normalized() * L * 0.6, 0.35, 3, 0.9, R, up=1.2, droop=0.05)
+        z += 0.42
+    for k, (zz, r) in enumerate([(2.7, 0.5), (3.7, 0.48), (4.6, 0.38)]): ps.append(smooth_blob(r * 0.8, (0, 0, zz), P['poplar'], scale=(1, 1, 1.6), seed=k + 3))
+    finish(join(ps + C.objects('poplar'), 'poplar'), 'poplar')
+    # small plants: a bush and a dry scrub (cards round a small dark core)
+    C = Cards(); ps = []
+    for i, (dx, dy) in enumerate([(0, 0), (0.45, 0.2), (-0.35, 0.3)]):
+        ps.append(smooth_blob(0.3, (dx, dy, 0.28), P['bush'], scale=(1, 1, 0.75), seed=i + 20))
+        C.cluster('bush', (dx, dy, 0.25), 0.4, 7, 0.75, R, up=0.6, droop=0.05)
+    finish(join(ps + C.objects('bush'), 'bush'), 'bush')
+    C = Cards(); ps = []
+    for i, (dx, dy) in enumerate([(0, 0), (0.25, 0.15), (-0.2, 0.2)]):
+        ps.append(smooth_blob(0.18, (dx, dy, 0.12), P['shrub'], scale=(1, 1, 0.6), seed=i))
+        C.cluster('shrub', (dx, dy, 0.08), 0.25, 5, 0.5, R, up=0.8, droop=0.02)
+    finish(join(ps + C.objects('shrub'), 'shrub'), 'shrub')
     ps = []
     for k in range(9):
         a = k / 9 * TAU
@@ -373,11 +507,11 @@ def make_trees():
         ps.append(box(0.04, 0.02, h, (math.cos(a) * r, math.sin(a) * r, h / 2), P['reed'], rot=(rnd.random() * 0.2 - 0.1, rnd.random() * 0.2 - 0.1, a)))
         if k % 3 == 0: ps.append(box(0.07, 0.07, 0.22, (math.cos(a) * r, math.sin(a) * r, h + 0.05), P['wood_dark']))
     finish(join(ps, 'reeds'), 'reeds')
-    finish(join([sphere(0.5, (dx, dy, 0.35), P['bush'], sub=1, noise=0.35, scale=(1, 1, 0.75), seed=i + 20) for i, (dx, dy) in enumerate([(0, 0), (0.45, 0.2), (-0.35, 0.3)])], 'bush'), 'bush')
+
 
 # ================================================================== PROPS
 def make_props():
-    CUR[0] = coll('props')
+    CUR[0] = coll('props'); BEVEL[0] = 0.02
     # round hay bale (lies on its side; axis along Y)
     hb = [cyl(0.62, 1.1, (0, 0, 0), P['hay'], n=18, rot=(math.pi / 2, 0, 0), bevel=0.08)]
     hb.append(cyl(0.5, 1.12, (0, 0, 0), P['hay_end'], n=18, rot=(math.pi / 2, 0, 0)))
@@ -470,7 +604,7 @@ def make_props():
 
 # ================================================================== LANDMARKS
 def make_landmarks():
-    CUR[0] = coll('landmarks')
+    CUR[0] = coll('landmarks'); BEVEL[0] = 0.035
     # ---------- Giza: stepped pyramids and the Sphinx
     def pyramid(name, base, h, steps, cap=None):
         ps = []
@@ -498,7 +632,11 @@ def make_landmarks():
     py.append(box(1.6, 1.6, 5.0, (0, 0, 2.5), P['sandstone']));
     boolean(py[-1], box(2.0, 1.2, 3.4, (0, 0, 1.7), P['trim']))
     for sy in (1, -1):
-        for k in range(5): py.append(box(0.05, 2.4, 0.08, (1.31, sy * 3.9, 1.4 + k * 1.1), P['hieroglyph']))
+        tilt = math.atan2(0.3, 7.2)
+        for gy in (-1.3, 1.3):   # the recessed flagpole grooves
+            py.append(box(0.1, 0.3, 5.6, (1.3 - 0.3 * 3.0 / 7.2 + 0.02, sy * 3.9 + gy, 3.0), P['hieroglyph'], rot=(0, -tilt, 0)))
+        py.append(frustum(1.02, 2.82, 1.25, 3.1, 0.55, P['sandstone'], (0, sy * 3.9, 7.15)))            # cavetto cornice
+        py.append(box(2.5, 6.2, 0.12, (0, sy * 3.9, 7.75), P['limestone']))
     finish(join(py, 'luxor_pylon'), 'luxor_pylon')
     for sy in (1, -1): col_box('luxor_pylon', 0 if sy > 0 else 1, 2.6, 6.4, 7.2, (0, sy * 3.9, 3.6))
     col_box('luxor_pylon', 2, 1.6, 1.6, 1.6, (0, 0, 4.2))
@@ -542,6 +680,13 @@ def make_landmarks():
         for r in range(int(h // 1.3)):
             for c in (-0.6, 0.6): hs.append(box(0.04, 0.4, 0.5, (w / 2 + 0.01, c, 1.0 + r * 1.3), P['wood_dark']))
         hs.append(cyl(0.3, 0.6, (w * 0.25, d * 0.2, h + 0.3), P['steel'], n=8))
+        mz = 1.0 + (int(h // 1.3) - 1) * 1.3
+        hs += [box(0.45, 1.4, 1.1, (w / 2 + 0.22, 0, mz), P['wood_dark']), box(0.55, 1.5, 0.12, (w / 2 + 0.25, 0, mz + 0.6), P['wood']), box(0.55, 1.5, 0.1, (w / 2 + 0.25, 0, mz - 0.58), P['wood'])]
+        for i in range(6): hs.append(box(0.04, 0.04, 1.0, (w / 2 + 0.46, -0.6 + i * 0.24, mz), P['wood']))
+        for i in range(int(w / 0.5)):
+            for sy in (1, -1): hs.append(box(0.24, 0.2, 0.3, (-w / 2 + 0.25 + i * 0.5, sy * (d / 2 - 0.05), h + 0.24), m))
+        for i in range(int(d / 0.5)):
+            for sx in (1, -1): hs.append(box(0.2, 0.24, 0.3, (sx * (w / 2 - 0.05), -d / 2 + 0.25 + i * 0.5, h + 0.24), m))
         hs.append(box(w + 0.1, d + 0.1, 0.18, (0, 0, h), P['sandstone']))
         n = f'cairo_house{k}'; finish(join(hs, n), n); col_box(n, 0, w, d, h, (0, 0, h / 2))
     # ---------- Gansu: crescent spring pavilion (Dunhuang) and a yardang
@@ -665,15 +810,32 @@ def make_landmarks():
     finish(join(sw, 'swfc'), 'swfc'); col_box('swfc', 0, 6, 6, 30, (0, 0, 15))
     bd = [box(6, 4, 7, (0, 0, 3.5), P['bund']), box(6.2, 4.2, 0.5, (0, 0, 7.0), P['bund_dark']), box(6.2, 4.2, 0.6, (0, 0, 1.2), P['bund_dark'])]
     for r in range(3):
-        for c in range(5): bd.append(box(0.06, 0.55, 0.9, (-3.02, -2 + c, 2.5 + r * 1.6), P['glass_dark']))
-    for c in range(4): bd.append(cyl(0.18, 2.6, (-3.15, -1.5 + c, 4.7), P['bund'], n=8))
+        for c in range(5):
+            y, z = -2 + c, 2.5 + r * 1.6
+            boolean(bd[0], box(0.3, 0.55, 0.9, (-3.0, y, z), P['trim']))
+            bd.append(box(0.06, 0.55, 0.9, (-2.9, y, z), P['glass_dark']))
+            bd.append(box(0.18, 0.75, 0.1, (-3.06, y, z - 0.5), P['bund_dark']))            # sill
+            bd.append(box(0.14, 0.72, 0.16, (-3.04, y, z + 0.53), P['bund']))               # lintel
+            for sy in (1, -1): bd.append(box(0.1, 0.07, 0.95, (-3.03, y + sy * 0.31, z), P['bund']))
+    for c in range(4):
+        x = -1.5 + c
+        bd += [cyl(0.18, 2.6, (-3.25, x, 4.7), P['bund'], n=12), box(0.5, 0.5, 0.18, (-3.25, x, 3.35), P['bund_dark']), box(0.5, 0.5, 0.2, (-3.25, x, 6.05), P['bund_dark'])]
+    for z in (1.55, 1.85): bd.append(box(6.12, 4.12, 0.06, (0, 0, z), P['bund_dark']))
+    bd.append(box(6.5, 4.5, 0.22, (0, 0, 7.35), P['bund']))
     bd.append(box(2.0, 2.0, 3.0, (0, 0, 8.5), P['bund']))
     bd.append(box(0.06, 1.2, 1.2, (-1.02, 0, 9.0), P['white']))
     bd.append(frustum(1.1, 1.1, 0.4, 0.4, 1.4, P['verdigris'], (0, 0, 10.0)))
     finish(join(bd, 'bund_customs'), 'bund_customs'); col_box('bund_customs', 0, 6, 4, 9, (0, 0, 4.5))
     bd2 = [box(5, 4, 6, (0, 0, 3), P['bund_dark']), box(5.2, 4.2, 0.4, (0, 0, 6.0), P['bund'])]
     for r in range(3):
-        for c in range(4): bd2.append(box(0.06, 0.6, 1.0, (-2.52, -1.5 + c, 1.6 + r * 1.5), P['glass_dark']))
+        for c in range(4):
+            y, z = -1.5 + c, 1.6 + r * 1.5
+            boolean(bd2[0], box(0.3, 0.6, 1.0, (-2.5, y, z), P['trim']))
+            bd2.append(box(0.06, 0.6, 1.0, (-2.4, y, z), P['glass_dark']))
+            bd2.append(box(0.18, 0.8, 0.1, (-2.56, y, z - 0.55), P['bund']))
+            bd2.append(box(0.14, 0.78, 0.22, (-2.55, y, z + 0.6), P['bund']) if r < 2 else frustum(0.07, 0.42, 0.07, 0.02, 0.28, P['bund'], (-2.55, y, z + 0.52)))
+    bd2.append(box(5.4, 4.4, 0.2, (0, 0, 6.3), P['bund']))
+    for z in (0.5, 0.9): bd2.append(box(5.08, 4.08, 0.05, (0, 0, z), P['bund']))
     bd2.append(frustum(2.0, 1.6, 0.6, 0.4, 2.0, P['verdigris'], (0, 0, 6.2)))
     finish(join(bd2, 'bund_bank'), 'bund_bank'); col_box('bund_bank', 0, 5, 4, 8, (0, 0, 4))
     for k, (w, h, m) in enumerate([(3.2, 14, P['glass_city']), (2.8, 18, P['glass_dark']), (3.6, 11, P['steel'])]):
@@ -739,7 +901,31 @@ def preview(cname, path, cam_dist=None):
         if o.name.startswith('prev_'): bpy.data.objects.remove(o, do_unlink=True)
         else: o.location = (0, 0, 0); o.hide_render = '__col' in o.name
 
+def world_uv(o):
+    """planar UVs in metres on every face (u along the face, horizontal; v up the face / up the slope),
+    so three.js can lay real-scale tiling textures on everything. Leaf-card faces keep their own UVs."""
+    me = o.data
+    bm = bmesh.new(); bm.from_mesh(me)
+    uvl = bm.loops.layers.uv.verify()
+    up = Vector((0, 0, 1))
+    for f in bm.faces:
+        mat = me.materials[f.material_index] if f.material_index < len(me.materials) else None
+        if mat and mat.name.startswith('card_'): continue
+        n = f.normal
+        if n.length < 1e-6: continue
+        if abs(n.z) > 0.94: t, b = Vector((1, 0, 0)), Vector((0, 1 if n.z > 0 else -1, 0))
+        else: t = up.cross(n).normalized(); b = n.cross(t).normalized()
+        for l in f.loops:
+            l[uvl].uv = (l.vert.co.dot(t), l.vert.co.dot(b))
+    bm.to_mesh(me); bm.free()
+
 def export(cname):
+    for o in COLL[cname].objects:
+        if o.type == 'MESH' and '__col' not in o.name:
+            world_uv(o)
+            # smooth shading with sharp edges above 35°: round things read round, boxes stay crisp
+            for p in o.data.polygons: p.use_smooth = True
+            o.data.set_sharp_from_angle(angle=math.radians(35))
     for o in bpy.data.objects: o.select_set(False)
     for o in COLL[cname].objects: o.location = (0, 0, 0); o.select_set(True)
     bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, f'{cname}.glb'), export_format='GLB', use_selection=True, export_apply=True,

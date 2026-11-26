@@ -24,7 +24,7 @@ export async function loadAssets(base, onProgress) {
       if (role && role.startsWith('col')) { A.hulls.push(new Float32Array(geo.attributes.position.array)); return; }
       const mat = o.material;
       if (mat.map) mat.map.colorSpace = THREE.SRGBColorSpace;
-      if (mat.metalness > 0.3) { mat.metalness = 0.3; mat.roughness = Math.max(mat.roughness, 0.35); }   // no environment map: strong metals would read as black
+      if (mat.metalness > 0.85) mat.metalness = 0.85;   // the sky is baked into an environment map, so metals have something to reflect
       if (role) { A.roles[role] = A.roles[role] || []; A.roles[role].push({ geometry: geo, material: mat }); return; }
       A.parts.push({ name: mat.name, geometry: geo, material: mat });
     });

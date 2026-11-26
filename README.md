@@ -116,6 +116,12 @@ Current frames are a procedural placeholder — see `motion-source/photographer-
     the camera and the car dissolve; each stop is a curved gallery wall with framed prints, captions and picture lights,
     seen from a viewpoint checked to be clear; `weather.js` snow flakes, rain streaks + splashes, sandstorm dust clouds,
     and a colour grade per weather.
+  - Surface pass: `assets/tools/drive_textures.py` generates tileable albedo + normal textures (grass, sand, strata rock,
+    snow, dirt, paving, limestone, brick, stucco, roof tiles, wood, marble, curtain wall, bark, ashlar…) and leaf-spray cards
+    into `media/drive/tex/`; `textures.js` unpacks them into texture arrays. Blender writes metre-scale UVs on every face,
+    so buildings get real-scale masonry with normal maps; the ground splats eight layers by region, road, slope and altitude
+    (triplanar rock on steep faces). Trees are branched in Blender and carry alpha-tested leaf cards; roofs have rafter ends
+    and bracket bands; the sky is baked into an environment map; the frame is multisampled.
   - Loaded only on demand (`travel.html?drive`; test params `&at=giza&tod=0.93&wx=sand&view=map`).
 - **Hero transition** (`viewfinder/stage.js`): between places the camera flies through a dark space — each photo
   becomes a relief (vertices pulled towards its own camera by depth, so the hand-off from/to the flat view is exact).

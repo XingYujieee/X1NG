@@ -10,13 +10,14 @@ import { PLACES, START, WATER_Y, SIZE_X, SIZE_Z, NX, NZ, X0, Z0, biomeAt, neares
 import { LANDMARKS, DECOR, ANIMALS, BALLOONS, BOATS, FLAGS, FLAGPOLES, dynamicProps } from './places.js';
 import { ENV, KIND, enhance } from './materials.js';
 import { buildGrass } from './grass.js';
+import { LEAVES, TEX } from './textures.js';
 
 const C = (h) => new THREE.Color(h);
 const BIOME_COL = { desert: C('#e7c890'), danxia: C('#cf7b52'), meadow: C('#86a85a'), autumn: C('#b5a65f'), plane: C('#8ba45c'), coast: C('#a4b37c'), field: C('#d3b66c') };
 const ROAD_COL = { desert: C('#d2ab72'), danxia: C('#b7744f'), meadow: C('#a48a62'), autumn: C('#a59a86'), plane: C('#9b978e'), coast: C('#a19d94'), field: C('#b49763') };
 const ROCK = C('#7b6a5c'), SNOW = C('#f4f6fb'), WET = C('#b9a57a'), PLAZA = C('#cfc8b8');
 
-const windPatch = (mat, { bend = 0.06, push = 0, rigid = 0.6, fade = false } = {}, name) => enhance(mat.clone(), { name: name || mat.name, wind: { bend, push, rigid }, fade });
+const windPatch = (mat, { bend = 0.06, push = 0, rigid = 0.6, fade = false, flutter = 0 } = {}, name) => enhance(mat.clone(), { name: name || mat.name, wind: { bend, push, rigid, flutter }, fade });
 
 export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
   const { sample, slope, road, at } = grid;
@@ -28,67 +29,108 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
   const t2 = new THREE.Color();
 
   /* ---------- ground ---------- */
+  // Texture layers splatted per vertex (two vec4 weights): grass, dry grass, sand, red rock | rock, snow, dirt, paving.
+  // The vertex colour keeps each region's palette; the textures bring the grain, pebbles, strata and blades at real scale.
+  const SPLAT = { desert: [0, 0, 1, 0, 0, 0, 0, 0], danxia: [0, 0, 0.3, 0.7, 0, 0, 0, 0], meadow: [1, 0, 0, 0, 0, 0, 0, 0], autumn: [0.4, 0.6, 0, 0, 0, 0, 0, 0],
+    plane: [0.75, 0, 0, 0, 0, 0, 0.25, 0], coast: [0.8, 0, 0.2, 0, 0, 0, 0, 0], field: [0.15, 0.85, 0, 0, 0, 0, 0, 0] };
+  const CITY = { plane: 1, coast: 1 };
   const geo = new THREE.PlaneGeometry(SIZE_X, SIZE_Z, NX, NZ); geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, col = new Float32Array(pos.count * 3), aux = new Float32Array(pos.count * 3), c = new THREE.Color(), rc = new THREE.Color();
+  const sw0 = new Float32Array(pos.count * 4), sw1 = new Float32Array(pos.count * 4), wv = new Float32Array(8);
+  const mixIn = (layer, k) => { for (let i = 0; i < 8; i++) wv[i] *= 1 - k; wv[layer] += k; };
   for (let k = 0; k < pos.count; k++) {
     const x = pos.getX(k), z = pos.getZ(k), i = Math.round(x - X0), j = Math.round(z - Z0), h = at(i, j);
     pos.setY(k, h);
     const w = biomeAt(x, z);
     c.setRGB(0, 0, 0); for (const b in w) c.add(t2.copy(BIOME_COL[b]).multiplyScalar(w[b]));
+    wv.fill(0); for (const b in w) for (let l = 0; l < 8; l++) wv[l] += SPLAT[b][l] * w[b];
     if (w.danxia > 0.1) { const s = 0.5 + 0.5 * Math.sin(h * 3.4 + fbm(x * 0.1, z * 0.1) * 3); c.lerp(t2.set(s > 0.55 ? '#e39a62' : s < 0.3 ? '#a9533a' : '#c86f4a'), w.danxia * 0.6); }
     const rd = road(x, z);
-    if (rd < 2.8) { rc.setRGB(0, 0, 0); for (const b in w) rc.add(t2.copy(ROAD_COL[b]).multiplyScalar(w[b])); c.lerp(rc, 1 - smooth(1.4, 2.8, rd)); }
-    for (const key in PLACES) { const p = PLACES[key], d = Math.hypot(x - p.x, z - p.z); if (d < 8.5) c.lerp(PLAZA, (1 - smooth(6.5, 8.5, d)) * 0.45); }
+    let city = 0; for (const b in w) if (CITY[b]) city += w[b];
+    if (rd < 2.8) { rc.setRGB(0, 0, 0); for (const b in w) rc.add(t2.copy(ROAD_COL[b]).multiplyScalar(w[b])); const kk = 1 - smooth(1.4, 2.8, rd); c.lerp(rc, kk); mixIn(city > 0.5 ? 7 : 6, kk); }
+    for (const key in PLACES) { const p = PLACES[key], d = Math.hypot(x - p.x, z - p.z); if (d < 8.5) { const kk = 1 - smooth(6.5, 8.5, d); c.lerp(PLAZA, kk * 0.45); mixIn(7, kk * 0.8); } }
     const sl = Math.hypot(at(i + 1, j) - at(i - 1, j), at(i, j + 1) - at(i, j - 1)) / 2;
-    c.lerp(ROCK, smooth(0.5, 1.15, sl) * 0.8);
-    c.lerp(SNOW, smooth(6.0, 9.0, h + fbm(x * 0.3, z * 0.3) * 2));
-    c.lerp(WET, (1 - smooth(-0.25, 0.2, h)) * 0.85);
+    const rk = smooth(0.5, 1.15, sl);
+    c.lerp(ROCK, rk * 0.8); mixIn((w.danxia || 0) > 0.4 ? 3 : 4, rk);
+    const sn = smooth(6.0, 9.0, h + fbm(x * 0.3, z * 0.3) * 2);
+    c.lerp(SNOW, sn); mixIn(5, sn);
+    const shore = (1 - smooth(-0.25, 0.2, h)) * 0.85;
+    c.lerp(WET, shore); mixIn(city > 0.5 ? 6 : 2, shore * 0.8);
     const n = (fbm(x * 0.7, z * 0.7) - 0.5) * 0.07;
     col[k * 3] = c.r + n; col[k * 3 + 1] = c.g + n; col[k * 3 + 2] = c.b + n;
-    aux[k * 3] = (w.desert || 0) + (w.danxia || 0) * 0.6; aux[k * 3 + 1] = smooth(6.0, 9.0, h); aux[k * 3 + 2] = 1 - smooth(1.4, 2.8, rd);
+    aux[k * 3] = (w.desert || 0) + (w.danxia || 0) * 0.6; aux[k * 3 + 1] = sn; aux[k * 3 + 2] = 1 - smooth(1.4, 2.8, rd);
+    let sum = 0; for (let l = 0; l < 8; l++) sum += wv[l]; sum = sum || 1;
+    for (let l = 0; l < 4; l++) { sw0[k * 4 + l] = wv[l] / sum; sw1[k * 4 + l] = wv[l + 4] / sum; }
   }
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
   geo.setAttribute('aux', new THREE.BufferAttribute(aux, 3));
+  geo.setAttribute('sw0', new THREE.BufferAttribute(sw0, 4));
+  geo.setAttribute('sw1', new THREE.BufferAttribute(sw1, 4));
   geo.computeVertexNormals();
   const groundMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96 });
-  groundMat.onBeforeCompile = (sh) => {   // grain, sand ripples, gravel roads, and the weather (snow cover, wet sheen, drifting sand)
-    Object.assign(sh.uniforms, { dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand });
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aux; varying vec3 vAux; varying vec3 vWp; varying vec3 vWn;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvAux = aux; vWp = (modelMatrix * vec4(transformed, 1.0)).xyz; vWn = normal;');
+  const GL = [[0, 2.4], [1, 2.6], [2, 5.0], [3, 7.0], [4, 6.0], [5, 5.0], [6, 3.6], [7, 3.2]];   // layer, metres per tile
+  groundMat.onBeforeCompile = (sh) => {   // splatted textures, sand ripples, and the weather (snow cover, wet sheen, drifting sand)
+    Object.assign(sh.uniforms, { dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, tAlb: TEX.alb, tNor: TEX.nor });
+    const mean = (l) => `vec3(${TEX.mean[l].map((v) => v.toFixed(4)).join(', ')})`;
+    const tri = (l) => l === 3 || l === 4;   // rock layers: triplanar on the slopes
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aux; attribute vec4 sw0, sw1; varying vec3 vAux; varying vec3 vWp; varying vec3 vWn; varying vec4 vS0, vS1;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvAux = aux; vS0 = sw0; vS1 = sw1; vWp = (modelMatrix * vec4(transformed, 1.0)).xyz; vWn = normal;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
       uniform float dTime, dSnow, dWet, dSand;
-      varying vec3 vAux; varying vec3 vWp; varying vec3 vWn;
+      uniform highp sampler2DArray tAlb, tNor;
+      varying vec3 vAux; varying vec3 vWp; varying vec3 vWn; varying vec4 vS0, vS1;
       float gH(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float gN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); return mix(mix(gH(i), gH(i+vec2(1,0)), f.x), mix(gH(i+vec2(0,1)), gH(i+vec2(1,1)), f.x), f.y); }
       float gF(vec2 p){ return gN(p) * 0.5 + gN(p * 2.1) * 0.25 + gN(p * 4.3) * 0.125 + gN(p * 8.7) * 0.0625; }
-      float gHt = 0.0;`)
+      vec3 gTN = vec3(0.0); float puddle = 0.0;
+      // one layer: albedo and a world-space normal offset; triplanar where asked
+      void gLayer(float L, float S, bool tri, vec3 wn, out vec3 a, out vec3 nOff){
+        if (!tri || wn.y > 0.85) {
+          vec2 uv = vWp.xz / S;
+          a = texture(tAlb, vec3(uv, L)).rgb; vec3 t = texture(tNor, vec3(uv, L)).xyz * 2.0 - 1.0;
+          nOff = vec3(t.x, 0.0, -t.y);
+        } else {
+          vec3 bw = pow(abs(wn), vec3(4.0)); bw /= bw.x + bw.y + bw.z;
+          vec2 ux = vWp.zy / S, uy = vWp.xz / S, uz = vWp.xy / S;
+          a = texture(tAlb, vec3(ux, L)).rgb * bw.x + texture(tAlb, vec3(uy, L)).rgb * bw.y + texture(tAlb, vec3(uz, L)).rgb * bw.z;
+          vec3 tx = texture(tNor, vec3(ux, L)).xyz * 2.0 - 1.0, ty = texture(tNor, vec3(uy, L)).xyz * 2.0 - 1.0, tz = texture(tNor, vec3(uz, L)).xyz * 2.0 - 1.0;
+          nOff = vec3(0.0, -tx.y, tx.x) * bw.x + vec3(ty.x, 0.0, -ty.y) * bw.y + vec3(tz.x, -tz.y, 0.0) * bw.z;
+        }
+      }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
-      float grain = gN(vWp.xz * 1.7) * 0.6 + gN(vWp.xz * 6.0) * 0.4;
-      diffuseColor.rgb *= 0.92 + grain * 0.14;
+      {
+        vec3 wn = normalize(vWn);
+        float W[8]; W[0] = vS0.x; W[1] = vS0.y; W[2] = vS0.z; W[3] = vS0.w; W[4] = vS1.x; W[5] = vS1.y; W[6] = vS1.z; W[7] = vS1.w;
+        vec3 A[8]; vec3 NO[8]; float Hh[8]; float ma = 0.0;
+        ${GL.map(([l, sc]) => `A[${l}] = vec3(0.0); NO[${l}] = vec3(0.0); Hh[${l}] = 0.0;
+        if (W[${l}] > 0.004) { gLayer(${l}.0, ${sc.toFixed(1)}, ${tri(l)}, wn, A[${l}], NO[${l}]); Hh[${l}] = W[${l}] + dot(A[${l}] / ${mean(l)}, vec3(0.333)) * 0.35; ma = max(ma, Hh[${l}]); }`).join('\n        ')}
+        // height blend: the bumpier layer wins where two meet (pebbles through sand, grass through dirt)
+        vec3 alb = vec3(0.0), meanC = vec3(0.0), no = vec3(0.0); float tw = 0.0;
+        ${GL.map(([l]) => `{ float b = max(Hh[${l}] - ma + 0.22, 0.0) * step(0.004, W[${l}]); alb += A[${l}] * b; meanC += ${mean(l)} * b; no += NO[${l}] * b; tw += b; }`).join('\n        ')}
+        alb /= max(tw, 1e-4); meanC /= max(tw, 1e-4); no /= max(tw, 1e-4);
+        diffuseColor.rgb *= clamp(alb / max(meanC, vec3(0.02)), 0.0, 2.4);
+        gTN = no;
+      }
       // patches of darker and lighter ground
       diffuseColor.rgb *= 0.9 + gF(vWp.xz * 0.12) * 0.2;
       // sand ripples, and in a sandstorm they stream across in the wind
       float rip = sin(vWp.x * 2.2 + sin(vWp.z * 0.35) * 2.5 + gN(vWp.xz * 0.4) * 3.0);
-      diffuseColor.rgb *= 1.0 - vAux.x * smoothstep(0.55, 1.0, rip) * 0.08;
+      diffuseColor.rgb *= 1.0 - vAux.x * smoothstep(0.55, 1.0, rip) * 0.06;
+      gTN.x += vAux.x * cos(vWp.x * 2.2 + sin(vWp.z * 0.35) * 2.5 + gN(vWp.xz * 0.4) * 3.0) * 0.12;
       float drift = smoothstep(0.6, 1.0, gN(vec2(vWp.x * 0.6 - dTime * 6.0, vWp.z * 4.0))) * dSand;
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.78, 0.55), drift * 0.45 * (0.4 + vAux.x));
-      // gravel on the roads, two worn tyre lines
-      float pebble = step(0.82, gH(floor(vWp.xz * 9.0))) * vAux.z;
-      diffuseColor.rgb *= 1.0 - pebble * 0.18 + vAux.z * (gN(vWp.xz * 14.0) - 0.5) * 0.12;
-      gHt = rip * vAux.x * 0.3 + pebble * 0.6 + grain * 0.25;
       // snow: the cap on the peaks, and snowfall settling on everything that faces up
-      diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.96, 0.97, 1.0), vAux.y * (0.6 + grain * 0.3));
       float settle = dSnow * smoothstep(0.55, 0.85, vWn.y) * smoothstep(0.2, 0.7, gF(vWp.xz * 0.5) + dSnow * 0.5);
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.95, 1.0), settle);
+      gTN *= 1.0 - settle * 0.7;
       // rain: darker ground and puddles in the low spots
-      float puddle = smoothstep(0.62, 0.7, gF(vWp.xz * 0.18)) * dWet * (0.4 + vAux.z * 0.6);
+      puddle = smoothstep(0.62, 0.7, gF(vWp.xz * 0.18)) * dWet * (0.4 + vAux.z * 0.6);
       diffuseColor.rgb *= 1.0 - dWet * 0.3 - puddle * 0.25;`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
       roughnessFactor = mix(roughnessFactor, 0.35, dWet * 0.6); roughnessFactor = mix(roughnessFactor, 0.04, puddle);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-      { vec3 sp = -vViewPosition; vec3 sx = normalize(dFdx(sp)), sy = normalize(dFdy(sp)); vec3 r1 = cross(sy, normal), r2 = cross(normal, sx);
-        float det = dot(sx, r1) * faceDirection; vec2 dh = vec2(dFdx(gHt), dFdy(gHt)) * 0.35 * (1.0 - puddle);
-        normal = normalize(abs(det) * normal - sign(det) * (dh.x * r1 + dh.y * r2)); }`);
+      { vec3 wn = normalize(vWn); vec3 o = gTN * 0.9 * (1.0 - puddle); o -= wn * dot(o, wn);
+        normal = normalize((viewMatrix * vec4(normalize(wn + o), 0.0)).xyz); }`);
   };
   const terrain = new THREE.Mesh(geo, groundMat); terrain.receiveShadow = true; scene.add(terrain);
 
@@ -139,7 +181,8 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     const A = lib[name]; if (!A) { console.warn('missing asset', name); return; }
     for (const p of A.parts) {
       let g = p.geometry.clone().applyMatrix4(m);
-      for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
+      for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal' && k !== 'uv') g.deleteAttribute(k);
+      if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
       if (g.index) g = g.toNonIndexed();
       const b = (buckets[place] ||= {}); (b[p.material.name] ||= { mat: p.material, geos: [] }).geos.push(g);
     }
@@ -161,10 +204,30 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     const A = lib[name]; if (!A || !A.roles.lamp) continue;
     for (const r of A.roles.lamp) { const mesh = new THREE.Mesh(r.geometry, r.material); mesh.applyMatrix4(mtx(x, sample(x, z) + y, z, ry, s)); scene.add(mesh); glow.push({ m: r.material, day: 0, night: 2.4 }); }
   }
-  for (const n of ['glass_city', 'glass_dark']) if (M[n]) { M[n].emissive = C('#ffcf8a'); glow.push({ m: M[n], day: 0, night: 0.22 }); }
+  for (const n of ['glass_city', 'glass_dark']) if (M[n]) { M[n].envMapIntensity = 2.2; M[n].emissive = C('#ffcf8a'); glow.push({ m: M[n], day: 0, night: 0.22 }); }
   if (M.pearl) { M.pearl.emissive = C('#ff4fa3'); glow.push({ m: M.pearl, day: 0, night: 0.9 }); }
 
   /* ---------- trees and plants of each place ---------- */
+  // leaf cards: alpha-tested sprays; normals point out of the crown so a tree shades like a volume, not like flat cards
+  const CARD_TEX = { fir: 'fir', firsnow: 'fir', ginkgo: 'ginkgo', plane: 'plane', poplar: 'poplar', blossom: 'blossom', palm: 'palm', bush: 'broad', shrub: 'broad' };
+  for (const n in M) if (n.startsWith('card_')) {
+    const m = M[n]; m.map = LEAVES[CARD_TEX[n.slice(5)]] || null; m.alphaTest = 0.42; m.alphaToCoverage = !coarse; m.side = THREE.DoubleSide;
+    m.roughness = 0.72; m.metalness = 0; m.needsUpdate = true;
+  }
+  for (const type in lib) {
+    const A = lib[type]; if (!A.parts) continue;
+    const cards = A.parts.filter((p) => p.material.name.startsWith('card_')); if (!cards.length) continue;
+    const box = new THREE.Box3(); for (const p of cards) { p.geometry.computeBoundingBox(); box.union(p.geometry.boundingBox); }
+    const c = box.getCenter(new THREE.Vector3()), R = box.getSize(new THREE.Vector3()).length() * 0.5, v = new THREE.Vector3();
+    for (const p of cards) {
+      const pa = p.geometry.attributes.position, na = p.geometry.attributes.normal;
+      for (let i = 0; i < pa.count; i++) {
+        v.set(pa.getX(i) - c.x, (pa.getY(i) - c.y) * 0.8, pa.getZ(i) - c.z).normalize(); v.y += 0.45; v.normalize();
+        na.setXYZ(i, v.x, v.y, v.z);
+      }
+      na.needsUpdate = true;
+    }
+  }
   const trees = {};
   const addTree = (type, x, z, s = 1, ry = rnd() * Math.PI * 2) => { (trees[type] ||= []).push({ x, y: sample(x, z) - 0.05, z, ry, s, wob: 0, v: 0, ax: 0, az: 0 }); };
   const clear = (x, z, r = 2.8) => road(x, z) > r && !nearStop(x, z, 9) && sample(x, z) > 0.05 && slope(x, z) < 0.5 && islandD(x, z) < 0.9;
@@ -215,7 +278,7 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     const list = trees[type];
     const { group, meshes } = instanced(lib, type, list.map((t) => mtx(t.x, t.y, t.z, t.ry, t.s)), {
       shadow: !LOW[type],
-      patch: (mat, name) => windPatch(mat, LOW[type] ? { bend: 0.05, push: 0.9, rigid: 0.05 } : { bend: name.startsWith('bark') ? 0.004 : 0.008, rigid: 1.2, fade: true }, name),
+      patch: (mat, name) => windPatch(mat, LOW[type] ? { bend: 0.05, push: 0.9, rigid: 0.05, flutter: name.startsWith('card') ? 0.03 : 0 } : { bend: name.startsWith('bark') ? 0.004 : 0.008, rigid: 1.2, fade: true, flutter: name.startsWith('card') ? 0.035 : 0 }, name),
     });
     if (!LOW[type]) for (const m of meshes) { const fa = new THREE.InstancedBufferAttribute(new Float32Array(list.length), 1); fa.setUsage(THREE.DynamicDrawUsage); m.geometry = m.geometry.clone(); m.geometry.setAttribute('aFade', fa); }
     list.forEach((t) => { t.fade = 0; });

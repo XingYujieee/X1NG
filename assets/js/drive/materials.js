@@ -10,10 +10,11 @@
    per-instance dissolve used when a tree comes between the camera and the car.
    ========================================================================== */
 import * as THREE from '../../vendor/three.min.js';
+import { TEX } from './textures.js';
 
 export const ENV = {
   time: { value: 0 }, snow: { value: 0 }, wet: { value: 0 }, sand: { value: 0 }, night: { value: 0 },
-  windS: { value: 0.6 }, car: { value: new THREE.Vector3(0, -99, 0) }, carR: { value: 1.7 },
+  windS: { value: 0.6 }, sun: { value: new THREE.Vector3(0, 1, 0) }, car: { value: new THREE.Vector3(0, -99, 0) }, carR: { value: 1.7 },
 };
 
 export const KIND = {
@@ -29,12 +30,25 @@ export const KIND = {
   snow: 'snowcap', hay: 'hay', hay_end: 'hay', wrap: 'plaster',
   steel: 'metal', titanium: 'metal', iron: 'metal', chrome: 'metal', verdigris: 'metal', stand: 'metal',
   yak: 'fur', camel: 'fur', cloth_red: 'fur', terrazzo: 'terrazzo',
+  card_fir: 'card', card_firsnow: 'card', card_ginkgo: 'card', card_plane: 'card', card_poplar: 'card', card_blossom: 'card', card_palm: 'card', card_bush: 'card', card_shrub: 'card',
+};
+// real-scale textures (layer in the texture array, metres per tile across, metres per tile up); the Blender UVs are in metres
+export const TEXMAP = {
+  sandstone: [8, 3.3, 2.75], limestone: [8, 3.9, 3.0], granite: [17, 1.8, 2.0], hieroglyph: [17, 1.2, 1.2], bund: [17, 1.8, 1.8], bund_dark: [17, 1.8, 1.8],
+  brick_grey: [9, 2.76, 2.8], brick_dark: [9, 2.76, 2.8],
+  plaster: [10, 4, 4], white: [10, 4, 4], wrap: [10, 2, 2], red: [19, 3, 3], red_dark: [19, 3, 3], paint_ochre: [19, 3, 3], stupa: [19, 3, 3], sand: [19, 3, 3],
+  marble: [13, 3, 3], concrete: [14, 4, 4],
+  tile_yellow: [11, 2.1, 2.04], tile_grey: [11, 2.1, 2.04], green_tile: [11, 2.1, 2.04],
+  glass_city: [15, 4.8, 6.0], glass_dark: [15, 4.8, 6.0],
+  wood: [12, 1.2, 1.2], wood_dark: [12, 1.2, 1.2], crate: [12, 0.8, 0.8],
+  bark: [16, 0.9, 1.6], bark_light: [16, 0.9, 1.6],
+  hay: [18, 1.2, 1.2], hay_end: [18, 0.8, 0.8],
 };
 // block sizes (length, course height) for masonry
 const BLOCK = { sandstone: [1.1, 0.55], limestone: [1.3, 0.6], granite: [0.9, 0.5], hieroglyph: [0.5, 0.35], bund: [0.9, 0.45], bund_dark: [0.9, 0.45], brick_grey: [0.46, 0.2], brick_dark: [0.46, 0.2] };
 
 const COMMON = /* glsl */`
-  uniform float dTime, dSnow, dWet, dSand, dNight;
+  uniform float dTime, dSnow, dWet, dSand, dNight; uniform vec3 dSun;
   varying vec3 vDW; varying vec3 vDN; varying vec3 vDL; varying vec3 vDR;
   float dH(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
   float dN(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
@@ -49,8 +63,27 @@ const COMMON = /* glsl */`
     vec3 vGrad = sign(fDet) * (dHdxy.x * R1 + dHdxy.y * R2);
     return normalize(abs(fDet) * surf_norm - vGrad);
   }
-  float dHt = 0.0; float dLit = 0.0; float dRough = -1.0;
+  float dHt = 0.0; float dLit = 0.0; float dRough = -1.0; vec3 dTN = vec3(0.0, 0.0, 1.0); float dUseTN = 0.0;
+  uniform highp sampler2DArray tAlb, tNor; varying vec2 vTU;
 `;
+
+const v3 = (c) => `vec3(${c.map((x) => x.toFixed(4)).join(', ')})`;
+function textured(kind, name, T) {
+  const [L, SX, SY] = T, mean = TEX.mean[L];
+  return `{
+    vec2 tu = vTU / vec2(${SX.toFixed(2)}, ${SY.toFixed(2)});
+    vec3 ta = texture(tAlb, vec3(tu, ${L}.0)).rgb;
+    // a second, larger and rotated sample breaks up the repeat on big walls
+    vec3 tb = texture(tAlb, vec3(mat2(0.8, -0.6, 0.6, 0.8) * tu * 0.29 + 0.37, ${L}.0)).rgb;
+    vec3 detail = ta / ${v3(mean)};
+    float macro = 0.88 + 0.24 * dF(vDW * 0.21) + (dot(tb, vec3(0.333)) / ${(mean.reduce((a, b) => a + b) / 3).toFixed(4)} - 1.0) * 0.18;
+    col *= clamp(detail, 0.0, 2.2) * macro;
+    dTN = texture(tNor, vec3(tu, ${L}.0)).xyz * 2.0 - 1.0; dUseTN = 1.0;
+    ${kind === 'glass' ? `{ vec2 cell = floor(tu * vec2(4.0, 5.0)); float frame = step(0.8, dot(ta, vec3(0.333)));
+      dLit = (1.0 - frame) * step(0.5, dH(vec3(cell, ${L}.0 + floor(vDW.x * 0.1)))); dRough = mix(0.06, 0.45, frame); }` : ''}
+    ${kind === 'tile' ? 'dRough = 0.5;' : ''}
+  }`;
+}
 
 function pattern(kind, name) {
   const [BL, BH] = BLOCK[name] || [1, 0.5];
@@ -127,6 +160,12 @@ function pattern(kind, name) {
       col *= mix(0.6, 1.06, smoothstep(-0.7, 0.85, vDN.y));
       dHt = n * 1.2;
     }`;
+    case 'card': return `{
+      float r = dH(floor(vDR * 3.7));
+      col *= vec3(1.0 + (r - 0.5) * 0.16, 1.0 + (r - 0.5) * 0.06, 1.0 - (r - 0.5) * 0.12);
+      ${name === 'card_firsnow' ? 'col = mix(col, vec3(0.93, 0.95, 0.99), smoothstep(0.15, 0.6, vDN.y + (dF(vDW * 2.5) - 0.5) * 0.5) * 0.9);' : ''}
+      dHt = 0.0;
+    }`;
     case 'snowcap': return `{ col *= 0.95 + dF(vDW * 3.0) * 0.08; dHt = dF(vDW * 4.0) * 0.4; }`;
     case 'hay': return `{
       float s = dN(vec3(vDW.x * 22.0, vDW.y * 22.0, vDW.z * 3.0)) * 0.5 + dN(vec3(vDW.x * 3.0, vDW.y * 22.0, vDW.z * 22.0)) * 0.5;
@@ -142,17 +181,18 @@ function pattern(kind, name) {
  * Add surface detail (and optionally wind / car push / dissolve) to a material.
  * opts: { kind, name, bump, wind: { bend, rigid, push }, fade }
  */
-export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, fade = false } = {}) {
+export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, fade = false, tex = true } = {}) {
   const k = kind || KIND[name];
+  const T = tex && TEX.ready ? TEXMAP[name] : null;
   if (!k && !wind) return mat;
   const prev = mat.onBeforeCompile;
   mat.onBeforeCompile = (sh, r) => {
     prev?.call(mat, sh, r);
-    Object.assign(sh.uniforms, { dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, dNight: ENV.night, wS: ENV.windS, wCar: ENV.car, wCarR: ENV.carR });
+    Object.assign(sh.uniforms, { tAlb: TEX.alb, tNor: TEX.nor, dSun: ENV.sun, dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, dNight: ENV.night, wS: ENV.windS, wCar: ENV.car, wCarR: ENV.carR });
     let vs = sh.vertexShader, fs = sh.fragmentShader;
     vs = vs.replace('#include <common>', `#include <common>
       uniform float dTime, wS, wCarR; uniform vec3 wCar;
-      varying vec3 vDW; varying vec3 vDN; varying vec3 vDL; varying vec3 vDR;
+      varying vec3 vDW; varying vec3 vDN; varying vec3 vDL; varying vec3 vDR; varying vec2 vTU;
       ${fade ? 'attribute float aFade; varying float vFade;' : ''}`);
     if (wind) {
       vs = vs.replace('#include <begin_vertex>', `#include <begin_vertex>
@@ -167,6 +207,8 @@ export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, f
         float wSw = (sin(dTime * 1.7 + wPh) + 0.4 * sin(dTime * 3.9 + wPh * 2.3)) * wS * wGust;
         transformed.x += wSw * ${wind.bend.toFixed(3)} * wH * wH;
         transformed.z += cos(dTime * 1.3 + wPh) * wS * wGust * ${(wind.bend * 0.5).toFixed(3)} * wH * wH;
+        ${wind.flutter ? `{ float fl = sin(dTime * 7.3 + dot(transformed, vec3(3.1, 2.3, 4.7)) + wPh) * ${wind.flutter.toFixed(3)} * wS * (0.4 + wGust);
+          transformed += normal * fl * smoothstep(0.0, 0.5, transformed.y); }` : ''}
         ${wind.push ? `{ vec2 wd = wRoot.xz - wCar.xz; float wl = length(wd);
           float wk = (1.0 - smoothstep(wCarR * 0.4, wCarR, wl)) * step(abs(wRoot.y - wCar.y), 2.5);
           vec2 wdir = wl > 0.001 ? wd / wl : vec2(1.0, 0.0);
@@ -177,7 +219,7 @@ export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, f
         #ifdef USE_INSTANCING
           dw = instanceMatrix * dw; dn = mat3(instanceMatrix) * dn; dr = instanceMatrix[3].xyz;
         #endif
-        dw = modelMatrix * dw; vDW = dw.xyz; vDN = normalize(mat3(modelMatrix) * dn); vDL = transformed; vDR = (modelMatrix * vec4(dr, 1.0)).xyz;
+        vTU = uv; dw = modelMatrix * dw; vDW = dw.xyz; vDN = normalize(mat3(modelMatrix) * dn); vDL = transformed; vDR = (modelMatrix * vec4(dr, 1.0)).xyz;
         ${fade ? 'vFade = aFade;' : ''} }`);
     fs = fs.replace('#include <common>', `#include <common>
       ${COMMON}
@@ -186,7 +228,7 @@ export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, f
       ${fade ? `if (vFade > 0.001) { float ign = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))); if (ign < vFade) discard; }` : ''}`);
     fs = fs.replace('#include <color_fragment>', `#include <color_fragment>
       { vec3 col = diffuseColor.rgb;
-        ${k ? pattern(k, name) : ''}
+        ${T ? textured(k, name, T) : k ? pattern(k, name) : ''}
         // weather on every surface
         float up = smoothstep(0.35, 0.85, vDN.y + (dF(vDW * 1.3) - 0.5) * 0.45);
         col = mix(col, vec3(0.93, 0.95, 1.0), dSnow * up);
@@ -197,13 +239,32 @@ export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, f
       if (dRough >= 0.0) roughnessFactor = dRough;
       roughnessFactor = mix(roughnessFactor, 0.22, dWet * smoothstep(0.4, 0.95, vDN.y));`);
     fs = fs.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-      normal = dPerturb(-vViewPosition, normal, vec2(dFdx(dHt), dFdy(dHt)) * ${bump.toFixed(2)}, faceDirection);`);
-    if (k === 'glass') fs = fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance *= dLit;');
-    if (k === 'leaf') fs = fs.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-      { vec3 vd = normalize(vViewPosition); float rim = pow(1.0 - abs(dot(normal, vd)), 3.0); totalEmissiveRadiance += diffuseColor.rgb * rim * 0.22 * (1.0 - dNight); }`);
+      if (dUseTN > 0.5) {
+        // tangent frame from the metre-scale UVs (as three does for normal maps); green flipped for glTF UVs
+        vec3 q0 = dFdx(-vViewPosition), q1 = dFdy(-vViewPosition); vec2 st0 = dFdx(vTU), st1 = dFdy(vTU);
+        vec3 q1p = cross(q1, normal), q0p = cross(normal, q0);
+        vec3 T = q1p * st0.x + q0p * st1.x, B = q1p * st0.y + q0p * st1.y;
+        float det = max(dot(T, T), dot(B, B)); float sc = det == 0.0 ? 0.0 : faceDirection * inversesqrt(det);
+        vec3 tn = vec3(dTN.xy * ${(bump * 2).toFixed(2)} * vec2(1.0, -1.0), dTN.z);
+        normal = normalize(T * (tn.x * sc) + B * (tn.y * sc) + normal * tn.z);
+      } else normal = dPerturb(-vViewPosition, normal, vec2(dFdx(dHt), dFdy(dHt)) * ${bump.toFixed(2)}, faceDirection);`);
+    if (k === 'glass' || T?.[0] === 15) fs = fs.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance *= dLit;');
+    if (k === 'card') fs = fs.replace('#include <alphatest_fragment>', `
+      #ifdef USE_MAP
+      { // keep the leaves solid as the card shrinks: mip levels average the alpha down, so scale it back up with the level
+        vec2 dx = dFdx(vMapUv * 512.0), dy = dFdy(vMapUv * 512.0);
+        float lod = max(0.0, 0.5 * log2(max(dot(dx, dx), dot(dy, dy))));
+        diffuseColor.a = clamp(diffuseColor.a * (1.0 + lod * 0.32), 0.0, 1.0); }
+      #endif
+      #include <alphatest_fragment>`);
+    if (k === 'leaf' || k === 'card') fs = fs.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      { vec3 vd = normalize(vViewPosition); float rim = pow(1.0 - abs(dot(normal, vd)), 3.0);
+        // light through the leaves when looking toward the sun
+        float tr = pow(max(0.0, dot(normalize(vDW - cameraPosition), dSun)), 5.0);
+        totalEmissiveRadiance += diffuseColor.rgb * (rim * ${k === 'card' ? '0.12' : '0.22'} + tr * ${k === 'card' ? '0.9' : '0.35'} + ${k === 'card' ? '0.07' : '0.0'}) * (1.0 - dNight); }`);
     sh.vertexShader = vs; sh.fragmentShader = fs;
   };
-  const key = `${k}|${name}|${bump}|${wind ? `${wind.bend}${wind.rigid}${wind.push || 0}` : ''}|${fade}`;
+  const key = `${k}|${name}|${T ? 't' : ''}|${bump}|${wind ? `${wind.bend}${wind.rigid}${wind.push || 0}${wind.flutter || 0}` : ''}|${fade}`;
   mat.customProgramCacheKey = () => key;
   mat.needsUpdate = true;
   return mat;
