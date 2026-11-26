@@ -12,7 +12,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/fonts.css">
   <link rel="stylesheet" href="assets/css/main.css">
-  <script>document.documentElement.classList.add('js')</script>
+  <script>document.documentElement.classList.add('js');try{if(sessionStorage.getItem('x1ng:transition')==='1'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('is-arriving')}catch(e){}</script>
   <script src="assets/vendor/gsap.min.js" defer></script>
   <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
   <script src="assets/vendor/lenis.min.js" defer></script>
@@ -62,7 +62,7 @@
     <!-- 02 · Intro statement -->
     <section class="section wrap">
       <div class="intro">
-        <h2 class="h2 intro__title" data-split>Photography as a way of standing still long enough to be surprised.</h2>
+        <h2 class="h2 intro__title" data-split data-lens="摄影，是一种站得足够久、好让自己被惊喜到的方式。">Photography as a way of standing still long enough to be surprised.</h2>
         <div class="intro__body">
           <p class="lead" data-fade>I’m Xing — a Nanjing-based photographer drawn to blue hours over the city, first light on high mountains, and the small human moments in between.</p>
           <p class="zh" data-fade data-delay=".1">大家好，我是星光。镜头主要聚焦城市与自然风光，热衷于在日常中捕捉那些被忽略的美丽瞬间——在光影中寻找世界的另一种语言。</p>
@@ -72,11 +72,53 @@
       </div>
     </section>
 
+    <!-- 02a · The darkroom — one print you develop yourself (relief.js): brush the plaster,
+         the relief comes up; past half, it glows and the photograph comes through. -->
+    <section class="wrap section darkroom" aria-labelledby="dk-title">
+      <div class="darkroom__text">
+        <p class="mono muted"><span data-scramble>The darkroom · 暗房</span></p>
+        <h2 id="dk-title" class="h2" data-lens="亲手冲洗一张照片。"><span data-split>Develop a print.</span></h2>
+        <p class="darkroom__lede" data-fade>Run your cursor over the plaster. The picture rises as a white relief wherever you pass — brush past half and it lights up and develops. <span class="zh muted">用光标在石膏上来回擦，照片会以白色浮雕慢慢浮现；擦过一半，它会发光，然后显影成原片。</span></p>
+        <p class="mono muted" data-fade>#128 · Hatshepsut from Above · Luxor, Egypt</p>
+      </div>
+      <figure class="darkroom__print">
+        <img src="media/m/128-xyj5178-eg03.webp" alt="Hatshepsut's temple seen from a balloon above the Luxor cliffs" data-relief>
+      </figure>
+    </section>
+
+    <!-- 02b · Travel — sticky horizontal film strip: one panel per chapter (built in home.js from
+         `travel` in data.js); scroll moves the strip sideways, each photo drifts inside its frame. -->
+    <section class="tv" data-tv aria-labelledby="tv-title">
+      <div class="tv__sticky">
+        <div class="tv__word" aria-hidden="true" data-tv-word>TRAVEL&nbsp;·&nbsp;游记&nbsp;·&nbsp;TRAVEL</div>
+        <div class="tv__track" data-tv-track>
+          <div class="tv__intro">
+            <p class="mono"><span data-scramble>Travel · <span data-tv-n>03</span> chapters</span></p>
+            <h2 id="tv-title" class="tv__title" data-lens="旅程，一章一章地讲。"><span data-split>Journeys,</span> <em data-split>told in chapters.</em></h2>
+            <p class="zh">游记 · 每段旅程是一章<br>云南的雪山与古城、青甘的戈壁与星空，还有埃及的热气球与金字塔。</p>
+            <p class="mono tv__hint"><span>Keep scrolling · 继续滚动</span><i aria-hidden="true"></i></p>
+          </div>
+          <div class="tv__panels" data-tv-panels></div>
+          <div class="tv__end">
+            <p class="mono muted" data-tv-total></p>
+            <a class="tv__more roll-host" href="travel.html" data-cursor="Open travel"><span data-roll>All travel</span> <span aria-hidden="true">→</span></a>
+            <a class="pill pill--light roll-host" href="egypt/"><span class="dot"></span><span data-roll>Latest journal · 埃及随笔</span></a>
+            <a class="pill pill--blue roll-host" href="travel.html?drive"><span class="dot"></span><span data-roll>Drive through them · 开车逛游记</span></a>
+          </div>
+        </div>
+        <div class="tv__hud mono" aria-hidden="true">
+          <span data-tv-count>00 / 03</span>
+          <span class="tv__bar"><i data-tv-bar></i></span>
+          <span data-tv-place>Travel · 游记</span>
+        </div>
+      </div>
+    </section>
+
     <!-- 03 · Featured series -->
     <section class="wrap" aria-labelledby="series-title">
       <div class="section-head">
-        <h2 id="series-title" class="h2" data-split>Featured Series</h2>
-        <p class="mono muted" data-fade>Seven bodies of work — from plateau roads to city nights. 七个系列，从高原公路到城市夜色。</p>
+        <h2 id="series-title" class="h2" data-split data-lens="精选系列">Featured Series</h2>
+        <p class="mono muted" data-fade>Five ongoing studies — city nights, altitude, architecture, people and living things. 五个持续进行的主题。</p>
       </div>
       <div class="cards" data-cards></div>
       <div style="display:flex;justify-content:center;margin-top:clamp(60px,8vw,120px)">
@@ -88,8 +130,8 @@
     <section class="section">
       <div class="band dark" aria-labelledby="band-title">
         <div class="band__head">
-          <h2 id="band-title" class="h2" data-split>Not a grid. <em>A field of 125 frames.</em></h2>
-          <a class="pill pill--light roll-host" href="work.html?view=field"><span class="dot"></span><span data-roll>Enter the field</span></a>
+          <h2 id="band-title" class="h2" data-lens="不是网格，是一片照片的原野。"><span data-split>Not a grid.</span> <em>A field of <span data-total>104</span> frames.</em></h2>
+          <a class="pill pill--light roll-host" href="work.html?view=field"><span class="dot"></span><span data-roll>Enter the 3D world</span></a>
         </div>
         <div data-marquee></div>
         <div class="band__foot mono">
@@ -102,10 +144,23 @@
     <!-- 05 · Categories index -->
     <section class="wrap" aria-labelledby="cat-title">
       <div class="section-head">
-        <h2 id="cat-title" class="h2" data-split>Seven ways of seeing</h2>
+        <h2 id="cat-title" class="h2" data-split data-lens="七种看世界的方式">Seven ways of seeing</h2>
         <p class="mono muted" data-fade>The archive, curated by visual style. 按风格浏览：蓝调、金色、辽阔、夜与星、几何、人间、生灵。</p>
       </div>
       <div class="index-list" data-index></div>
+    </section>
+
+    <!-- 05b · Beyond the camera — projects & CV teaser (data in assets/js/profile.js) -->
+    <section class="wrap section" aria-labelledby="proj-title" style="padding-bottom:0">
+      <div class="section-head">
+        <h2 id="proj-title" class="h2" data-lens="镜头之外"><span data-split>Beyond the camera</span></h2>
+        <p class="mono muted" data-fade>Research, apps and small machines — the other half of what I do. 镜头之外：研究、应用和小硬件。</p>
+      </div>
+      <div class="proj-mini" data-proj-mini></div>
+      <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:clamp(40px,5vw,70px)">
+        <a class="pill roll-host" href="projects.html"><span class="dot"></span><span data-roll>All projects</span></a>
+        <a class="pill pill--ghost roll-host" href="projects.html#cv"><span class="dot"></span><span data-roll>CV · 简历</span></a>
+      </div>
     </section>
 
     <!-- 06 · CTA -->

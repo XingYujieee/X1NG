@@ -9,7 +9,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/css/fonts.css">
   <link rel="stylesheet" href="assets/css/main.css">
-  <script>document.documentElement.classList.add('js')</script>
+  <script>document.documentElement.classList.add('js');try{if(sessionStorage.getItem('x1ng:transition')==='1'&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('is-arriving')}catch(e){}</script>
   <script src="assets/vendor/gsap.min.js" defer></script>
   <script src="assets/vendor/ScrollTrigger.min.js" defer></script>
   <script src="assets/vendor/lenis.min.js" defer></script>
@@ -38,7 +38,7 @@
       <div class="corridor__end">
         <div>
           <p class="mono" style="color:rgba(255,255,255,.6)">End of the corridor · 走廊尽头</p>
-          <h2 class="h2">Every one of these started with getting up early.</h2>
+          <h2 class="h2" data-lens="每一张，都从早起开始。">Every one of these started with getting up early.</h2>
           <a class="pill pill--light roll-host" href="work.html"><span class="dot"></span><span data-roll>See all the work</span></a>
         </div>
       </div>

@@ -47,7 +47,7 @@ const bgShader = {
     aspA: { value: 1.5 }, aspB: { value: 1.5 }, sa: { value: 1.78 },
     cA: { value: new THREE.Vector2(.5, .5) }, cB: { value: new THREE.Vector2(.5, .5) }, zA: { value: 1 }, zB: { value: 1 },
     dollyA: { value: 0 }, dollyB: { value: 0 }, mouse: { value: new THREE.Vector2() }, par: { value: 0.006 },
-    prog: { value: 0 }, t: { value: 0 },
+    prog: { value: 0 }, t: { value: 0 }, anc: { value: new THREE.Vector2(0.5, 0.5) }, zbk: { value: 0 },
     focusD: { value: 0.5 }, blurK: { value: 0 }, px: { value: new THREE.Vector2(1 / 1280, 1 / 720) },
     tint: { value: new THREE.Vector3(1, 1, 1) }, sat: { value: 1 }, light: { value: new THREE.Vector3(1, 1, 1) },
     expo: { value: 0 }, subj: { value: new THREE.Vector3(.5, .5, .1) }, pool: { value: 0.18 },
@@ -55,7 +55,7 @@ const bgShader = {
   vertexShader: `varying vec2 vS; void main(){ vS = uv; gl_Position = vec4(position.xy, 0.9999, 1.0); }`,
   fragmentShader: `
     uniform sampler2D texA, texB, depA, depB;
-    uniform float aspA, aspB, sa, zA, zB, dollyA, dollyB, par, prog, t, focusD, blurK, sat, expo, pool;
+    uniform float aspA, aspB, sa, zA, zB, dollyA, dollyB, par, prog, t, focusD, blurK, sat, expo, pool, zbk; uniform vec2 anc;
     uniform vec2 cA, cB, mouse, px; uniform vec3 tint, light, subj;
     varying vec2 vS;
     vec2 K(float ia){ return sa > ia ? vec2(1.0, ia / sa) : vec2(sa / ia, 1.0); }
@@ -93,20 +93,27 @@ const bgShader = {
         col = lens(texA, uA, dA, aspA);
       } else {
         vec2 uB = place(s, aspB, cB, zB, dollyB, depB, dB);
-        // the horizon sweep: far first, near last, the sky from the top down
-        vec2 np = s * vec2(sa, 1.0) * 3.0;
-        float n = 0.6 * vn(np + t * 0.05) + 0.4 * vn(np * 2.7 - t * 0.08);
-        float key = max(dA, dB) * 0.9 + s.y * 0.12 + (n - 0.5) * 0.1;
-        float P = prog * 1.32 - 0.16;
-        float m = smoothstep(key - 0.045, key + 0.045, P);
-        float front = exp(-pow((P - key) / 0.065, 2.0));
-        // the mist bends the light a touch as it passes
-        vec2 wob = vec2(0.0, (vn(np * 4.0 + t * 0.3) - 0.5) * 0.004 * front);
-        vec3 a = m < 0.999 ? lens(texA, uA + wob, dA, aspA) : vec3(0.0);
-        vec3 b = m > 0.001 ? lens(texB, uB + wob, dB, aspB) : vec3(0.0);
-        col = mix(a, b, m);
-        float land = smoothstep(0.04, 0.22, max(dA, dB));             // the mist lies on the land, the sky just changes
-        col = mix(col, light * 0.9, front * 0.13 * land);
+        // Through the figure: the old place rushes on towards him (a radial zoom blur on the anchor) …
+        vec3 a = lens(texA, uA, dA, aspA);
+        if (zbk > 0.002) {
+          vec3 acc = a;
+          for (int i = 1; i < 8; i++) {
+            float f = float(i) / 8.0 * zbk; float dd;
+            acc += photo(texA, place(mix(s, anc, f), aspA, cA, zA, dollyA, depA, dd));
+          }
+          a = acc / 8.0;
+        }
+        // … while the next place opens out of him like a print lifted to the eye, until it fills the frame
+        vec2 e = vec2(0.004);
+        vec2 inn = smoothstep(vec2(0.0), e, uB) * smoothstep(vec2(1.0), vec2(1.0) - e, uB);
+        float win = inn.x * inn.y;
+        vec2 outv = max(vec2(0.0), max(-uB, uB - 1.0)) * zB / K(aspB);
+        float od = length(outv);
+        a *= 1.0 - 0.5 * exp(-od * 22.0) * (1.0 - win);                     // the print's soft shadow on the old place
+        vec3 b = lens(texB, uB, dB, aspB);
+        col = mix(a, b, win * smoothstep(0.0, 0.08, prog));
+        col += vec3(1.0, 0.97, 0.92) * (1.0 - win) * exp(-od * 700.0) * 0.55 * (1.0 - smoothstep(0.8, 1.0, prog));   // its fine paper edge
+        col += light * 0.04 * exp(-pow((prog - 0.55) / 0.16, 2.0));           // a breath of light as it passes
       }
       // grade: true to the photo, nudged towards the hour
       float l = dot(col, vec3(0.299, 0.587, 0.114));
@@ -233,6 +240,69 @@ const beamMat = () => new THREE.ShaderMaterial({
       gl_FragColor = vec4(vec3(0.8, 0.87, 1.0) * rim * fall * 0.16 * k, 1.0); }`,
 });
 
+/* ---------- the flight: each photograph as a relief floating in a dark space ----------
+   Every vertex is pulled towards the photo's own camera position by its depth, so
+   seen from that camera the relief is pixel-identical to the flat photo (the hand-off
+   to and from the full-screen view is seamless). Only when the camera leaves that
+   point does the place reveal its volume. */
+const flightShader = {
+  uniforms: {
+    tex: { value: null }, dep: { value: null }, c: { value: new THREE.Vector2(.5, .5) }, size: { value: new THREE.Vector2(1, 1) },
+    eye: { value: new THREE.Vector3(0, 0, 20) }, amp: { value: 0.33 }, fl: { value: 0 },
+    tint: { value: new THREE.Vector3(1, 1, 1) }, sat: { value: 1 }, expo: { value: 0 },
+    poolC: { value: new THREE.Vector2(.5, .5) }, poolS: { value: new THREE.Vector2(1, 1) }, pool: { value: 0 }, dim: { value: 1 },
+  },
+  vertexShader: `
+    uniform sampler2D dep; uniform vec2 c, size; uniform vec3 eye; uniform float amp;
+    varying vec2 vUv; varying float vD; varying float vZ;
+    void main(){
+      vUv = uv;
+      float d = texture2D(dep, uv).r;
+      vD = d;
+      vec3 p = vec3((uv.x - c.x) * size.x, (c.y - (1.0 - uv.y)) * size.y, 0.0);   // photo uv (y down) → the plane that fills the frame
+      p += (eye - p) * d * amp;                 // along the ray to the photo's own camera
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      vZ = -mv.z;
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `
+    uniform sampler2D tex; uniform float fl, sat, expo, pool, dim; uniform vec3 tint; uniform vec2 poolC, poolS;
+    varying vec2 vUv; varying float vD; varying float vZ;
+    void main(){
+      // tear open where the relief stretches across a depth edge (only in flight)
+      float g = fwidth(vD) / max(fwidth(vUv.x) + fwidth(vUv.y), 1e-5);
+      if (fl > 0.02 && g * fl > 70.0) discard;
+      vec3 col = texture2D(tex, vUv).rgb;
+      float l = dot(col, vec3(0.299, 0.587, 0.114));
+      col = mix(vec3(l), col, sat) * tint;
+      vec2 dd = (vec2(vUv.x, 1.0 - vUv.y) - poolC) * poolS;
+      col *= 1.0 + pool * exp(-dot(dd, dd) * 0.9);
+      col = col * (1.0 + expo * 1.6) / (1.0 + col * expo * 0.55);
+      // the photo's border dissolves into the dark while it floats
+      vec2 e = min(vUv, 1.0 - vUv);
+      float edge = mix(1.0, smoothstep(0.0, 0.06, min(e.x, e.y)), fl);
+      col *= edge * dim;
+      if (edge < 0.01) discard;
+      gl_FragColor = vec4(col, 1.0);
+    }`,
+};
+function makeDust(n) {
+  const g = new THREE.BufferGeometry(); const p = new Float32Array(n * 3), a = new Float32Array(n);
+  for (let i = 0; i < n; i++) { p[i * 3] = (rnd() - 0.5) * 140; p[i * 3 + 1] = (rnd() - 0.5) * 70; p[i * 3 + 2] = -70 + rnd() * 120; a[i] = rnd(); }
+  g.setAttribute('position', new THREE.BufferAttribute(p, 3)); g.setAttribute('seed', new THREE.BufferAttribute(a, 1));
+  const m = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { k: { value: 0 }, px: { value: 1 }, t: { value: 0 } },
+    vertexShader: `uniform float px, t; attribute float seed; varying float vA;
+      void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv;
+        vA = 0.35 + 0.65 * pow(0.5 + 0.5 * sin(t * (0.8 + seed * 2.0) + seed * 50.0), 2.0);
+        gl_PointSize = (0.8 + seed * seed * 2.6) * px * 46.0 / -mv.z; }`,
+    fragmentShader: `uniform float k; varying float vA; void main(){ float a = smoothstep(0.5, 0.0, length(gl_PointCoord - 0.5));
+      gl_FragColor = vec4(vec3(0.85, 0.9, 1.0) * a * vA * k, 1.0); }`,
+  });
+  const pts = new THREE.Points(g, m); pts.frustumCulled = false; pts.renderOrder = 1; return pts;
+}
+
 const gradeShader = {
   uniforms: { tDiffuse: { value: null }, t: { value: 0 }, res: { value: new THREE.Vector2(1, 1) }, fade: { value: 0 }, vig: { value: 1 } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
@@ -304,6 +374,11 @@ export function createStage(canvas, images, depths, opts = {}) {
   const sunGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, color: 0xffe2b0 })); sunGlow.renderOrder = 7; scene.add(sunGlow);
   const parts = SCENES.map((s) => { const p = makeParts(s.fx.parts, HH); scene.add(p); return p; });
 
+  const reliefs = [0, 1].map(() => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1, lite ? 160 : 260, lite ? 110 : 180), new THREE.ShaderMaterial({ ...flightShader, uniforms: THREE.UniformsUtils.clone(flightShader.uniforms) }));
+    m.frustumCulled = false; m.visible = false; m.renderOrder = 0; scene.add(m); return m;
+  });
+  const dust = makeDust(lite ? 900 : 1800); dust.visible = false; scene.add(dust);
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.22, 0.5, 0.93); composer.addPass(bloom);
@@ -316,7 +391,7 @@ export function createStage(canvas, images, depths, opts = {}) {
     camera.aspect = aspect; camera.updateProjectionMatrix(); U.sa.value = aspect;
     U.px.value.set(1 / (w * 1), 1 / (h * 1));
     grade.uniforms.res.value.set(w * dpr, h * dpr);
-    nebula.material.uniforms.px.value = dpr * h / 900;
+    nebula.material.uniforms.px.value = dpr * h / 900; dust.material.uniforms.px.value = dpr * h / 900;
     parts.forEach((p) => { p.material.uniforms.px.value = dpr * h / 900; p.material.uniforms.box.value.set(2 * HH * aspect * 1.15, 2 * HH, 14); });
   }
 
@@ -350,6 +425,48 @@ export function createStage(canvas, images, depths, opts = {}) {
     U.cA.value.set(...ca); U.cB.value.set(...cb); U.zA.value = za; U.zB.value = zb;
     U.dollyA.value = 0.035 * fu; U.dollyB.value = 0.035 * Math.max(0, fu - 1 + 0.0);
     U.mouse.value.set(st.mouse[0], st.mouse[1]); U.prog.value = ia === ib ? 0 : (prog >= 1 ? 1.0001 : prog);
+    // the transition: the camera leaves this photograph, flies through the dark and lands in the next
+    U.zbk.value = 0;
+    const flying = prog > 0 && prog < 1;
+    const fl = flying ? Math.sin(Math.PI * prog) : 0;
+    bg.visible = !flying;
+    reliefs.forEach((m) => { m.visible = flying; });
+    dust.visible = flying;
+    camera.position.set(0, 0, 20); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0);
+    if (flying) {
+      const dir = ia % 2 ? -1 : 1, fw = 2 * HH * aspect;
+      const wOf = (i, z) => 2 * HH * aspect * z / kOf(i)[0];
+      const ox = Math.max(fw * 1.3, (wOf(ia, za) + wOf(ib, zb)) / 2 + fw * 0.25);   // never fly through a photo (portrait screens crop wide photos a lot)
+      const O = new THREE.Vector3(dir * ox, -dir * HH * 0.4, -HH * 5);
+      const setRelief = (m, i, z, c, at, look) => {
+        const k = kOf(i), u = m.material.uniforms;
+        u.tex.value = texs[i]; u.dep.value = deps[i]; u.c.value.set(c[0], c[1]);
+        u.size.value.set(2 * HH * aspect * z / k[0], 2 * HH * z / k[1]);
+        u.fl.value = fl; u.amp.value = 0.28;
+        u.tint.value.set(...look.tint); u.sat.value = look.sat; u.expo.value = st.expo;
+        const S = SCENES[i], fs = toScreen(i, z, c, S.x, S.feet), hs = toScreen(i, z, c, S.x, S.head), ph = Math.max(0.02, fs[1] - hs[1]);
+        u.poolC.value.set(S.x, (S.head + S.feet) / 2); u.poolS.value.set(z / k[0] * aspect / ph, z / k[1] / ph);
+        u.pool.value = 0.16 * (1 - prog * (1 - prog) * 4);
+        m.position.copy(at);
+      };
+      setRelief(reliefs[0], ia, za, ca, new THREE.Vector3(), A.look);
+      setRelief(reliefs[1], ib, zb, cb, O, B.look);
+      // a smooth arc: pull back from A (seeing it as a floating relief), cross the space, push into B
+      const e = prog < 0.5 ? 4 * prog * prog * prog : 1 - Math.pow(-2 * prog + 2, 3) / 2;
+      const back = new THREE.Vector3(-dir * fw * 0.15, HH * 0.7, Math.max(HH * 5.2, ox * 1.05));
+      const P0 = new THREE.Vector3(0, 0, 20), P3 = O.clone().add(P0);
+      const P1 = P0.clone().add(back), P2 = P3.clone().add(back);
+      const v = 1 - e, cam = P0.clone().multiplyScalar(v * v * v).addScaledVector(P1, 3 * v * v * e).addScaledVector(P2, 3 * v * e * e).addScaledVector(P3, e * e * e);
+      const te = sstep(0.15, 0.85, prog);
+      const target = new THREE.Vector3().lerpVectors(new THREE.Vector3(), O, te);
+      camera.position.copy(cam);
+      camera.up.set(Math.sin(fl * 0.12 * dir) * 1, 1, 0).normalize();      // a slight bank in the turn
+      camera.lookAt(target);
+      // the photo you are leaving / arriving at dims a little while it floats, so the space reads as space
+      reliefs[0].material.uniforms.dim.value = 1 - 0.25 * sstep(0.1, 0.6, prog);
+      reliefs[1].material.uniforms.dim.value = 1 - 0.25 * (1 - sstep(0.4, 0.9, prog));
+      dust.material.uniforms.k.value = 0.9 * fl; dust.material.uniforms.t.value = t;
+    }
     if (prog >= 1) { U.texA.value = texs[ib]; U.depA.value = deps[ib]; U.aspA.value = asp(ib); U.cA.value.set(...cb); U.zA.value = zb; U.dollyA.value = 0; U.prog.value = 0; }
     U.t.value = t;
     U.focusD.value = st.focus.d; U.blurK.value = st.focus.k * (prog > 0 && prog < 1 ? 0.3 : 1);
@@ -370,14 +487,14 @@ export function createStage(canvas, images, depths, opts = {}) {
     parts.forEach((p, i) => {
       const w = i === ia ? wA : i === ib ? wB : 0;
       p.visible = w > 0.01; if (!p.visible) return;
-      const uu = p.material.uniforms; uu.t.value = t; uu.k.value = w * (1 - st.print * 0.8); uu.expo.value = st.expo; uu.shift.value.set(st.mouse[0], -st.mouse[1]);
+      const uu = p.material.uniforms; uu.t.value = t; uu.k.value = w * (1 - st.print * 0.8) * (1 - fl); uu.expo.value = st.expo; uu.shift.value.set(st.mouse[0], -st.mouse[1]);
       const band = p.userData.P.band; uu.y0.value = (0.5 - band[1]) * 2 * HH; uu.box.value.y = (band[1] - band[0]) * 2 * HH;
     });
 
     // the sun he holds (noon)
     // things in the sky leave with the sky (the sweep reaches it first)
     const skyA = 1 - sstep(0.0, 0.35, prog), skyB = sstep(0.0, 0.35, prog);
-    const sunW = (A.fx.sun ? skyA : 0) + (B.fx.sun && ia !== ib ? skyB : 0);
+    const sunW = ((A.fx.sun ? skyA : 0) + (B.fx.sun && ia !== ib ? skyB : 0)) * (1 - fl);
     sunStar.visible = sunGlow.visible = sunW > 0.01;
     if (sunW > 0.01) {
       const S = A.fx.sun ? A : B, i = A.fx.sun ? ia : ib, z = A.fx.sun ? za : zb, c = A.fx.sun ? ca : cb;
@@ -388,7 +505,7 @@ export function createStage(canvas, images, depths, opts = {}) {
     }
 
     // night: nebula at the celestial pole, a faint shaft on him, stones rising
-    const nW = (A.fx.nebula ? skyA : 0) + (B.fx.nebula && ia !== ib ? skyB : 0);
+    const nW = ((A.fx.nebula ? skyA : 0) + (B.fx.nebula && ia !== ib ? skyB : 0)) * (1 - fl);
     nebula.visible = halo.visible = night.visible = nW > 0.01;
     if (nW > 0.01) {
       const S = A.fx.nebula ? A : B, i = A.fx.nebula ? ia : ib, z = A.fx.nebula ? za : zb, c = A.fx.nebula ? ca : cb;

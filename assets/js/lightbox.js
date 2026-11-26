@@ -1,5 +1,5 @@
 import { $, h, esc, pad, getLenis } from './core.js';
-import { CATEGORIES, seriesOf, styleById } from './data.js';
+import { CATEGORIES, seriesOf, travelOf, styleById } from './data.js';
 
 let el, img, list = [], index = 0, lastFocus = null, onChange = null;
 const catName = (id) => CATEGORIES.find((c) => c.id === id)?.en || id;
@@ -53,12 +53,14 @@ function render() {
   if (!next.complete) { img.src = p.s; img.classList.remove('is-swapping'); next.onload = show; } else setTimeout(show, 120);
   [list[index + 1], list[index - 1]].forEach((q) => { if (q) { const pre = new Image(); pre.src = q.l; } });
   const s = seriesOf(p.n);
+  const t = travelOf(p.n);
   $('[data-lb-count]', el).textContent = `${pad(index + 1, 3)} / ${pad(list.length, 3)}`;
   $('[data-lb-title]', el).innerHTML = `${esc(p.title)}<span class="zh">${esc(p.zh)}</span>`;
   $('[data-lb-meta]', el).innerHTML = [
     p.place && `<span>${esc(p.place)}</span>`,
     `<a href="work.html?style=${p.style}">${esc(styleById(p.style)?.en || catName(p.cat))}</a>`,
     s && `<a href="series.html?id=${s.id}">Series: ${esc(s.en)}</a>`,
+    t && `<a href="travel.html?id=${t.id}">Travel: ${esc(t.en)}</a>`,
     `<span>#${pad(p.n, 3)}</span>`,
   ].filter(Boolean).join('');
   onChange?.(p);

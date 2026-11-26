@@ -124,4 +124,10 @@ export const RAW_PHOTOS = [["001-dsc0189-9f9d69",2400,3600,"cityscape","Tower at
 ["122-sh-78182e",2400,1711,"cityscape","River Bend at Night","夜色江湾","Shanghai","night"],
 ["123-slx06909-daf02f",2400,4055,"personal","Stairway to the Tower","通往高塔","Shanghai","geometry"],
 ["124-1-40e905",2400,3601,"cityscape","Interchange","立交光轨","Beijing","blue"],
-["125-1-8e43bc",2400,1600,"creativity","X","X","","geometry"]];
+["125-1-8e43bc",2400,1600,"creativity","X","X","","geometry"],
+["126-xyj5139-eg01",2400,1600,"landscape","Balloons over the West Bank","西岸热气球","Luxor","vast"],
+["127-xyj5172-eg02",1717,2576,"documentary","One Balloon, a Thousand Roofs","千屋之上","Luxor","geometry"],
+["128-xyj5178-eg03",2400,1600,"landscape","Hatshepsut from Above","俯瞰哈特谢普苏特神庙","Luxor","gold"],
+["129-xyj5491-eg04",2400,1600,"landscape","Pyramid in the Fog","雾中金字塔","Giza","vast"],
+["130-xyj5530-eg05",2400,1600,"documentary","Khufu Through the Glass","玻璃后的胡夫","Giza","people"],
+["131-xyj5448-eg06",1718,2576,"cityscape","Minarets and Pyramids","宣礼塔与金字塔","Cairo","gold"]];
