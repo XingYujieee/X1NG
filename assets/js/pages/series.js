@@ -34,7 +34,7 @@ function renderTravelIndex() {
     <section class="wrap">
       <button type="button" class="drive-cta" data-drive data-cursor="Drive">
         <span class="drive-cta__car" aria-hidden="true"><i></i><b></b><b></b></span>
-        <span class="drive-cta__text"><span class="mono">Play · 可玩</span><strong>Drive across the places</strong><span class="zh">一座按拍摄地点造的小岛：沙漠、丹霞、雪山、草甸与城市。每个地点是一站，开进圆圈按 Enter 看那里拍的照片；N 切换昼夜，T 切换天气。</span></span>
+        <span class="drive-cta__text"><span class="mono">Play · 可玩</span><strong>Drive across the places</strong><span class="zh">一座按拍摄地点造的小岛：沙漠、丹霞、雪山、草甸与城市。跟车视角，开进展台按 Enter 看那里拍的照片；Shift 加速，空格跳，M 看地图。</span></span>
         <span class="drive-cta__keys mono"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>Start →</span></span>
       </button>
     </section>

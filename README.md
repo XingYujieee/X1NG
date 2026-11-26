@@ -105,7 +105,12 @@ Current frames are a procedural placeholder — see `motion-source/photographer-
     vegetation, grass that parts for the car, kicked-up leaves, shaking trees, animals, balloons, boats, prayer flags ·
     `stops.js` the exhibition platforms (museum label, prints that stand up when you arrive) · `drive.js` car, camera, weather,
     day/night, HUD. `node assets/tools/drive_test.mjs` checks the vehicle headlessly.
-  - Loaded only on demand (`travel.html?drive`; test params `&at=giza&tod=0.93&wx=sand&cam=2`).
+  - Motion borrowed from the Saltline prototype: chase camera behind the car (drag to orbit, wheel to zoom, shape-cast so
+    it never ends up inside a hill or a wall, shake on impact; `V` switches to the overview), peripheral speed blur that
+    skips the car, fixed-step physics drawn interpolated, anti-roll bars, boost (Shift), hop (Space), handbrake (B),
+    WebAudio engine with gears plus tyre/wind/rain/impact sounds (`audio.js`), skid marks, speedometer, radar, full map (M)
+    with visited places and click-to-go.
+  - Loaded only on demand (`travel.html?drive`; test params `&at=giza&tod=0.93&wx=sand&view=map`).
 - **Hero transition** (`viewfinder/stage.js`): between places the camera flies through a dark space — each photo
   becomes a relief (vertices pulled towards its own camera by depth, so the hand-off from/to the flat view is exact).
 
