@@ -8,7 +8,7 @@
    went, and take snow on their tips.
    ========================================================================== */
 import * as THREE from '../../vendor/three.min.js';
-import { CLOUD_GLSL } from './light.js';
+import { CLOUD_GLSL, AIR } from './light.js';
 import { ENV } from './materials.js';
 import { SIZE_X, SIZE_Z, NX, NZ, X0, Z0, PLACES, START, biomeAt, fbm, smooth } from './terrain.js';
 
@@ -65,7 +65,7 @@ export function buildGrass(scene, grid, { coarse = false, free = () => true } = 
     light: { value: new THREE.Color(1, 1, 1) }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color(1, 1, 1) },
   };
   const mat = new THREE.ShaderMaterial({
-    uniforms: Object.assign(THREE.UniformsUtils.merge([THREE.UniformsLib.fog, THREE.UniformsLib.lights]), U, { dSun: ENV.sun, cCover: ENV.cloud, cOff: ENV.cloudOff }),
+    uniforms: Object.assign(THREE.UniformsUtils.merge([THREE.UniformsLib.fog, THREE.UniformsLib.lights]), U, AIR, { dSun: ENV.sun, cCover: ENV.cloud, cOff: ENV.cloudOff }),
     side: THREE.DoubleSide, fog: true, lights: true,
     vertexShader: `#include <common>
       #include <fog_pars_vertex>

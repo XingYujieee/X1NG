@@ -25,6 +25,7 @@ import { ShaderPass } from '../../vendor/three-addons/postprocessing/ShaderPass.
 import { OutputPass } from '../../vendor/three-addons/postprocessing/OutputPass.js';
 import { GTAOPass } from '../../vendor/three-addons/postprocessing/GTAOPass.js';
 import { patchFog, injectAir, AIR, CLOUD_GLSL } from './light.js';
+import { buildSky } from './sky.js';
 import { PLACES, START, WATER_Y, SIZE_X, SIZE_Z, biomeAt, nearestPlace, islandD, buildGrid } from './terrain.js';
 import { createPhysics } from './physics.js';
 import { loadAssets } from './assets.js';
@@ -148,7 +149,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0xbcd9ea, 0.0085);
-  const camera = new THREE.PerspectiveCamera(50, 1, 0.12, 900);
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.12, 2600);
   const hemi = new THREE.HemisphereLight(0xdcecff, 0x8a7458, 1.1);
   const sun = new THREE.DirectionalLight(0xffffff, 2.4);
   sun.castShadow = true;
@@ -158,66 +159,17 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   const moon = new THREE.DirectionalLight(0x8aa2ff, 0);
   scene.add(hemi, sun, sun.target, moon, moon.target);
 
-  // sky: a gradient dome with the sun and, at night, stars; its horizon is the fog colour
-  const skyU = { top: { value: new THREE.Color() }, horizon: { value: new THREE.Color() }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color() }, night: { value: 0 }, haze: { value: 0 }, cloudLit: { value: 1 }, cCover: ENV.cloud, cOff: ENV.cloudOff };
-  const sky = new THREE.Mesh(new THREE.SphereGeometry(420, 32, 16), new THREE.ShaderMaterial({
-    uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false,
-    vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); vec4 p = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * p; gl_Position.z = gl_Position.w; }',
-    fragmentShader: `
-      uniform vec3 top, horizon, sunDir, sunCol; uniform float night, haze, cloudLit; varying vec3 vD;
-      ${CLOUD_GLSL}
-      float h3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
-      void main(){
-        vec3 d = normalize(vD); float h = d.y; vec3 sd = normalize(sunDir);
-        float s = max(dot(d, sd), 0.0);
-        // a deep zenith fading to a bright, hazy horizon; warmer on the sun's side
-        vec3 c = mix(horizon, top, pow(smoothstep(-0.02, 1.0, h), 0.55) * (1.0 - haze));
-        c += sunCol * pow(s, 3.0) * 0.18 * (1.0 - smoothstep(0.0, 0.5, h)) * (1.0 - haze * 0.6);
-        c += sunCol * (pow(s, 2400.0) * 9.0 + pow(s, 48.0) * 0.45 + pow(s, 8.0) * 0.12) * (1.0 - haze * 0.85) * step(0.0, h + 0.03);
-        // stars
-        vec3 g = floor(d * 260.0);
-        float st = step(0.9965, h3(g)) * smoothstep(0.05, 0.3, h) * night * (1.0 - haze);
-        c += vec3(st) * (0.6 + 0.4 * h3(g + 1.0));
-        // the cloud deck (60 m up): the same field that throws shadows on the island
-        if (h > 0.01) {
-          vec3 o = cameraPosition; float t = (60.0 - o.y) / h; vec2 p = o.xz + d.xz * t;
-          float cd = cloudDensity(p);
-          float edge = cloudDensity(p + sd.xz * 6.0);
-          vec3 lit = mix(vec3(0.62, 0.66, 0.74), vec3(1.0, 0.98, 0.95), clamp(1.0 - edge * 0.8, 0.0, 1.0)) * cloudLit;
-          lit += sunCol * pow(s, 6.0) * 0.6 * (1.0 - cd);    // silver lining toward the sun
-          float fade = smoothstep(0.01, 0.22, h);
-          c = mix(c, mix(lit, horizon, 1.0 - fade), cd * fade * 0.92 * (1.0 - haze * 0.7));
-        }
-        c = mix(c, horizon * 0.9, smoothstep(0.0, -0.2, h));
-        gl_FragColor = vec4(c, 1.0);
-      }`,
-  }));
-  sky.renderOrder = -1; sky.frustumCulled = false; scene.add(sky);
-
-  // image-based light from the same sky (re-baked when the sky changes), so metal, glass and wet stone have something to reflect
-  // and the shade side of every surface picks up the sky's colour instead of a flat ambient
+  // sky: physically based (Rayleigh + Mie) and baked into one HDR texture that the dome, the fog, the ambient light
+  // and the water all read, so the horizon has no seam and the shade side of things takes the sky's real colour
+  const SKY = buildSky(renderer, { coarse });
+  const sky = SKY.dome(CLOUD_GLSL, { cCover: ENV.cloud, cOff: ENV.cloudOff });
+  scene.add(sky);
+  AIR.fogSky.value = SKY.texture; AIR.fogSkyOn.value = 1;
   const pmrem = new THREE.PMREMGenerator(renderer);
-  const envScene = new THREE.Scene();
-  const envGround = { value: new THREE.Color('#8a7458') };
-  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.ShaderMaterial({
-    uniforms: { ...skyU, ground: envGround }, side: THREE.BackSide, depthWrite: false,
-    vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: `
-      uniform vec3 top, horizon, sunDir, sunCol, ground; uniform float night, haze; varying vec3 vD;
-      void main(){
-        vec3 d = normalize(vD); float h = d.y;
-        vec3 c = mix(horizon, top, smoothstep(-0.02, 0.45, h) * (1.0 - haze));
-        float s = max(dot(d, normalize(sunDir)), 0.0);
-        c += sunCol * (pow(s, 64.0) * 3.0 + pow(s, 6.0) * 0.3) * (1.0 - haze * 0.8) * step(0.0, h + 0.05);
-        c = mix(c, ground, smoothstep(0.02, -0.12, h));
-        gl_FragColor = vec4(c, 1.0);
-      }`,
-  })));
-  let envRT = null, envKey = '', envT = 0, airT = 0;
+  let envRT = null, envT = 0, airT = 0;
   const bakeEnv = () => {
-    const k = [skyU.horizon.value.getHexString(), skyU.top.value.getHexString(), skyU.sunDir.value.toArray().map((v) => v.toFixed(2)).join(), skyU.haze.value.toFixed(2)].join('|');
-    if (k === envKey) return; envKey = k;
-    const next = pmrem.fromScene(envScene, 0, 0.1, 100, { size: 128 });
+    if (!SKY.bake()) return;
+    const next = pmrem.fromEquirectangular(SKY.texture);
     envRT?.dispose(); envRT = next; scene.environment = envRT.texture;
   };
   scene.environmentIntensity = 0.55;
@@ -533,12 +485,21 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     if (wxKind === 'snow') { skyC.lerp(tmpC.copy(SNOW_FOG).multiplyScalar(lerp(0.3, 1, dayK)), a * 0.55); haze = a * 0.6; }
     if (wxKind === 'rain') { skyC.lerp(tmpC.copy(RAIN_FOG).multiplyScalar(lerp(0.3, 1, dayK)), a * 0.6); haze = a * 0.7; }
     scene.fog.color.copy(skyC);
-    scene.fog.density = (view === 'map' ? 0.005 : 0.0105) + (wxKind === 'sand' ? 0.042 : wxKind === 'snow' ? 0.016 : wxKind === 'rain' ? 0.011 : 0) * a;
-    skyU.horizon.value.copy(skyC);
-    skyU.top.value.copy(TOP_NIGHT).lerp(TOP_DAY, dayK).lerp(TOP_DUSK, horizon * 0.5);
-    skyU.night.value = nightK; skyU.haze.value = haze;
+    // clear air: ~10% at 150 m, a veil at 400 m, gone into the sky by ~2 km; weather closes it right in
+    scene.fog.density = (view === 'map' ? 0.0016 : 0.0034) + (wxKind === 'sand' ? 0.034 : wxKind === 'snow' ? 0.014 : wxKind === 'rain' ? 0.009 : 0) * a;
+    const SU = SKY.U;
+    SU.haze.value = haze;
+    SU.turbidity.value = 2.2 + (wxKind === 'sand' ? 6 * a : 0) + horizon * 1.2;
+    SU.hazeCol.value.copy(wxKind === 'sand' ? SAND_FOG : wxKind === 'snow' ? SNOW_FOG : RAIN_FOG).multiplyScalar(lerp(0.12, 1.15, dayK));
+    SU.ground.value.set(wxKind === 'snow' ? '#9aa1a8' : '#5d5646');
     const sunDir = new THREE.Vector3(-Math.cos(th), Math.sin(th) * 0.55 + 0.03, 0.62).normalize();   // a low arc (≈43° at noon): side light all day, long shadows
-    skyU.sunDir.value.copy(sunDir); skyU.sunCol.value.set('#ffd9a8').multiplyScalar(dayK);
+    SU.sunDir.value.copy(sunDir);
+    SU.night.value = smooth(0.03, -0.14, sunDir.y);   // the scattering model handles sunset itself; the night dome only takes over once the sun is down
+    SKY.D.sunCol.value.set('#fff1dc').lerp(tmpC.set('#ff9a5a'), 1 - smooth(0.0, 0.3, sunDir.y)).multiplyScalar(dayK);
+    // cloud light: sunlit tops warm at the ends of the day; bases take the sky's blue-grey
+    SKY.D.cloudSun.value.copy(SKY.D.sunCol.value).multiplyScalar(1.05);
+    SKY.D.cloudAmb.value.set('#7d8da6').multiplyScalar(lerp(0.06, 0.62, dayK)).lerp(tmpC.set('#9a9a9a').multiplyScalar(dayK * 0.8 + 0.05), haze);
+    SKY.D.cirrus.value = wxKind === 'clear' ? 0.55 : 0.55 * (1 - a);
     const dim = 1 - (wxKind === 'clear' ? 0 : a * 0.35);
     sun.color.set('#ffb27a').lerp(tmpC.set('#fff8ee'), smooth(0.02, 0.45, el));
     sun.intensity = 3.2 * dayK * dim * LT.sun;
@@ -546,18 +507,16 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     sun.target.position.copy(focus);
     moon.intensity = 0.9 * nightK; moon.position.set(focus.x + 20, focus.y + 40, focus.z - 10); moon.target.position.copy(focus);
     hemi.intensity = (0.2 + 0.2 * dayK) * dim * LT.hemi;
-    envGround.value.set('#7d6b55').lerp(tmpC.set('#0d1020'), nightK).multiplyScalar(0.9);
     scene.environmentIntensity = lerp(0.62, 0.3, nightK) * dim * LT.env;
     ENV.sun.value.copy(sunDir);
     AIR.fogSunCol.value.copy(sun.color).multiplyScalar(dayK * (1 - haze * 0.4) * 0.75);
-    skyU.cloudLit.value = lerp(0.07, 1, dayK) * (1 - haze * 0.3);
     hemi.color.copy(skyC).lerp(tmpC.set('#ffffff'), 0.35);
     hemi.groundColor.set('#8a7458').lerp(tmpC.set('#1a1f33'), nightK);
     renderer.toneMappingExposure = lerp(1.06, 1.3, nightK) * LT.exp;
-    bloom.strength = 0.22 + nightK * 0.45;
+    bloom.strength = 0.22 + nightK * 0.45; bloom.threshold = lerp(1.7, 0.85, nightK);   // the HDR sky must not bloom, the sun and lanterns should
     W.glow.forEach((g) => { g.m.emissiveIntensity = lerp(g.day, g.night, smooth(0.25, 0.75, nightK)); });
     W.grassU.light.value.setRGB(lerp(0.13, 1, dayK) * dim, lerp(0.17, 1, dayK) * dim, lerp(0.3, 1, dayK) * dim);
-    W.waterMat.uniforms.night.value = nightK; W.waterMat.uniforms.sky.value.copy(skyC);
+    W.waterMat.uniforms.night.value = nightK; W.waterMat.uniforms.sky.value.copy(skyC); W.waterMat.uniforms.sunC.value.copy(SKY.D.sunCol.value);
     ENV.night.value = nightK;
     W.grassU.sunCol.value.copy(sun.color).multiplyScalar(sun.intensity / 3.2);
     ffMat.opacity = smooth(0.5, 0.9, nightK) * (wxKind === 'clear' ? 1 : 1 - a);
@@ -612,7 +571,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     if (!alive) return;
     raf = requestAnimationFrame(frame);
     const rawDt = (now - last) / 1000;
-    const dt = Math.min(0.08, rawDt); last = now;
+    const dt = Math.max(0, Math.min(0.08, rawDt)); last = now;   // the first rAF stamp can be older than the setup clock
     const tt = (now - startT) / 1000;
     adapt(rawDt, tt);
     if (mapDlg.open) return;
@@ -742,7 +701,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     const fov = (camera.aspect < 1 ? 62 : 50) * (1 - viewK) + (camera.aspect < 1 ? 50 : 36) * viewK + fovKick * (1 - viewK);
     if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
     camera.updateMatrixWorld();
-    sky.position.copy(camera.position);
+    sky.position.copy(camera.position); SKY.D.time.value = tt;
     if (dbgCam) { camera.position.set(dbgCam[0], dbgCam[1], dbgCam[2]); camera.lookAt(dbgCam[3], dbgCam[4], dbgCam[5]); }
     W.occlude(camera.position, camLook, dt);
     // speed blur, never over the car
@@ -833,7 +792,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
   };
   let dbgCam = null;
   window.__drive = {
-    look: (a) => { dbgCam = a; }, trees: W.trees, renderer, scene, composer, get gtao() { return gtao; }, AIR, ENV, THREE, LT, grade,
+    look: (a) => { dbgCam = a; }, trees: W.trees, renderer, scene, composer, get gtao() { return gtao; }, AIR, ENV, THREE, LT, grade, SKY, get envT() { return envT; }, bakeEnv,
     lookAt: (type, i, d = 6, h = 2.5, a = 0.8) => { const t = W.trees[type][i]; dbgCam = [t.x + Math.cos(a) * d, t.y + h, t.z + Math.sin(a) * d, t.x, t.y + h * 0.8, t.z]; },
     park: (i) => { const s = stops[i]; car.place(s.x, s.gy + 1.2, s.z + 1.5, yawNorth); snapCam = true; },
     stops, get car() { return car.body.translation(); }, carApi: car, jumpTo, nextPhase, open: (i) => openViewer(stops[i]), keys,

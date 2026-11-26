@@ -11,7 +11,7 @@
    ========================================================================== */
 import * as THREE from '../../vendor/three.min.js';
 import { TEX } from './textures.js';
-import { CLOUD_GLSL, SUN, CLOUD, CLOUD_OFF } from './light.js';
+import { CLOUD_GLSL, SUN, CLOUD, CLOUD_OFF, AIR } from './light.js';
 import { SIZE_X, SIZE_Z, NX, NZ, X0, Z0 } from './terrain.js';
 
 export const ENV = {
@@ -232,7 +232,7 @@ export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, f
   const prev = mat.onBeforeCompile;
   mat.onBeforeCompile = (sh, r) => {
     prev?.call(mat, sh, r);
-    Object.assign(sh.uniforms, { tGround: ENV.ground, cCover: ENV.cloud, cOff: ENV.cloudOff, tAlb: TEX.alb, tNor: TEX.nor, dSun: ENV.sun, dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, dNight: ENV.night, wS: ENV.windS, wCar: ENV.car, wCarR: ENV.carR });
+    Object.assign(sh.uniforms, AIR, { tGround: ENV.ground, cCover: ENV.cloud, cOff: ENV.cloudOff, tAlb: TEX.alb, tNor: TEX.nor, dSun: ENV.sun, dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, dNight: ENV.night, wS: ENV.windS, wCar: ENV.car, wCarR: ENV.carR });
     let vs = sh.vertexShader, fs = sh.fragmentShader;
     vs = vs.replace('#include <common>', `#include <common>
       uniform float dTime, wS, wCarR; uniform vec3 wCar;

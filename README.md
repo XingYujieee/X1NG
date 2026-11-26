@@ -128,6 +128,10 @@ Current frames are a procedural placeholder — see `motion-source/photographer-
     Walls get grime and moss at the base (read from the terrain height), rain streaks, mottled roughness; windows show a
     room behind the glass (interior mapping); archways have stone frames; rubble and weeds where walls meet the ground.
     Quality steps down by itself if the frame rate stays low (`&hq` disables that).
+  - Sky (`sky.js`): Preetham scattering (Rayleigh + Mie) baked into one small HDR equirect whenever the sun or weather
+    changes; the dome adds a sharp sun, high cirrus and a cumulus deck (the same field that shades the ground), and the
+    fog, the image-based light and the water's reflections all sample that one texture — so distant land melts into the
+    exact colour of the sky behind it. The sea runs to the horizon and a ring of far hills and snowy ranges closes it.
   - Loaded only on demand (`travel.html?drive`; test params `&at=giza&tod=0.93&wx=sand&view=map`).
 - **Hero transition** (`viewfinder/stage.js`): between places the camera flies through a dark space — each photo
   becomes a relief (vertices pulled towards its own camera by depth, so the hand-off from/to the flat view is exact).

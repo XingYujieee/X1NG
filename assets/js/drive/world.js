@@ -11,7 +11,7 @@ import { LANDMARKS, DECOR, ANIMALS, BALLOONS, BOATS, FLAGS, FLAGPOLES, dynamicPr
 import { ENV, KIND, enhance } from './materials.js';
 import { buildGrass } from './grass.js';
 import { LEAVES, TEX } from './textures.js';
-import { CLOUD_GLSL } from './light.js';
+import { CLOUD_GLSL, AIR } from './light.js';
 
 const C = (h) => new THREE.Color(h);
 const BIOME_COL = { desert: C('#e7c890'), danxia: C('#cf7b52'), meadow: C('#86a85a'), autumn: C('#b5a65f'), plane: C('#8ba45c'), coast: C('#a4b37c'), field: C('#d3b66c') };
@@ -71,7 +71,7 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
   const groundMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96 });
   const GL = [[0, 2.4], [1, 2.6], [2, 5.0], [3, 7.0], [4, 6.0], [5, 5.0], [6, 3.6], [7, 3.2]];   // layer, metres per tile
   groundMat.onBeforeCompile = (sh) => {   // splatted textures, sand ripples, and the weather (snow cover, wet sheen, drifting sand)
-    Object.assign(sh.uniforms, { dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, tAlb: TEX.alb, tNor: TEX.nor, dSun: ENV.sun, cCover: ENV.cloud, cOff: ENV.cloudOff });
+    Object.assign(sh.uniforms, AIR, { dTime: ENV.time, dSnow: ENV.snow, dWet: ENV.wet, dSand: ENV.sand, tAlb: TEX.alb, tNor: TEX.nor, dSun: ENV.sun, cCover: ENV.cloud, cOff: ENV.cloudOff });
     const mean = (l) => `vec3(${TEX.mean[l].map((v) => v.toFixed(4)).join(', ')})`;
     const tri = (l) => l === 3 || l === 4;   // rock layers: triplanar on the slopes
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aux; attribute vec4 sw0, sw1; varying vec3 vAux; varying vec3 vWp; varying vec3 vWn; varying vec4 vS0, vS1;')
@@ -144,13 +144,14 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
   const htex = new THREE.DataTexture(hdata, NX + 1, NZ + 1); htex.needsUpdate = true; htex.magFilter = htex.minFilter = THREE.LinearFilter;
   const waterMat = new THREE.ShaderMaterial({
     transparent: true, fog: true,
-    uniforms: { ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog), t: { value: 0 }, htex: { value: htex }, deep: { value: C('#1e6a8f') }, shallow: { value: C('#63c6c8') }, foam: { value: C('#ffffff') }, night: { value: 0 }, sky: { value: C('#bfe3ff') }, car: { value: new THREE.Vector3() } },
+    uniforms: { ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog), ...AIR, t: { value: 0 }, htex: { value: htex }, deep: { value: C('#1e6a8f') }, shallow: { value: C('#63c6c8') }, foam: { value: C('#ffffff') }, night: { value: 0 }, sky: { value: C('#bfe3ff') }, car: { value: new THREE.Vector3() }, sunD: ENV.sun, sunC: { value: C('#fff1dc') } },
     vertexShader: `#include <fog_pars_vertex>
       varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; vec4 mvPosition = viewMatrix * w; gl_Position = projectionMatrix * mvPosition;
       #include <fog_vertex>
       }`,
     fragmentShader: `#include <fog_pars_fragment>
       uniform float t, night; uniform sampler2D htex; uniform vec3 deep, shallow, foam, sky, car; varying vec3 vW;
+      uniform vec3 sunD, sunC;
       float hs(vec2 q){ return fract(sin(dot(q, vec2(127.1, 311.7))) * 43758.5453); }
       float vn(vec2 q){ vec2 i = floor(q), f = fract(q); f = f*f*(3.-2.*f); return mix(mix(hs(i), hs(i+vec2(1,0)), f.x), mix(hs(i+vec2(0,1)), hs(i+vec2(1,1)), f.x), f.y); }
       void main(){
@@ -165,11 +166,21 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
         float wk = exp(-pow(length(vW.xz - car.xz), 2.0) * 0.4) * step(car.y, 0.6);
         c = mix(c, foam, clamp(f + wk * 0.6, 0.0, 1.0));
         c *= mix(1.0, 0.3, night); c += foam * f * night * 0.2;
-        gl_FragColor = vec4(c, max(clamp(0.5 + depth * 0.35, 0.0, 0.92), f * 0.95));
+        // the sky in the water: fresnel reflection of the same baked sky, small waves, and a sun glint
+        vec3 V = normalize(vW - cameraPosition);
+        float n2 = vn(vW.xz * 0.9 + t * 0.5), n3 = vn(vW.xz * 0.23 - t * 0.12);
+        vec3 N = normalize(vec3((n - 0.5) * 0.16 + (n3 - 0.5) * 0.1, 1.0, (n2 - 0.5) * 0.16));
+        vec3 Rf = reflect(V, N); Rf.y = abs(Rf.y);
+        float fr = 0.02 + 0.98 * pow(1.0 - max(dot(-V, N), 0.0), 5.0);
+        vec3 refl = fogSkyOn > 0.5 ? texture2D(fogSky, fogSkyUV(Rf)).rgb : sky;
+        c = mix(c, refl, clamp(fr, 0.0, 1.0) * (1.0 - f) * 0.9);
+        c += sunC * pow(max(dot(Rf, normalize(sunD)), 0.0), 400.0) * 6.0 * (1.0 - f);
+        float far = smoothstep(40.0, 260.0, length(vW.xz - cameraPosition.xz));
+        gl_FragColor = vec4(c, mix(max(clamp(0.5 + depth * 0.35, 0.0, 0.92), f * 0.95), 1.0, far));
         #include <fog_fragment>
       }`,
   });
-  const water = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), waterMat);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000, 1, 1), waterMat);
   water.rotation.x = -Math.PI / 2; water.position.y = WATER_Y; water.renderOrder = 2; scene.add(water);
 
   /* ---------- landmarks: merged per place and material; convex colliders from the Blender shapes ---------- */
@@ -210,6 +221,36 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
   }
   for (const n of ['glass_city', 'glass_dark']) if (M[n]) { M[n].metalness = 0; M[n].roughness = 0.05; M[n].envMapIntensity = 1.6; M[n].emissive = C('#ffcf8a'); glow.push({ m: M[n], day: 0, night: 0.22 }); }
   if (M.pearl) { M.pearl.emissive = C('#ff4fa3'); glow.push({ m: M.pearl, day: 0, night: 0.9 }); }
+
+  /* ---------- the far shore: a ring of hills and mountains across the water, so the world has a horizon ---------- */
+  {
+    const SEG = coarse ? 160 : 288, RINGS = 9, R0 = 430, R1 = 1300;
+    const pos = [], col = [], idx = [], cc = new THREE.Color();
+    const ridge = (a) => {   // height of the range in direction a: high in the north (snow), rolling hills east/west, open sea to the south
+      const north = Math.max(0, -Math.sin(a)), south = Math.max(0, Math.sin(a));
+      let h = 0, amp = 1, fr = 1;
+      for (let o = 0; o < 5; o++) { h += amp * (0.5 + 0.5 * Math.sin(a * 3 * fr + o * 1.7 + Math.sin(a * 7 * fr + o) * 0.8)); amp *= 0.5; fr *= 2.1; }
+      return (12 + 46 * north * north + 10 * h * (1 - south * 0.9)) * (1 - smooth(0.55, 0.95, south)) + h * 3;
+    };
+    for (let r = 0; r <= RINGS; r++) {
+      const t = r / RINGS, rad = R0 + (R1 - R0) * t;
+      for (let k = 0; k <= SEG; k++) {
+        const a = k / SEG * Math.PI * 2, x = Math.cos(a) * rad * 1.15, z = Math.sin(a) * rad * 0.9;
+        const prof = Math.sin(Math.min(1, t * 1.25) * Math.PI) ** 0.8 * (t < 0.12 ? t / 0.12 : 1);
+        const y = WATER_Y - 2 + ridge(a + t * 0.6) * prof * (0.75 + 0.5 * fbm(x * 0.01, z * 0.01));
+        pos.push(x, y, z);
+        const hk = (y - WATER_Y) / 55;
+        cc.set('#55654a').lerp(t2.set('#7c7768'), smooth(0.2, 0.6, hk)).lerp(t2.set('#e8edf2'), smooth(0.72, 0.9, hk + fbm(x * 0.03, z * 0.03) * 0.15));
+        col.push(cc.r, cc.g, cc.b);
+      }
+    }
+    for (let r = 0; r < RINGS; r++) for (let k = 0; k < SEG; k++) { const a = r * (SEG + 1) + k, b = a + SEG + 1; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeVertexNormals();
+    const vista = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, side: THREE.DoubleSide }));
+    vista.frustumCulled = false; scene.add(vista);
+  }
 
   /* ---------- trees and plants of each place ---------- */
   // leaf cards: alpha-tested sprays; normals point out of the crown so a tree shades like a volume, not like flat cards

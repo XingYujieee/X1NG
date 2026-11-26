@@ -11,7 +11,7 @@ import * as THREE from '../../vendor/three.min.js';
 // shared uniforms (materials.js puts the same objects into ENV)
 export const SUN = { value: new THREE.Vector3(0, 1, 0) }, CLOUD = { value: 0.35 }, CLOUD_OFF = { value: new THREE.Vector2() };
 export const AIR = {
-  fogSunDir: SUN, fogSunCol: { value: new THREE.Color(0, 0, 0) }, fogHeight: { value: 0.045 },
+  fogSunDir: SUN, fogSunCol: { value: new THREE.Color(0, 0, 0) }, fogHeight: { value: 0.03 }, fogSky: { value: null }, fogSkyOn: { value: 0 },
   cCover: CLOUD, cOff: CLOUD_OFF,
 };
 
@@ -21,14 +21,17 @@ export const CLOUD_GLSL = /* glsl */`
   float cH2(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float cN2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
     return mix(mix(cH2(i), cH2(i + vec2(1, 0)), f.x), mix(cH2(i + vec2(0, 1)), cH2(i + vec2(1, 1)), f.x), f.y); }
+  // a cumulus deck 420 m up: billowy (domain-warped fbm), features a couple of hundred metres across
   float cloudDensity(vec2 xz){
-    vec2 q = (xz + cOff) * 0.016;
-    float n = cN2(q) * 0.5 + cN2(q * 2.03 + 3.1) * 0.25 + cN2(q * 4.1 + 7.7) * 0.125 + cN2(q * 8.3 + 1.3) * 0.0625;
-    return smoothstep(1.0 - cCover * 0.95, 1.12 - cCover * 0.7, n * 1.07);
+    vec2 q = (xz + cOff) * 0.0045;
+    vec2 w = vec2(cN2(q * 0.7 + 4.2), cN2(q * 0.7 + 9.1)) - 0.5;
+    q += w * 0.9;
+    float n = cN2(q) * 0.5 + cN2(q * 2.03 + 3.1) * 0.25 + cN2(q * 4.1 + 7.7) * 0.14 + cN2(q * 8.3 + 1.3) * 0.08 + cN2(q * 17.0 + 5.3) * 0.03;
+    return smoothstep(1.0 - cCover * 0.95, 1.1 - cCover * 0.62, n * 1.05);
   }
   float cloudShadow(vec3 p, vec3 sunD){
-    vec3 s = normalize(sunD); float t = (60.0 - p.y) / max(s.y, 0.12);
-    return 1.0 - cloudDensity(p.xz + s.xz * t) * 0.62;
+    vec3 s = normalize(sunD); float t = (420.0 - p.y) / max(s.y, 0.12);
+    return 1.0 - cloudDensity(p.xz + s.xz * t) * 0.6;
   }
 `;
 
@@ -36,6 +39,8 @@ let patched = false;
 /** replace three's fog chunks (call once, before anything compiles) */
 export function patchFog() {
   if (patched) return; patched = true;
+  // every material without its own hook gets the air uniforms at compile time (the rest are wrapped by injectAir)
+  THREE.Material.prototype.onBeforeCompile = function (sh) { if (this.fog !== false) Object.assign(sh.uniforms, AIR); };
   const SC = THREE.ShaderChunk;
   SC.fog_pars_vertex = `#ifdef USE_FOG
     varying float vFogDepth; varying vec3 vFogWorld;
@@ -46,7 +51,8 @@ export function patchFog() {
   #endif`;
   SC.fog_pars_fragment = `#ifdef USE_FOG
     uniform vec3 fogColor; varying float vFogDepth; varying vec3 vFogWorld;
-    uniform vec3 fogSunDir; uniform vec3 fogSunCol; uniform float fogHeight;
+    uniform vec3 fogSunDir; uniform vec3 fogSunCol; uniform float fogHeight; uniform sampler2D fogSky; uniform float fogSkyOn;
+    vec2 fogSkyUV(vec3 d){ return vec2(atan(d.z, d.x) * 0.15915494 + 0.5, asin(clamp(d.y, -1.0, 1.0)) * 0.31830989 + 0.5); }
     #ifdef FOG_EXP2
       uniform float fogDensity;
     #else
@@ -64,12 +70,17 @@ export function patchFog() {
           hk = abs(dy) > 0.01 ? (exp(-fogHeight * y0) - exp(-fogHeight * (y0 + dy))) / (fogHeight * dy) : exp(-fogHeight * y0);
           hk = clamp(hk * 1.25, 0.05, 1.6);
         }
-        float fogFactor = 1.0 - exp(- fogDensity * fogDensity * vFogDepth * vFogDepth * hk);
+        // optical depth grows a little faster than the distance: clear close by, a soft veil at a few hundred metres,
+        // and the sea melts into the sky at the horizon
+        float fogFactor = 1.0 - exp(- pow(fogDensity * fl, 1.6) * hk);
       #else
         float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
       #endif
-      float sunAmt = pow(max(dot(fdir, normalize(fogSunDir + vec3(0.0, 1e-4, 0.0))), 0.0), 6.0);
-      gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor + fogSunCol * sunAmt * 0.55, fogFactor);
+      // the air takes the colour of the sky behind it (sampled just above the horizon in this direction)
+      vec3 fc = fogColor;
+      if (fogSkyOn > 0.5) fc = texture2D(fogSky, fogSkyUV(normalize(vec3(fdir.x, max(fdir.y, 0.0) * 0.5 + 0.012, fdir.z)))).rgb;
+      else fc += fogSunCol * pow(max(dot(fdir, normalize(fogSunDir + vec3(0.0, 1e-4, 0.0))), 0.0), 6.0) * 0.55;
+      gl_FragColor.rgb = mix(gl_FragColor.rgb, fc, fogFactor);
     }
   #endif`;
 }
