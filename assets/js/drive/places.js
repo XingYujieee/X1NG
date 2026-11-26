@@ -32,7 +32,7 @@ export const LANDMARKS = [
   // Nanjing — the city wall and its gate, Zifeng Tower
   ['nanjing_gate', 50, -14, 0, 1], ['city_wall', 35.5, -14, 0, 1], ['city_wall', 64.5, -14, 0, 1], ['zifeng', 67, 4, 0, 1],
   // Shanghai — Lujiazui across the river, the Bund on this side
-  ['pearl_tower', 78, -5, 0, 1], ['shanghai_tower', 90, -7, 0.3, 1], ['jinmao', 94, 0, 0.2, 1], ['swfc', 85, -13, 0.4, 1],
+  ['pearl_tower', 80, -6, 0, 1.25], ['shanghai_tower', 92, -9, 0.3, 1.35], ['jinmao', 96, -2, 0.2, 1.3], ['swfc', 87, -16, 0.4, 1.32],
   ['tower0', 71, -8, 0.1, 1], ['tower1', 80, -16, 0.2, 1], ['tower2', 68, -14, 0, 1],
   ['bund_customs', 80, 16, FACE, 1], ['bund_bank', 73, 16.5, FACE, 1], ['bund_bank', 87, 16.5, FACE, 1], ['bund_customs', 93, 16.5, FACE, 0.9],
   // the road — a red barn

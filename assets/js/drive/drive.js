@@ -742,7 +742,7 @@ export async function mountDrive(host, { stops: stopData = [], onClose } = {}) {
     // the cloud deck drifts with the wind; more cloud in rain and snow, almost none in a sandstorm
     ENV.cloudOff.value.x += (1.3 + windV.x * 0.5) * dt; ENV.cloudOff.value.y += (0.5 + windV.y * 0.5) * dt;
     ENV.cloud.value = damp(ENV.cloud.value, wxKind === 'clear' ? 0.34 : wxKind === 'sand' ? 0.34 * (1 - wxAmt) : 0.34 + wxAmt * 0.55, 0.15, dt);
-    weather.update(dt, tt, wxKind, wxAmt, camera.position, P, windV, nightK, scene.fog.color);
+    weather.update(dt, tt, wxKind, wxAmt, camera.position, P, windV, nightK, scene.fog.color, car.body.linvel());
     { const g = gradeFor(wxKind, wxAmt, nightK); grade.uniforms.tint.value.set(g[0], g[1], g[2]); grade.uniforms.sat.value = g[3]; grade.uniforms.contrast.value = g[4]; grade.uniforms.lift.value = g[5]; grade.uniforms.vig.value = g[6]; grade.uniforms.t.value = tt % 10; }
 
     W.update(dt, tt, {

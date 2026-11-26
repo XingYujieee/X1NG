@@ -20,7 +20,7 @@ export const ENV = {
 };
 
 export const KIND = {
-  sandstone: 'stone', limestone: 'stone', granite: 'stone', hieroglyph: 'stone', bund: 'stone', bund_dark: 'stone',
+  sandstone: 'stone', limestone: 'stone', granite: 'stone', rock: 'stone', rock_red: 'stone', hieroglyph: 'stone', bund: 'stone', bund_dark: 'stone',
   brick_grey: 'brick', brick_dark: 'brick',
   plaster: 'plaster', stupa: 'plaster', marble: 'plaster', white: 'plaster', paint_ochre: 'plaster', red: 'plaster', red_dark: 'plaster', concrete: 'plaster', sand: 'plaster',
   tile_yellow: 'tile', tile_grey: 'tile', green_tile: 'tile', gold: 'tile',
@@ -36,7 +36,7 @@ export const KIND = {
 };
 // real-scale textures (layer in the texture array, metres per tile across, metres per tile up); the Blender UVs are in metres
 export const TEXMAP = {
-  sandstone: [8, 3.3, 2.75], limestone: [8, 3.9, 3.0], granite: [17, 1.8, 2.0], hieroglyph: [17, 1.2, 1.2], bund: [17, 1.8, 1.8], bund_dark: [17, 1.8, 1.8],
+  rock: [4, 2.2, 2.2], rock_red: [3, 4.5, 3.5], sandstone: [8, 3.3, 2.75], limestone: [8, 3.9, 3.0], granite: [17, 1.8, 2.0], hieroglyph: [17, 1.2, 1.2], bund: [17, 1.8, 1.8], bund_dark: [17, 1.8, 1.8],
   brick_grey: [9, 2.76, 2.8], brick_dark: [9, 2.76, 2.8],
   plaster: [10, 4, 4], white: [10, 4, 4], wrap: [10, 2, 2], red: [19, 3, 3], red_dark: [19, 3, 3], paint_ochre: [19, 3, 3], stupa: [19, 3, 3], sand: [19, 3, 3],
   marble: [13, 3, 3], concrete: [14, 4, 4],
@@ -284,7 +284,7 @@ export function enhance(mat, { kind, name = mat.name, bump = 0.5, wind = null, f
       { float cs = cloudShadow(vDW, dSun); reflectedLight.directDiffuse *= cs; reflectedLight.directSpecular *= cs; }`);
     fs = fs.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
       if (dRough >= 0.0) roughnessFactor = dRough;
-      roughnessFactor = mix(roughnessFactor, 0.22, dWet * smoothstep(0.4, 0.95, vDN.y));`);
+      roughnessFactor = mix(roughnessFactor, mix(0.42, 0.16, smoothstep(0.4, 0.95, vDN.y)), dWet);   // wet: glossy tops, sheen running down the walls`);
     fs = fs.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
       if (dUseTN > 0.5) {
         // tangent frame from the metre-scale UVs (as three does for normal maps); green flipped for glTF UVs

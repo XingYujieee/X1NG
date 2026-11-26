@@ -60,7 +60,7 @@ P = {   # palette
     'lamp': M('lamp', '#fff4d6', 0.3, 0, '#ffe2a8', 0.0), 'wood': M('wood', '#8a6240', 0.85), 'wood_dark': M('wood_dark', '#5a3d27', 0.85),
     'stupa': M('stupa', '#f4f1ea', 0.7), 'sail': M('sail', '#f3efe6', 0.8), 'rope': M('rope', '#b49a72', 0.9),
     'sand': M('sand', '#e2c48e', 0.95), 'sandstone': M('sandstone', '#d6b077', 0.95), 'limestone': M('limestone', '#e8d6ae', 0.9),
-    'granite': M('granite', '#b98b6a', 0.9), 'paint_ochre': M('paint_ochre', '#c99a5b', 0.9), 'hieroglyph': M('hieroglyph', '#a98455', 0.9),
+    'granite': M('granite', '#b98b6a', 0.9), 'rock': M('rock', '#8f877b', 0.95), 'rock_red': M('rock_red', '#c08a66', 0.95), 'paint_ochre': M('paint_ochre', '#c99a5b', 0.9), 'hieroglyph': M('hieroglyph', '#a98455', 0.9),
     'red': M('red', '#a9322a', 0.8), 'red_dark': M('red_dark', '#7d211c', 0.8), 'tile_yellow': M('tile_yellow', '#e3a630', 0.55), 'tile_grey': M('tile_grey', '#59606a', 0.7),
     'marble': M('marble', '#ece9e1', 0.6), 'brick_grey': M('brick_grey', '#8d8f8a', 0.9), 'brick_dark': M('brick_dark', '#6a6c69', 0.9), 'plaster': M('plaster', '#e6ddcc', 0.9),
     'green_tile': M('green_tile', '#4c8a6b', 0.6), 'blue_paint': M('blue_paint', '#2f5f8f', 0.7),
@@ -492,7 +492,7 @@ def make_trees():
             ps.append(limb((0, 0, z), Vector((0, 0, z)) + d.normalized() * L * 0.7, 0.04, 0.015, P['bark_white'], 4))
             C.cluster('poplar', Vector((0, 0, z)) + d.normalized() * L * 0.6, 0.35, 3, 0.9, R, up=1.2, droop=0.05)
         z += 0.42
-    for k, (zz, r) in enumerate([(2.7, 0.5), (3.7, 0.48), (4.6, 0.38)]): ps.append(smooth_blob(r * 0.8, (0, 0, zz), P['poplar'], scale=(1, 1, 1.6), seed=k + 3))
+    for k, (zz, r) in enumerate([(2.7, 0.5), (3.7, 0.48), (4.6, 0.38)]): ps.append(smooth_blob(r * 0.5, (0, 0, zz), P['fir2'], scale=(1, 1, 1.6), seed=k + 3))
     finish(join(ps + C.objects('poplar'), 'poplar'), 'poplar')
     # small plants: a bush and a dry scrub (cards round a small dark core)
     C = Cards(); ps = []
@@ -591,7 +591,7 @@ def make_props():
     rb = []
     for k in range(6):
         a = k * 1.9; r = 0.12 + (k % 3) * 0.12
-        o = sphere(0.09 + (k % 3) * 0.05, (math.cos(a) * r, math.sin(a) * r, 0.03), P['granite'] if k % 2 else P['limestone'], sub=1, noise=0.55, scale=(1.3, 1, 0.6), seed=k + 70)
+        o = sphere(0.09 + (k % 3) * 0.05, (math.cos(a) * r, math.sin(a) * r, 0.03), P['rock'] if k % 2 else P['rock_red'] if k % 3 == 0 else P['rock'], sub=2, noise=0.5, scale=(1.3, 1, 0.6), seed=k + 70)
         rb.append(o)
     finish(join(rb, 'rubble'), 'rubble')
     # bench, cone, crate, barrier
@@ -608,7 +608,7 @@ def make_props():
     sd.append(box(1.8, 0.18, 0.06, (0, 0.12, 0.55), P['stand']))
     finish(join(sd, 'stand'), 'stand')
     # stop platform: a low disc with a bevelled edge
-    finish(join([cyl(6.0, 0.18, (0, 0, 0.09), P['concrete'], n=48, bevel=0.05)], 'platform'), 'platform')
+    finish(join([cyl(6.0, 0.18, (0, 0, 0.09), P['concrete'], n=64, bevel=0.05), cyl(5.96, 1.6, (0, 0, -0.8), P['concrete'], n=64)], 'platform'), 'platform')   # a deep footing so slopes never show a gap
     # prayer-flag pole (flags are drawn by the game)
     finish(join([cyl(0.07, 5.0, (0, 0, 2.5), P['wood'], n=6), sphere(0.12, (0, 0, 5.05), P['gold'], sub=1)], 'flagpole'), 'flagpole')
     # camel (Giza) and yak (Yunnan): simple, chunky
@@ -720,7 +720,7 @@ def make_landmarks():
     pv.append(box(2.6, 2.0, 1.4, (0, 0, 4.6), P['red']))
     pv.append(roof(2.2, 1.7, 1.1, 0.4, P['tile_grey'], (0, 0, 5.3), ridge=0.9))
     finish(join(pv, 'pavilion'), 'pavilion'); col_box('pavilion', 0, 5, 4, 6, (0, 0, 3))
-    yd = sphere(1, (0, 0, 0), P['granite'], sub=2, noise=0.35, seed=5)
+    yd = sphere(1, (0, 0, 0), P['rock_red'], sub=3, noise=0.35, seed=5)
     for v in yd.data.vertices:
         v.co.x *= 4.2; v.co.y *= 1.4; v.co.z = max(v.co.z, -0.2) * 2.4
         v.co.z *= 1 - 0.35 * max(0.0, v.co.x / 4.2)
@@ -950,7 +950,7 @@ def export(cname):
             world_uv(o)
             # smooth shading with sharp edges above 35°: round things read round, boxes stay crisp
             for p in o.data.polygons: p.use_smooth = True
-            o.data.set_sharp_from_angle(angle=math.radians(35))
+            o.data.set_sharp_from_angle(angle=math.radians(89 if o.name in ('yardang', 'rubble') else 35))   # rocks are smooth all over
     for o in bpy.data.objects: o.select_set(False)
     for o in COLL[cname].objects: o.location = (0, 0, 0); o.select_set(True)
     bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, f'{cname}.glb'), export_format='GLB', use_selection=True, export_apply=True,

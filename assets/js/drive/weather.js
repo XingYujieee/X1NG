@@ -63,23 +63,24 @@ export function buildWeather(scene, { coarse = false, sample } = {}) {
   const rPos = new Float32Array(RN * 6), rEnd = new Float32Array(RN * 2), rR = new Float32Array(RN * 2);
   for (let i = 0; i < RN; i++) { const x = Math.random(), y = Math.random(), z = Math.random(), r = Math.random(); for (let k = 0; k < 2; k++) { rPos[i * 6 + k * 3] = x; rPos[i * 6 + k * 3 + 1] = y; rPos[i * 6 + k * 3 + 2] = z; rEnd[i * 2 + k] = k; rR[i * 2 + k] = r; } }
   const rGeo = new THREE.BufferGeometry(); rGeo.setAttribute('position', new THREE.BufferAttribute(rPos, 3)); rGeo.setAttribute('end', new THREE.BufferAttribute(rEnd, 1)); rGeo.setAttribute('rnd', new THREE.BufferAttribute(rR, 1));
-  const RU = { t: PU.t, center: PU.center, box: PU.box, amount: { value: 0 }, wind: PU.wind, tint: { value: new THREE.Color(1, 1, 1) } };
+  const RU = { t: PU.t, center: PU.center, box: PU.box, amount: { value: 0 }, wind: PU.wind, tint: { value: new THREE.Color(1, 1, 1) }, rel: { value: new THREE.Vector3() } };
   const rain = new THREE.LineSegments(rGeo, new THREE.ShaderMaterial({
     uniforms: RU, transparent: true, depthWrite: false,
     vertexShader: `
-      uniform float t, amount; uniform vec3 center, box; uniform vec2 wind; attribute float end; attribute float rnd; varying float vA; varying float vE;
+      uniform float t, amount; uniform vec3 center, box, rel; uniform vec2 wind; attribute float end; attribute float rnd; varying float vA; varying float vE;
       void main(){
-        vA = step(rnd, amount); vE = end;
+        vA = step(rnd, amount) * (0.45 + 0.55 * fract(rnd * 17.3)); vE = end;
         vec3 vel = vec3(wind.x * 0.6, -22.0 - rnd * 6.0, wind.y * 0.6);
         vec3 p = position * box + vel * t;
         vec3 o = center - box * 0.5; o.y = center.y - 8.0;
         p = mod(p - o, box) + o;
-        p -= vel * 0.035 * end;
+        // the streak is the drop's motion during the exposure, as seen from the moving car: it slants toward you at speed
+        p -= (vel - rel) * (0.022 + fract(rnd * 7.1) * 0.014) * end;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
         vA *= smoothstep(0.8, 3.0, -mv.z) * (1.0 - smoothstep(25.0, 40.0, -mv.z));
         gl_Position = projectionMatrix * mv;
       }`,
-    fragmentShader: `uniform vec3 tint; varying float vA; varying float vE; void main(){ if (vA < 0.01) discard; gl_FragColor = vec4(vec3(0.78, 0.84, 0.95) * tint, vA * (0.12 + vE * 0.32)); }`,
+    fragmentShader: `uniform vec3 tint; varying float vA; varying float vE; void main(){ if (vA < 0.01) discard; gl_FragColor = vec4(vec3(0.74, 0.8, 0.9) * tint, vA * (0.06 + vE * 0.22)); }`,
   }));
   rain.frustumCulled = false; rain.renderOrder = 6; scene.add(rain);
 
@@ -140,7 +141,8 @@ export function buildWeather(scene, { coarse = false, sample } = {}) {
   return {
     resize(h, pr) { PU.scale.value = h * pr * 0.9; },
     /* kind: 'clear' | 'rain' | 'snow' | 'sand', amount 0..1 */
-    update(dt, tt, kind, amount, cam, focus, wind, night, fogCol) {
+    update(dt, tt, kind, amount, cam, focus, wind, night, fogCol, carVel) {
+      if (carVel) RU.rel.value.set(carVel.x, carVel.y, carVel.z);
       PU.t.value = tt; PU.center.value.copy(cam); PU.wind.value.copy(wind);
       const dim = 1 - night * 0.55;
       PU.kind.value = kind === 'sand' ? 2 : 1;

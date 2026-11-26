@@ -89,8 +89,8 @@ export function buildStops(scene, physics, lib, grid, stopData) {
   const loader = new THREE.TextureLoader();
   const stops = [];
   const valid = stopData.filter((s) => PLACES[s.key]);
-  const wallMat = enhance(new THREE.MeshStandardMaterial({ color: '#f1eee7', roughness: 0.92, name: 'plaster' }), { kind: 'plaster', bump: 0.25 });
-  const skirtMat = new THREE.MeshStandardMaterial({ color: '#1b1d24', roughness: 0.6 });
+  const wallMat = enhance(new THREE.MeshStandardMaterial({ color: '#f1eee7', roughness: 0.92, name: 'plaster', side: THREE.DoubleSide }), { kind: 'plaster', bump: 0.25, tex: false });
+  const skirtMat = new THREE.MeshStandardMaterial({ color: '#1b1d24', roughness: 0.6, side: THREE.DoubleSide });
   const frameMat = new THREE.MeshStandardMaterial({ color: '#141519', roughness: 0.45 });
   const matMat = new THREE.MeshStandardMaterial({ color: '#f7f5f0', roughness: 0.95 });
   const lampMat = new THREE.MeshStandardMaterial({ color: '#16171c', roughness: 0.4, metalness: 0.3 });

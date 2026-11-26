@@ -84,7 +84,7 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
       float gH(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float gN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); return mix(mix(gH(i), gH(i+vec2(1,0)), f.x), mix(gH(i+vec2(0,1)), gH(i+vec2(1,1)), f.x), f.y); }
       float gF(vec2 p){ return gN(p) * 0.5 + gN(p * 2.1) * 0.25 + gN(p * 4.3) * 0.125 + gN(p * 8.7) * 0.0625; }
-      vec3 gTN = vec3(0.0); float puddle = 0.0;
+      vec3 gTN = vec3(0.0); float puddle = 0.0; float shoreWet = 0.0;
       // one layer: albedo and a world-space normal offset; triplanar where asked
       void gLayer(float L, float S, bool tri, vec3 wn, out vec3 a, out vec3 nOff){
         if (!tri || wn.y > 0.85) {
@@ -125,11 +125,14 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
       float settle = dSnow * smoothstep(0.55, 0.85, vWn.y) * smoothstep(0.2, 0.7, gF(vWp.xz * 0.5) + dSnow * 0.5);
       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.95, 1.0), settle);
       gTN *= 1.0 - settle * 0.7;
+      // the wet band along the water's edge: darker sand and stones, glossy
+      shoreWet = 1.0 - smoothstep(${(WATER_Y + 0.02).toFixed(2)}, ${(WATER_Y + 0.5).toFixed(2)}, vWp.y + (gF(vWp.xz * 0.8) - 0.5) * 0.15);
+      diffuseColor.rgb *= 1.0 - shoreWet * 0.38;
       // rain: darker ground and puddles in the low spots
       puddle = smoothstep(0.62, 0.7, gF(vWp.xz * 0.18)) * dWet * (0.4 + vAux.z * 0.6);
       diffuseColor.rgb *= 1.0 - dWet * 0.3 - puddle * 0.25;`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-      roughnessFactor = mix(roughnessFactor, 0.35, dWet * 0.6); roughnessFactor = mix(roughnessFactor, 0.04, puddle);`)
+      roughnessFactor = mix(roughnessFactor, 0.35, dWet * 0.6); roughnessFactor = mix(roughnessFactor, 0.04, puddle); roughnessFactor = mix(roughnessFactor, 0.28, shoreWet);`)
       .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
       { float cs = cloudShadow(vWp, dSun); reflectedLight.directDiffuse *= cs; reflectedLight.directSpecular *= cs; }`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
@@ -250,6 +253,16 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     g.setIndex(idx); g.computeVertexNormals();
     const vista = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, side: THREE.DoubleSide }));
     vista.frustumCulled = false; scene.add(vista);
+    // a far city on the eastern shore, across the water: towers that only read as a pale skyline in the haze
+    const boxes = [];
+    for (let k = 0; k < 70; k++) {
+      const a = -0.55 + rnd() * 1.1, rad = 560 + rnd() * 120, w = 8 + rnd() * 16, d = 8 + rnd() * 14;
+      const hgt = (18 + rnd() * rnd() * 110) * (1 - Math.abs(a) * 0.9);
+      const b = new THREE.BoxGeometry(w, hgt, d); b.translate(Math.cos(a) * rad * 1.15, WATER_Y + hgt / 2 - 1, Math.sin(a) * rad * 0.9);
+      boxes.push(b);
+    }
+    const city = new THREE.Mesh(mergeGeometries(boxes), new THREE.MeshStandardMaterial({ color: '#9aa2ad', roughness: 0.8, metalness: 0.1 }));
+    city.frustumCulled = false; scene.add(city);
   }
 
   /* ---------- trees and plants of each place ---------- */
@@ -274,7 +287,15 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     }
   }
   const trees = {};
-  const addTree = (type, x, z, s = 1, ry = rnd() * Math.PI * 2) => { (trees[type] ||= []).push({ x, y: sample(x, z) - 0.05, z, ry, s, wob: 0, v: 0, ax: 0, az: 0 }); };
+  // no two alike: size jitter and a slight lean (palms lean more, toward the light), on top of the random turn
+  const addTree = (type, x, z, s = 1, ry = rnd() * Math.PI * 2) => {
+    const low = /^(shrub|tuft|reeds|bush)$/.test(type);
+    s *= low ? 0.8 + rnd() * 0.5 : 0.88 + rnd() * 0.32;
+    const lean = type === 'palm' ? 0.06 + rnd() * 0.12 : low ? 0 : rnd() * 0.07, la = rnd() * Math.PI * 2;
+    const tilt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(Math.cos(la), 0, Math.sin(la)), lean);
+    (trees[type] ||= []).push({ x, y: sample(x, z) - 0.05 - (lean * 0.4), z, ry, s, tilt, wob: 0, v: 0, ax: 0, az: 0 });
+  };
+  const treeMtx = (t) => new THREE.Matrix4().compose(new THREE.Vector3(t.x, t.y, t.z), t.tilt.clone().multiply(new THREE.Quaternion().setFromAxisAngle(Y, t.ry)), new THREE.Vector3(t.s, t.s, t.s));
   const clear = (x, z, r = 2.8) => road(x, z) > r && !nearStop(x, z, 9) && sample(x, z) > 0.05 && slope(x, z) < 0.5 && islandD(x, z) < 0.9;
   const blocked = [];
   for (const [name, x, z, , s] of LANDMARKS) blocked.push([x, z, (name.startsWith('pyramid') ? 12 : name === 'city_wall' ? 9 : 6.5) * (s || 1)]);
@@ -344,13 +365,27 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
     if (rd < 2.5 || rd > 3.4 || nearStop(x, z, 8) || sample(x, z) < 0.05 || !free(x, z)) continue;
     if (rnd() < 0.45) rubble.push(mtx(x, sample(x, z), z, rnd() * 6.28, 0.4 + rnd() * 0.6)); else addTree('tuft', x, z, 0.5 + rnd() * 0.6);
   }
+  for (const key in PLACES) {
+    const P = PLACES[key];
+    for (let k = 0; k < 26; k++) {
+      const a = rnd() * Math.PI * 2, r = 6.15 + rnd() * 0.9, x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r;
+      if (road(x, z) < 1.6 || sample(x, z) < WATER_Y + 0.1) continue;
+      if (rnd() < 0.45) rubble.push(mtx(x, sample(x, z), z, rnd() * 6.28, 0.5 + rnd() * 0.5)); else addTree('tuft', x, z, 0.6 + rnd() * 0.5);
+    }
+  }
+  // the shore: wet stones and boulders where the land meets the water
+  for (let n = 0; n < (coarse ? 1400 : 3000); n++) {
+    const x = X0 + rnd() * SIZE_X, z = Z0 + rnd() * SIZE_Z, h = sample(x, z);
+    if (h < WATER_Y - 0.15 || h > WATER_Y + 0.35 || road(x, z) < 2.5 || nearStop(x, z, 8) || rnd() > 0.5) continue;
+    rubble.push(mtx(x, h - 0.05, z, rnd() * 6.28, 0.8 + rnd() * rnd() * 2.6));
+  }
   if (lib.rubble && rubble.length) scene.add(instanced(lib, 'rubble', rubble, { shadow: true }).group);
   const SOLID = { fir: 0.3, fir_snow: 0.3, palm: 0.24, ginkgo: 0.28, plane: 0.34, poplar: 0.24, blossom: 0.2 };
   const LOW = { shrub: 1, tuft: 1, reeds: 1, bush: 1 };
   const treeMeshes = {};
   for (const type in trees) {
     const list = trees[type];
-    const { group, meshes } = instanced(lib, type, list.map((t) => mtx(t.x, t.y, t.z, t.ry, t.s)), {
+    const { group, meshes } = instanced(lib, type, list.map(treeMtx), {
       shadow: !LOW[type],
       patch: (mat, name) => windPatch(mat, LOW[type] ? { bend: 0.05, push: 0.9, rigid: 0.05, flutter: name.startsWith('card') ? 0.03 : 0 } : { bend: name.startsWith('bark') ? 0.004 : 0.008, rigid: 1.2, fade: true, flutter: name.startsWith('card') ? 0.035 : 0 }, name),
     });
@@ -376,7 +411,7 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
   function updateShaking(dt) {
     for (const t of shaking) {
       t.v += (-t.wob * 70 - t.v * 3.5) * dt; t.wob += t.v * dt; t.phase += dt;
-      tmpQ.setFromAxisAngle(tmpP.set(t.ax, 0, t.az), t.wob * 0.2).multiply(new THREE.Quaternion().setFromAxisAngle(Y, t.ry));
+      tmpQ.setFromAxisAngle(tmpP.set(t.ax, 0, t.az), t.wob * 0.2).multiply(t.tilt).multiply(new THREE.Quaternion().setFromAxisAngle(Y, t.ry));
       tmpM.compose(tmpP.set(t.x, t.y, t.z), tmpQ, tmpS.set(t.s, t.s, t.s));
       for (const m of treeMeshes[t.type]) { m.setMatrixAt(t.i, tmpM); m.instanceMatrix.needsUpdate = true; }
       if (Math.abs(t.wob) < 0.004 && Math.abs(t.v) < 0.03 && t.phase > 0.4) { t.wob = 0; shaking.delete(t); }
@@ -405,6 +440,29 @@ export function buildWorld(scene, physics, lib, grid, { coarse = false } = {}) {
   const blobs = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, opacity: 0.6 }), Math.max(1, blobList.length));
   blobList.forEach(([x, y, z, r], i) => blobs.setMatrixAt(i, tmpM.compose(tmpP.set(x, y, z), tmpQ.identity(), tmpS.set(r * 2, 1, r * 2))));
   blobs.count = blobList.length; blobs.renderOrder = 1; scene.add(blobs);
+  // and under every building: a soft rectangle a little larger than its footprint (the occlusion of the ground by the walls)
+  const rectTex = (() => {
+    const N = 64, cv = document.createElement('canvas'); cv.width = cv.height = N; const x = cv.getContext('2d'), im = x.createImageData(N, N);
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const u = Math.abs((i + 0.5) / N * 2 - 1), v = Math.abs((j + 0.5) / N * 2 - 1);
+      const d = Math.hypot(Math.max(0, u - 0.62), Math.max(0, v - 0.62)) / 0.38;
+      const a = Math.max(0, 1 - d); im.data[(j * N + i) * 4 + 3] = Math.round(a * a * (3 - 2 * a) * 150);
+    }
+    x.putImageData(im, 0, 0); return new THREE.CanvasTexture(cv);
+  })();
+  const feet = [];
+  for (const [name, x, z, ry, sc = 1, yo = 0] of LANDMARKS) {
+    const A = lib[name]; if (!A || yo > 0.5) continue;
+    const fb2 = new THREE.Box3(); for (const p of A.parts) { p.geometry.computeBoundingBox(); fb2.union(p.geometry.boundingBox); }
+    const cx = (fb2.max.x + fb2.min.x) / 2 * sc, cz = (fb2.max.z + fb2.min.z) / 2 * sc, cs = Math.cos(ry), sn = Math.sin(ry);
+    const wx = x + cx * cs + cz * sn, wz = z - cx * sn + cz * cs;
+    feet.push([wx, sample(wx, wz) + 0.05, wz, (fb2.max.x - fb2.min.x) * sc + 1.6, (fb2.max.z - fb2.min.z) * sc + 1.6, ry]);
+  }
+  if (feet.length) {
+    const fm = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: rectTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, opacity: 0.55 }), feet.length);
+    feet.forEach(([x, y, z, w, d, ry], i) => fm.setMatrixAt(i, tmpM.compose(tmpP.set(x, y, z), tmpQ.setFromAxisAngle(Y, ry), tmpS.set(w, 1, d))));
+    fm.renderOrder = 1; scene.add(fm);
+  }
 
   /* ---------- fallen leaves: ginkgo gold in Beijing, plane-tree brown in Nanjing; the car kicks them up ---------- */
   const leafTex = (() => {
